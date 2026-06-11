@@ -1457,7 +1457,7 @@ export default function App() {
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, chartDone: !item.chartDone } : item)); }}
-                                  className={`px-1.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-colors border shrink-0 ${p.chartDone ? 'text-slate-300 border-transparent' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}
+                                  className={`px-1.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-colors border shrink-0 ${p.chartDone ? 'text-slate-300 border-transparent' : 'bg-emerald-50 text-emerald-600 border-emerald-400'}`}
                                 >病歷</button>
                                 {/* Delete */}
                                 <button
