@@ -951,6 +951,7 @@ export default function App() {
                 <Search size={13} className="text-slate-400 shrink-0" />
                 <input
                   type="text"
+                  autoComplete="off"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="搜尋"
@@ -968,6 +969,7 @@ export default function App() {
                 <input
                   id="search-input-box"
                   type="text"
+                  autoComplete="off"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="搜尋"
@@ -1272,6 +1274,7 @@ export default function App() {
                   {/* Form Scroll Container */}
                   <form 
                     onSubmit={handleAddPatientSubmit}
+                    autoComplete="off"
                     className="flex-grow flex flex-col justify-between overflow-y-auto"
                   >
                     <div className="p-6 md:p-8 flex flex-col gap-5">
@@ -1691,6 +1694,7 @@ export default function App() {
                   {/* Form Scroll Container */}
                   <form 
                     onSubmit={handleAddOrderSubmit}
+                    autoComplete="off"
                     className="flex-grow flex flex-col justify-between overflow-y-auto"
                   >
                     <div className="p-6 md:p-8 flex flex-col gap-5">
@@ -2079,6 +2083,7 @@ export default function App() {
                   {/* Form Scroll Container */}
                   <form 
                     onSubmit={handleAddHandoverSubmit}
+                    autoComplete="off"
                     className="flex-grow flex flex-col justify-between overflow-y-auto"
                   >
                     <div className="p-6 md:p-8 flex flex-col gap-5">
@@ -2145,6 +2150,7 @@ export default function App() {
                       <div className="flex flex-col gap-1.5 w-full">
                         <input
                           type="text"
+                          autoComplete="off"
                           value={hNote}
                           onChange={(e) => setHNote(e.target.value)}
                           placeholder="其餘備註資訊 (例如: 水分限制、歷史病歷、D.N.R. 簽章等其餘病歷備註...)"
