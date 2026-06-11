@@ -1242,32 +1242,14 @@ export default function App() {
                 className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-4 px-3 md:pt-8 md:px-6"
               >
                 <div className="w-full max-w-2xl bg-gradient-to-b from-indigo-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-indigo-150 dark:border-slate-200/40 flex flex-col max-h-[90vh] animate-scale-up duration-200">
-                  {/* Header */}
-                  <div className="flex items-center justify-end px-4 py-2 border-b border-indigo-100/50">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAddPatient(false);
-                        setEditingPatientId(null);
-                        setPBed('');
-                        setPDiagnosis('');
-                        setPNote('');
-                        setPError('');
-                      }}
-                      className="text-slate-400 hover:text-slate-650 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
-                      title="關閉"
-                    >
-                      ✕
-                    </button>
-                  </div>
-
-                  {/* Form Scroll Container */}
-                  <form 
-                    onSubmit={handleAddPatientSubmit}
-                    autoComplete="off"
-                    className="flex-grow flex flex-col justify-between overflow-y-auto"
-                  >
-                    <div className="p-6 md:p-8 flex flex-col gap-5">
+                  <form onSubmit={handleAddPatientSubmit} autoComplete="off" className="flex flex-col flex-grow overflow-hidden">
+                    <div className="flex items-center justify-end gap-1.5 px-4 py-2 border-b border-indigo-100/50 shrink-0">
+                      <button type="submit" className="w-8 h-8 rounded-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white transition-colors cursor-pointer" title="確認">
+                        <Check size={15} className="stroke-[3]" />
+                      </button>
+                      <button type="button" onClick={() => { setShowAddPatient(false); setEditingPatientId(null); setPBed(''); setPDiagnosis(''); setPNote(''); setPError(''); }} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold" title="關閉">✕</button>
+                    </div>
+                    <div className="p-6 md:p-8 flex flex-col gap-5 overflow-y-auto flex-grow">
                       {/* Main elements fields: Bed and Diagnosis on the same row */}
                       <div className="flex items-center gap-3 w-full">
                         <div className="flex-1 max-w-[80px] flex items-center bg-indigo-50/50 px-2.5 py-1.5 rounded-xl border border-indigo-150">
@@ -1331,29 +1313,6 @@ export default function App() {
                       )}
                     </div>
 
-                    {/* Submit / Cancel Footer */}
-                    <div className="bg-slate-50 p-6 rounded-b-2xl border-t border-slate-100 flex items-center justify-end gap-3.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowAddPatient(false);
-                          setEditingPatientId(null);
-                          setPBed('');
-                          setPDiagnosis('');
-                          setPNote('');
-                          setPError('');
-                        }}
-                        className="px-5 py-3 text-slate-500 hover:text-slate-800 text-sm font-bold rounded-xl border border-slate-200 hover:bg-white transition-all bg-slate-100/50 cursor-pointer"
-                      >
-                        取消變更
-                      </button>
-                      <button
-                        type="submit"
-                        className="py-3 px-8 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-base font-bold rounded-xl shadow-md cursor-pointer transition-all flex items-center gap-1.5"
-                      >
-                        <Check size={18} className="stroke-[3]" />
-                        <span>{editingPatientId ? '確認變更' : '登記並新增新病人'}</span>
-                      </button>
                     </div>
                   </form>
                 </div>
@@ -1654,35 +1613,14 @@ export default function App() {
                 className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-4 px-3 md:pt-8 md:px-6"
               >
                 <div className="w-full max-w-2xl bg-gradient-to-b from-amber-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-amber-150 dark:border-slate-200/40 flex flex-col max-h-[92vh] animate-scale-up duration-200">
-                  {/* Header */}
-                  <div className="flex items-center justify-end px-4 py-2 border-b border-amber-100/50">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAddOrder(false);
-                        setEditingOrderId(null);
-                        setOBed('');
-                        setOTask('');
-                        setODiagnosis('');
-                        setONote('');
-                        setONurse('');
-                        setOPriority('normal');
-                        setOError('');
-                      }}
-                      className="text-slate-400 hover:text-slate-650 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
-                      title="關閉"
-                    >
-                      ✕
-                    </button>
-                  </div>
-
-                  {/* Form Scroll Container */}
-                  <form 
-                    onSubmit={handleAddOrderSubmit}
-                    autoComplete="off"
-                    className="flex-grow flex flex-col justify-between overflow-y-auto"
-                  >
-                    <div className="p-6 md:p-8 flex flex-col gap-5">
+                  <form onSubmit={handleAddOrderSubmit} autoComplete="off" className="flex flex-col flex-grow overflow-hidden">
+                    <div className="flex items-center justify-end gap-1.5 px-4 py-2 border-b border-amber-100/50 shrink-0">
+                      <button type="submit" className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white transition-colors cursor-pointer" title="確認">
+                        <Check size={15} className="stroke-[3]" />
+                      </button>
+                      <button type="button" onClick={() => { setShowAddOrder(false); setEditingOrderId(null); setOBed(''); setOTask(''); setODiagnosis(''); setONote(''); setONurse(''); setOPriority('normal'); setOError(''); }} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold" title="關閉">✕</button>
+                    </div>
+                    <div className="p-6 md:p-8 flex flex-col gap-5 overflow-y-auto flex-grow">
                       {/* Bed and Diagnosis in the same row */}
                       <div className="flex items-center gap-3 w-full">
                         <div className="flex-1 max-w-[80px] flex items-center bg-amber-50/55 px-2.5 py-1.5 rounded-xl border border-amber-150">
@@ -1752,32 +1690,6 @@ export default function App() {
                       )}
                     </div>
 
-                    {/* Submit / Cancel Footer */}
-                    <div className="bg-slate-50 p-6 rounded-b-2xl border-t border-slate-100 flex items-center justify-end gap-3.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowAddOrder(false);
-                          setEditingOrderId(null);
-                          setOBed('');
-                          setOTask('');
-                          setODiagnosis('');
-                          setONote('');
-                          setONurse('');
-                          setOPriority('normal');
-                          setOError('');
-                        }}
-                        className="px-5 py-3 text-slate-500 hover:text-slate-800 text-sm font-bold rounded-xl border border-slate-200 hover:bg-white transition-all bg-slate-100/50 cursor-pointer"
-                      >
-                        取消變更
-                      </button>
-                      <button
-                        type="submit"
-                        className="py-3 px-8 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-base font-bold rounded-xl shadow-md cursor-pointer transition-all flex items-center gap-1.5"
-                      >
-                        <Check size={18} className="stroke-[3]" />
-                        <span>{editingOrderId ? '確認變更公文' : '登記並加開醫囑監控'}</span>
-                      </button>
                     </div>
                   </form>
                 </div>
@@ -2039,34 +1951,14 @@ export default function App() {
                 className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-4 px-3 md:pt-8 md:px-6"
               >
                 <div className="w-full max-w-2xl bg-gradient-to-b from-rose-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-rose-150 dark:border-slate-200/40 flex flex-col max-h-[92vh] animate-scale-up duration-200">
-                  {/* Header */}
-                  <div className="flex items-center justify-end px-4 py-2 border-b border-rose-100/50">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAddHandover(false);
-                        setEditingHandoverId(null);
-                        setHBed('');
-                        setHDiagnosis('');
-                        setHAttn('');
-                        setHNote('');
-                        setHStatus('unstable');
-                        setHError('');
-                      }}
-                      className="text-slate-400 hover:text-slate-650 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
-                      title="關閉"
-                    >
-                      ✕
-                    </button>
-                  </div>
-
-                  {/* Form Scroll Container */}
-                  <form 
-                    onSubmit={handleAddHandoverSubmit}
-                    autoComplete="off"
-                    className="flex-grow flex flex-col justify-between overflow-y-auto"
-                  >
-                    <div className="p-6 md:p-8 flex flex-col gap-5">
+                  <form onSubmit={handleAddHandoverSubmit} autoComplete="off" className="flex flex-col flex-grow overflow-hidden">
+                    <div className="flex items-center justify-end gap-1.5 px-4 py-2 border-b border-rose-100/50 shrink-0">
+                      <button type="submit" className="w-8 h-8 rounded-full flex items-center justify-center bg-rose-500 hover:bg-rose-600 text-white transition-colors cursor-pointer" title="確認">
+                        <Check size={15} className="stroke-[3]" />
+                      </button>
+                      <button type="button" onClick={() => { setShowAddHandover(false); setEditingHandoverId(null); setHBed(''); setHDiagnosis(''); setHAttn(''); setHNote(''); setHStatus('unstable'); setHError(''); }} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold" title="關閉">✕</button>
+                    </div>
+                    <div className="p-6 md:p-8 flex flex-col gap-5 overflow-y-auto flex-grow">
                       {/* Bed and Diagnosis on the same row */}
                       <div className="flex items-center gap-3 w-full">
                         <div className="flex-1 max-w-[80px] flex items-center bg-rose-50/50 px-2.5 py-1.5 rounded-xl border border-rose-150">
@@ -2176,31 +2068,6 @@ export default function App() {
                       )}
                     </div>
 
-                    {/* Submit / Cancel Footer */}
-                    <div className="bg-slate-50 p-6 rounded-b-2xl border-t border-slate-100 flex items-center justify-end gap-3.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowAddHandover(false);
-                          setEditingHandoverId(null);
-                          setHBed('');
-                          setHDiagnosis('');
-                          setHAttn('');
-                          setHNote('');
-                          setHStatus('unstable');
-                          setHError('');
-                        }}
-                        className="px-5 py-3 text-slate-500 hover:text-slate-800 text-sm font-bold rounded-xl border border-slate-200 hover:bg-white transition-all bg-slate-100/50 cursor-pointer"
-                      >
-                        取消交班
-                      </button>
-                      <button
-                        type="submit"
-                        className="py-3 px-8 bg-rose-550 hover:bg-rose-650 active:scale-95 text-white text-base font-bold rounded-xl shadow-md cursor-pointer transition-all flex items-center gap-1.5"
-                      >
-                        <Check size={18} className="stroke-[3]" />
-                        <span>{editingHandoverId ? '確認交班變動' : '登錄特交安全提醒'}</span>
-                      </button>
                     </div>
                   </form>
                 </div>
