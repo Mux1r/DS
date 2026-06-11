@@ -1312,8 +1312,6 @@ export default function App() {
                         </p>
                       )}
                     </div>
-
-                    </div>
                   </form>
                 </div>
               </div>
@@ -1688,8 +1686,6 @@ export default function App() {
                           {oError}
                         </p>
                       )}
-                    </div>
-
                     </div>
                   </form>
                 </div>
@@ -2066,8 +2062,6 @@ export default function App() {
                           {hError}
                         </p>
                       )}
-                    </div>
-
                     </div>
                   </form>
                 </div>
