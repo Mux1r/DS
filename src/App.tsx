@@ -39,7 +39,8 @@ import {
   ChevronDown,
   ChevronUp,
   Sun,
-  Moon
+  Moon,
+  MoreVertical
 } from 'lucide-react';
 
 export default function App() {
@@ -91,6 +92,9 @@ export default function App() {
 
   // Toggle for the main search & switcher dashboard panel, default collapsed!
   const [isDashboardExpanded, setIsDashboardExpanded] = useState(false);
+
+  // Expanded control row state for compact patient cards
+  const [expandedControlPatientId, setExpandedControlPatientId] = useState<string | null>(null);
 
   // Edit states to allow clicking on items to edit them, inline!
   const [editingPatientId, setEditingPatientId] = useState<string | null>(null);
@@ -1433,74 +1437,75 @@ export default function App() {
                             </span>
                           </div>
 
-                          {/* Right: Checklist toggles (no icons, pure text, aligned right) & actions */}
+                          {/* Right: traffic-light dots (default) or full controls (expanded) */}
                           <div className="flex items-center gap-1.5 shrink-0 ml-auto select-none">
-                            {/* 1. 開醫囑 */}
-                            <button
-                              type="button"
-                              id={`p-order-tgl-${p.id}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setNewPatients((prev) =>
-                                  prev.map((item) => item.id === p.id ? { ...item, orderDone: !item.orderDone } : item)
-                                );
-                              }}
-                              className={`px-1.5 py-0.5 rounded-full text-xs font-semibold tracking-wider cursor-pointer transition-all border shrink-0 ${
-                                p.orderDone
-                                  ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                                  : 'text-slate-400 hover:text-slate-600 border-transparent'
-                              }`}
-                            >
-                              醫囑
-                            </button>
-
-                            {/* 2. 看病人 */}
-                            <button
-                              type="button"
-                              id={`p-visit-tgl-${p.id}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setNewPatients((prev) =>
-                                  prev.map((item) => item.id === p.id ? { ...item, visited: !item.visited } : item)
-                                );
-                              }}
-                              className={`px-1.5 py-0.5 rounded-full text-xs font-semibold tracking-wider cursor-pointer transition-all border shrink-0 ${
-                                p.visited
-                                  ? 'bg-amber-100 text-amber-800 border-amber-200'
-                                  : 'text-slate-400 hover:text-slate-600 border-transparent'
-                              }`}
-                            >
-                              探視
-                            </button>
-
-                            {/* 3. 寫病歷 */}
-                            <button
-                              type="button"
-                              id={`p-chart-tgl-${p.id}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setNewPatients((prev) =>
-                                  prev.map((item) => item.id === p.id ? { ...item, chartDone: !item.chartDone } : item)
-                                );
-                              }}
-                              className={`px-1.5 py-0.5 rounded-full text-xs font-semibold tracking-wider cursor-pointer transition-all border shrink-0 ${
-                                p.chartDone
-                                  ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
-                                  : 'text-slate-400 hover:text-slate-600 border-transparent'
-                              }`}
-                            >
-                              病歷
-                            </button>
-
-                            {/* Delete */}
-                            <button
-                              id={`del-p-btn-${p.id}`}
-                              onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.filter((pItem) => pItem.id !== p.id)); }}
-                              className="text-slate-305 hover:text-rose-500 hover:bg-rose-50 p-0.5 rounded transition-colors shrink-0"
-                              title="刪除"
-                            >
-                              <Trash2 size={11} />
-                            </button>
+                            {expandedControlPatientId === p.id ? (
+                              <>
+                                {/* 醫囑 toggle */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, orderDone: !item.orderDone } : item)); }}
+                                  className={`px-1.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-all border shrink-0 ${p.orderDone ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'text-slate-400 hover:text-slate-600 border-transparent'}`}
+                                >醫囑</button>
+                                {/* 探視 toggle */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, visited: !item.visited } : item)); }}
+                                  className={`px-1.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-all border shrink-0 ${p.visited ? 'bg-amber-100 text-amber-800 border-amber-200' : 'text-slate-400 hover:text-slate-600 border-transparent'}`}
+                                >探視</button>
+                                {/* 病歷 toggle */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, chartDone: !item.chartDone } : item)); }}
+                                  className={`px-1.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-all border shrink-0 ${p.chartDone ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'text-slate-400 hover:text-slate-600 border-transparent'}`}
+                                >病歷</button>
+                                {/* Delete */}
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.filter((pItem) => pItem.id !== p.id)); }}
+                                  className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 p-0.5 rounded transition-colors shrink-0"
+                                  title="刪除"
+                                ><Trash2 size={11} /></button>
+                                {/* Collapse */}
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setExpandedControlPatientId(null); }}
+                                  className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-0.5 rounded transition-colors shrink-0"
+                                ><X size={11} /></button>
+                              </>
+                            ) : (
+                              <>
+                                {/* 3 traffic-light dots — lit = not done, dim = done */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, orderDone: !item.orderDone } : item)); }}
+                                  className="p-0.5 rounded-full cursor-pointer transition-all shrink-0"
+                                  title="醫囑"
+                                >
+                                  <span className={`block w-2.5 h-2.5 rounded-full transition-colors ${p.orderDone ? 'bg-slate-200' : 'bg-rose-400'}`} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, visited: !item.visited } : item)); }}
+                                  className="p-0.5 rounded-full cursor-pointer transition-all shrink-0"
+                                  title="探視"
+                                >
+                                  <span className={`block w-2.5 h-2.5 rounded-full transition-colors ${p.visited ? 'bg-slate-200' : 'bg-amber-400'}`} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, chartDone: !item.chartDone } : item)); }}
+                                  className="p-0.5 rounded-full cursor-pointer transition-all shrink-0"
+                                  title="病歷"
+                                >
+                                  <span className={`block w-2.5 h-2.5 rounded-full transition-colors ${p.chartDone ? 'bg-slate-200' : 'bg-emerald-400'}`} />
+                                </button>
+                                {/* ⋮ expand button */}
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setExpandedControlPatientId(p.id); }}
+                                  className="text-slate-300 hover:text-slate-600 hover:bg-slate-100 p-0.5 rounded transition-colors shrink-0"
+                                  title="展開操作"
+                                ><MoreVertical size={13} /></button>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
