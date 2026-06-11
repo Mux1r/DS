@@ -1043,23 +1043,18 @@ export default function App() {
         {showQuickPhoneAdd && (
           <div 
             id="panel-quick-phone-add"
-            className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 md:p-6"
+            className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-4 px-3 md:pt-8 md:px-6"
           >
             <div className="w-full max-w-4xl bg-gradient-to-b from-emerald-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-emerald-100 dark:border-slate-200/40 flex flex-col max-h-[92vh] animate-scale-up duration-200">
               {/* Header info */}
-               <div className="flex items-center justify-between px-6 py-4.5 border-b border-emerald-100/50">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-100 text-emerald-800 shrink-0">
-                    <PhoneCall size={18} className="stroke-[2.5]" />
-                  </div>
-                </div>
-                <button 
+              <div className="flex items-center justify-end px-4 py-2 border-b border-emerald-100/50">
+                <button
                   type="button"
                   onClick={() => {
                     setShowQuickPhoneAdd(false);
                     clearQp();
                   }}
-                  className="text-slate-400 hover:text-slate-650 hover:bg-slate-100 w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
+                  className="text-slate-400 hover:text-slate-650 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
                   title="關閉"
                 >
                   ✕
@@ -1070,7 +1065,7 @@ export default function App() {
               <div className="p-6 md:p-8 flex flex-col gap-5 overflow-y-auto flex-grow">
                 {/* Row 1: Bed Input, Diagnosis Input in the same line */}
                 <div className="flex items-center gap-3 w-full">
-                  <div className="flex-1 max-w-[120px] flex items-center bg-emerald-50/50 px-2.5 py-1.5 rounded-xl border border-emerald-150">
+                  <div className="flex-1 max-w-[80px] flex items-center bg-emerald-50/50 px-2.5 py-1.5 rounded-xl border border-emerald-150">
                     <input
                       ref={qpBedRef}
                       required
@@ -1244,17 +1239,12 @@ export default function App() {
             {showAddPatient && (
               <div 
                 id="inline-add-patient-form-modal"
-                className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 md:p-6"
+                className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-4 px-3 md:pt-8 md:px-6"
               >
                 <div className="w-full max-w-2xl bg-gradient-to-b from-indigo-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-indigo-150 dark:border-slate-200/40 flex flex-col max-h-[90vh] animate-scale-up duration-200">
                   {/* Header */}
-                  <div className="flex items-center justify-between px-6 py-4.5 border-b border-indigo-100/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-indigo-100 text-indigo-800 shrink-0">
-                        <Users size={18} className="stroke-[2.5]" />
-                      </div>
-                    </div>
-                    <button 
+                  <div className="flex items-center justify-end px-4 py-2 border-b border-indigo-100/50">
+                    <button
                       type="button"
                       onClick={() => {
                         setShowAddPatient(false);
@@ -1264,7 +1254,7 @@ export default function App() {
                         setPNote('');
                         setPError('');
                       }}
-                      className="text-slate-400 hover:text-slate-650 hover:bg-slate-100 w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
+                      className="text-slate-400 hover:text-slate-650 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
                       title="關閉"
                     >
                       ✕
@@ -1280,7 +1270,7 @@ export default function App() {
                     <div className="p-6 md:p-8 flex flex-col gap-5">
                       {/* Main elements fields: Bed and Diagnosis on the same row */}
                       <div className="flex items-center gap-3 w-full">
-                        <div className="flex-1 max-w-[120px] flex items-center bg-indigo-50/50 px-2.5 py-1.5 rounded-xl border border-indigo-150">
+                        <div className="flex-1 max-w-[80px] flex items-center bg-indigo-50/50 px-2.5 py-1.5 rounded-xl border border-indigo-150">
                           <input
                             ref={pBedRef}
                             required
@@ -1443,7 +1433,7 @@ export default function App() {
                           {/* Right: traffic-light dots + ⋮ / expanded controls — both always rendered, animated via max-width */}
                           <div className="flex items-center shrink-0 ml-auto select-none h-6">
                             {/* Collapsed: 3 dots + ⋮ */}
-                            <div className={`flex items-center gap-1.5 overflow-hidden transition-all duration-200 ${expandedControlPatientId === p.id ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[120px] opacity-100'}`}>
+                            <div className={`flex items-center gap-1.5 overflow-hidden transition-all duration-200 ${expandedControlPatientId === p.id ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[80px] opacity-100'}`}>
                               <button type="button" onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, orderDone: !item.orderDone } : item)); }} className="p-0.5 rounded-full cursor-pointer shrink-0" title="醫囑">
                                 <span className={`block w-2.5 h-2.5 rounded-full transition-colors ${p.orderDone ? 'bg-slate-200' : 'bg-rose-400'}`} />
                               </button>
@@ -1661,17 +1651,12 @@ export default function App() {
             {showAddOrder && (
               <div 
                 id="inline-add-order-form-modal"
-                className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 md:p-6"
+                className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-4 px-3 md:pt-8 md:px-6"
               >
                 <div className="w-full max-w-2xl bg-gradient-to-b from-amber-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-amber-150 dark:border-slate-200/40 flex flex-col max-h-[92vh] animate-scale-up duration-200">
                   {/* Header */}
-                  <div className="flex items-center justify-between px-6 py-4.5 border-b border-amber-100/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-amber-100 text-amber-850 shrink-0">
-                        <ListTodo size={18} className="stroke-[2.5]" />
-                      </div>
-                    </div>
-                    <button 
+                  <div className="flex items-center justify-end px-4 py-2 border-b border-amber-100/50">
+                    <button
                       type="button"
                       onClick={() => {
                         setShowAddOrder(false);
@@ -1684,7 +1669,7 @@ export default function App() {
                         setOPriority('normal');
                         setOError('');
                       }}
-                      className="text-slate-400 hover:text-slate-650 hover:bg-slate-100 w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
+                      className="text-slate-400 hover:text-slate-650 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
                       title="關閉"
                     >
                       ✕
@@ -1700,7 +1685,7 @@ export default function App() {
                     <div className="p-6 md:p-8 flex flex-col gap-5">
                       {/* Bed and Diagnosis in the same row */}
                       <div className="flex items-center gap-3 w-full">
-                        <div className="flex-1 max-w-[120px] flex items-center bg-amber-50/55 px-2.5 py-1.5 rounded-xl border border-amber-150">
+                        <div className="flex-1 max-w-[80px] flex items-center bg-amber-50/55 px-2.5 py-1.5 rounded-xl border border-amber-150">
                           <input
                             ref={oBedRef}
                             required
@@ -2051,17 +2036,12 @@ export default function App() {
             {showAddHandover && (
               <div 
                 id="inline-add-handover-form-modal"
-                className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 md:p-6"
+                className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-4 px-3 md:pt-8 md:px-6"
               >
                 <div className="w-full max-w-2xl bg-gradient-to-b from-rose-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-rose-150 dark:border-slate-200/40 flex flex-col max-h-[92vh] animate-scale-up duration-200">
                   {/* Header */}
-                  <div className="flex items-center justify-between px-6 py-4.5 border-b border-rose-100/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-rose-100 text-rose-800 shrink-0">
-                        <HeartPulse size={18} className="stroke-[2.5]" />
-                      </div>
-                    </div>
-                    <button 
+                  <div className="flex items-center justify-end px-4 py-2 border-b border-rose-100/50">
+                    <button
                       type="button"
                       onClick={() => {
                         setShowAddHandover(false);
@@ -2073,7 +2053,7 @@ export default function App() {
                         setHStatus('unstable');
                         setHError('');
                       }}
-                      className="text-slate-400 hover:text-slate-650 hover:bg-slate-100 w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
+                      className="text-slate-400 hover:text-slate-650 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
                       title="關閉"
                     >
                       ✕
@@ -2089,7 +2069,7 @@ export default function App() {
                     <div className="p-6 md:p-8 flex flex-col gap-5">
                       {/* Bed and Diagnosis on the same row */}
                       <div className="flex items-center gap-3 w-full">
-                        <div className="flex-1 max-w-[120px] flex items-center bg-rose-50/50 px-2.5 py-1.5 rounded-xl border border-rose-150">
+                        <div className="flex-1 max-w-[80px] flex items-center bg-rose-50/50 px-2.5 py-1.5 rounded-xl border border-rose-150">
                           <input
                             ref={hBedRef}
                             required
