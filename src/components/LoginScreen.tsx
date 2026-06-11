@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
-import { HeartPulse, CloudLightning } from 'lucide-react';
+import { HeartPulse } from 'lucide-react';
 
 export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
@@ -33,13 +33,6 @@ export default function LoginScreen() {
           <p className="text-sm text-slate-500 mt-1">值班病患管理系統</p>
         </div>
 
-        <div className="w-full bg-indigo-50 rounded-xl p-4 border border-indigo-100 flex items-start gap-3">
-          <CloudLightning size={16} className="text-indigo-500 mt-0.5 shrink-0" />
-          <p className="text-xs text-indigo-700 leading-relaxed">
-            登入後資料透過 <span className="font-bold">Firebase</span> 自動雲端同步，可在手機、電腦、平板跨裝置即時存取您的值班記錄。
-          </p>
-        </div>
-
         <button
           onClick={handleGoogleLogin}
           disabled={isLoading}
@@ -60,9 +53,6 @@ export default function LoginScreen() {
           </p>
         )}
 
-        <p className="text-[10px] text-slate-400 text-center leading-relaxed">
-          您的資料僅供您本人存取<br />受 Firebase Security Rules 保護
-        </p>
       </div>
     </div>
   );

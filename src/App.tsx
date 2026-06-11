@@ -919,33 +919,22 @@ export default function App() {
               </select>
             </div>
 
-            {/* CENTER: phone button (mobile + desktop), hidden when mobile search open */}
+            {/* DESKTOP: phone button inline in Row 1 */}
             {!isMobileSearchOpen && (
-              <div className="flex flex-1 items-center justify-center px-1">
+              <div className="hidden md:flex flex-1 items-center justify-center px-1">
                 <button
                   type="button"
-                  id="quick-phone-add-trigger"
+                  id="quick-phone-add-trigger-desktop"
                   onClick={() => { setShowQuickPhoneAdd(!showQuickPhoneAdd); clearQp(); }}
-                  className={`flex items-stretch rounded-full overflow-hidden border transition-all cursor-pointer duration-200 w-full md:w-auto shadow-xs ${
-                    showQuickPhoneAdd
-                      ? 'border-rose-300/60'
-                      : 'border-emerald-400/50'
+                  className={`flex items-stretch rounded-full overflow-hidden border transition-all cursor-pointer duration-200 shadow-xs ${
+                    showQuickPhoneAdd ? 'border-rose-300/60' : 'border-emerald-400/50'
                   }`}
                 >
-                  {/* icon pill */}
-                  <span className={`flex items-center justify-center px-3 py-1.5 shrink-0 ${
-                    showQuickPhoneAdd ? 'bg-rose-600' : 'bg-emerald-600'
-                  }`}>
+                  <span className={`flex items-center justify-center px-3 py-1.5 shrink-0 ${showQuickPhoneAdd ? 'bg-rose-600' : 'bg-emerald-600'}`}>
                     <PhoneCall size={13} className="text-white" />
                   </span>
-                  {/* divider */}
                   <span className={`w-px shrink-0 ${showQuickPhoneAdd ? 'bg-rose-300/50' : 'bg-emerald-400/40'}`} />
-                  {/* label */}
-                  <span className={`flex items-center justify-center flex-1 md:flex-none px-3 md:px-5 py-1.5 text-sm font-medium ${
-                    showQuickPhoneAdd
-                      ? 'bg-rose-50 text-rose-700'
-                      : 'bg-emerald-50 text-emerald-800'
-                  }`}>
+                  <span className={`flex items-center justify-center px-5 py-1.5 text-sm font-medium ${showQuickPhoneAdd ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-800'}`}>
                     {showQuickPhoneAdd ? '關閉速記' : '電話速記'}
                   </span>
                 </button>
@@ -1023,6 +1012,26 @@ export default function App() {
                 {isDarkMode ? <Sun size={14} className="text-amber-500" /> : <Moon size={14} />}
               </button>
             </div>
+          </div>
+
+          {/* Row 2: MOBILE ONLY — 電話速記 full-width button */}
+          <div className="flex md:hidden">
+            <button
+              type="button"
+              id="quick-phone-add-trigger-mobile"
+              onClick={() => { setShowQuickPhoneAdd(!showQuickPhoneAdd); clearQp(); }}
+              className={`flex items-stretch rounded-full overflow-hidden border transition-all cursor-pointer duration-200 w-full shadow-xs ${
+                showQuickPhoneAdd ? 'border-rose-300/60' : 'border-emerald-400/50'
+              }`}
+            >
+              <span className={`flex items-center justify-center px-3 py-2 shrink-0 ${showQuickPhoneAdd ? 'bg-rose-600' : 'bg-emerald-600'}`}>
+                <PhoneCall size={13} className="text-white" />
+              </span>
+              <span className={`w-px shrink-0 ${showQuickPhoneAdd ? 'bg-rose-300/50' : 'bg-emerald-400/40'}`} />
+              <span className={`flex items-center justify-center flex-1 py-2 text-sm font-medium ${showQuickPhoneAdd ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-800'}`}>
+                {showQuickPhoneAdd ? '關閉速記' : '電話速記'}
+              </span>
+            </button>
           </div>
         </div>      {/* 📞護理師來電：萬用快速登記面板 (全螢幕加大版) */}
         {showQuickPhoneAdd && (
