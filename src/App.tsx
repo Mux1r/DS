@@ -1093,6 +1093,7 @@ export default function App() {
                       onChange={(e) => setQpDiagnosis(e.target.value)}
                       onKeyDown={(e) => handleKeyJump(e, qpContentRef)}
                       placeholder="診斷 (主要診斷/病因)"
+                      autoComplete="off"
                       className="w-full text-sm bg-transparent text-slate-800 focus:outline-hidden"
                       title="主要診斷/病因"
                     />
@@ -1289,6 +1290,7 @@ export default function App() {
                             onKeyDown={(e) => handleKeyJump(e, pDiagnosisRef)}
                             placeholder="床號 *"
                             className="w-full text-center font-mono text-sm font-bold bg-transparent text-indigo-850 focus:outline-hidden"
+                            autoComplete="off"
                             title="床號 (必填)"
                           />
                         </div>
@@ -1302,6 +1304,7 @@ export default function App() {
                             onKeyDown={(e) => handleKeyJump(e, pNoteRef)}
                             placeholder="主要診斷 / 病因"
                             className="w-full text-sm bg-transparent text-slate-800 focus:outline-hidden"
+                            autoComplete="off"
                             title="主要診斷"
                           />
                         </div>
@@ -1749,6 +1752,7 @@ export default function App() {
                             onKeyDown={(e) => handleKeyJump(e, oDiagnosisRef)}
                             placeholder="床號 *"
                             className="w-full text-center font-mono text-sm font-bold bg-transparent text-amber-850 focus:outline-hidden animate-pulse-once"
+                            autoComplete="off"
                             title="床號 (必填)"
                           />
                         </div>
@@ -1762,6 +1766,7 @@ export default function App() {
                             onKeyDown={(e) => handleKeyJump(e, oTaskRef)}
                             placeholder="主要診斷 / 病因"
                             className="w-full text-sm bg-transparent text-slate-800 focus:outline-hidden"
+                            autoComplete="off"
                             title="主要診斷"
                           />
                         </div>
@@ -2135,6 +2140,7 @@ export default function App() {
                             onKeyDown={(e) => handleKeyJump(e, hDiagnosisRef)}
                             placeholder="床號 *"
                             className="w-full text-center font-mono text-sm font-bold bg-transparent text-rose-850 focus:outline-hidden"
+                            autoComplete="off"
                             title="床號 (必填)"
                           />
                         </div>
@@ -2148,6 +2154,7 @@ export default function App() {
                             onKeyDown={(e) => handleKeyJump(e, hAttnRef)}
                             placeholder="主要診斷 / 病因"
                             className="w-full text-sm bg-transparent text-slate-800 focus:outline-hidden"
+                            autoComplete="off"
                             title="主要診斷"
                           />
                         </div>
