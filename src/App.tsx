@@ -1397,7 +1397,7 @@ export default function App() {
                           setPNote(p.note || '');
                           setShowAddPatient(true);
                         }}
-                        className={`border rounded-xl px-3 py-1.5 transition-all cursor-pointer ${
+                        className={`border rounded-xl px-3 py-1.5 transition-colors cursor-pointer ${
                           allDone
                             ? 'border-emerald-100 bg-emerald-50/5 opacity-70 hover:opacity-100'
                             : 'border-slate-150/80 bg-white hover:border-slate-200 hover:shadow-3xs'
@@ -1445,19 +1445,19 @@ export default function App() {
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, orderDone: !item.orderDone } : item)); }}
-                                  className={`px-1.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-all border shrink-0 ${p.orderDone ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'text-slate-400 hover:text-slate-600 border-transparent'}`}
+                                  className={`px-1.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-colors border shrink-0 ${p.orderDone ? 'text-slate-300 border-transparent' : 'bg-rose-50 text-rose-500 border-rose-200'}`}
                                 >醫囑</button>
                                 {/* 探視 toggle */}
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, visited: !item.visited } : item)); }}
-                                  className={`px-1.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-all border shrink-0 ${p.visited ? 'bg-amber-100 text-amber-800 border-amber-200' : 'text-slate-400 hover:text-slate-600 border-transparent'}`}
+                                  className={`px-1.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-colors border shrink-0 ${p.visited ? 'text-slate-300 border-transparent' : 'bg-amber-50 text-amber-500 border-amber-200'}`}
                                 >探視</button>
                                 {/* 病歷 toggle */}
                                 <button
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, chartDone: !item.chartDone } : item)); }}
-                                  className={`px-1.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-all border shrink-0 ${p.chartDone ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'text-slate-400 hover:text-slate-600 border-transparent'}`}
+                                  className={`px-1.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-colors border shrink-0 ${p.chartDone ? 'text-slate-300 border-transparent' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}
                                 >病歷</button>
                                 {/* Delete */}
                                 <button
