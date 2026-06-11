@@ -1397,7 +1397,7 @@ export default function App() {
                           setPNote(p.note || '');
                           setShowAddPatient(true);
                         }}
-                        className={`border rounded-xl px-3 py-1.5 transition-colors cursor-pointer ${
+                        className={`border rounded-xl px-3 py-1.5 transition-all cursor-pointer ${
                           allDone
                             ? 'border-emerald-100 bg-emerald-50/5 opacity-70 hover:opacity-100'
                             : 'border-slate-150/80 bg-white hover:border-slate-200 hover:shadow-3xs'
@@ -1438,7 +1438,7 @@ export default function App() {
                           </div>
 
                           {/* Right: traffic-light dots (default) or full controls (expanded) */}
-                          <div className="flex items-center gap-1.5 shrink-0 ml-auto select-none">
+                          <div className="flex items-center gap-1.5 shrink-0 ml-auto select-none h-6 overflow-hidden">
                             {expandedControlPatientId === p.id ? (
                               <>
                                 {/* 醫囑 toggle */}
