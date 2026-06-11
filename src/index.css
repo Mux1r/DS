@@ -1,0 +1,297 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* --- MORANDI PALETTE REDEFINITION --- */
+  /* Holds quiet, desaturated, grayish medical colors */
+
+  /* 1. Slate Blue-Gray (originally Indigo) */
+  --color-indigo-50: #f2f5f7;
+  --color-indigo-100: #e5ebf0;
+  --color-indigo-150: #d3deea;
+  --color-indigo-200: #b3c5d6;
+  --color-indigo-300: #93acc4;
+  --color-indigo-400: #7795b2;
+  --color-indigo-500: #5b7993;
+  --color-indigo-600: #496277;
+  --color-indigo-700: #3a4e5f;
+  --color-indigo-800: #2d3c4a;
+  --color-indigo-850: #232e39;
+  --color-indigo-900: #1b242c;
+  --color-indigo-950: #10151a;
+
+  /* 2. Warm Ochre & Clay (originally Amber) */
+  --color-amber-50: #faf7f2;
+  --color-amber-100: #f4ede0;
+  --color-amber-150: #ebdfcd;
+  --color-amber-200: #dcceb4;
+  --color-amber-300: #c6b497;
+  --color-amber-400: #af9c80;
+  --color-amber-500: #938067;
+  --color-amber-600: #796853;
+  --color-amber-700: #625341;
+  --color-amber-800: #4c4031;
+  --color-amber-850: #3e3327;
+  --color-amber-900: #32291e;
+  --color-amber-950: #211a13;
+
+  /* 3. Terracotta & Dusty Pink (originally Rose) */
+  --color-rose-50: #fbf7f7;
+  --color-rose-100: #f3e4e4;
+  --color-rose-150: #ead4d4;
+  --color-rose-200: #dec2c2;
+  --color-rose-250: #d2b0b0;
+  --color-rose-300: #c5979c;
+  --color-rose-400: #b07e84;
+  --color-rose-500: #97656d;
+  --color-rose-550: #86555c;
+  --color-rose-600: #75444b;
+  --color-rose-700: #5e363c;
+  --color-rose-800: #492a2e;
+  --color-rose-855: #3e2226;
+  --color-rose-900: #3a1d21;
+  --color-rose-950: #261113;
+
+  /* 4. Sage & Olive Green (originally Emerald) */
+  --color-emerald-50: #f3f5f3;
+  --color-emerald-100: #dee5df;
+  --color-emerald-150: #cbd5ce;
+  --color-emerald-250: #b2c4b7;
+  --color-emerald-300: #9ebbaa;
+  --color-emerald-400: #88a795;
+  --color-emerald-500: #6e8d7c;
+  --color-emerald-600: #587363;
+  --color-emerald-700: #475d4f;
+  --color-emerald-850: #36483d;
+  --color-emerald-900: #222f27;
+  --color-emerald-950: #141c17;
+
+  /* 5. Pebbled Clay Grays & Plasters (originally Slate) */
+  --color-slate-50: #fafaf9;
+  --color-slate-100: #f3f3f0;
+  --color-slate-150: #e8e8e3;
+  --color-slate-200: #dadad4;
+  --color-slate-300: #ccccc5;
+  --color-slate-305: #bebeb3;
+  --color-slate-400: #b4b4a9;
+  --color-slate-500: #94948a;
+  --color-slate-600: #75756b;
+  --color-slate-700: #5a5a51;
+  --color-slate-800: #41413a;
+  --color-slate-850: #33332d;
+  --color-slate-900: #22221b;
+  --color-slate-950: #161611;
+}
+
+/* Custom classes for cozy, calm medical UI styling */
+html {
+  font-size: 14px; /* Scale down rem base: monospace CJK renders visually larger than proportional fonts */
+}
+
+html, body {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f5f5f2; /* Soft plaster gray-cream background */
+  color: #33332d; /* Warm pebble near-charcoal */
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+input, textarea, select, button {
+  font-family: inherit;
+  font-weight: inherit;
+  font-size: inherit;
+}
+
+/* --- DARK MODE SELECTOR OVERRIDES --- */
+.dark {
+  /* 1. Slate Blue-Gray (originally Indigo) */
+  --color-indigo-50: #192026;
+  --color-indigo-100: #212c36;
+  --color-indigo-150: #2b3945;
+  --color-indigo-200: #374857;
+  --color-indigo-300: #495e72;
+  --color-indigo-400: #5d7891;
+  --color-indigo-500: #7393b0;
+  --color-indigo-600: #8baecd;
+  --color-indigo-700: #a7c9eb;
+  --color-indigo-800: #c4dffa;
+  --color-indigo-850: #dbecfd;
+  --color-indigo-900: #edf5fe;
+  --color-indigo-950: #fafcff;
+
+  /* 2. Warm Ochre & Clay (originally Amber) */
+  --color-amber-50: #221e19;
+  --color-amber-100: #2f271e;
+  --color-amber-150: #3c3125;
+  --color-amber-200: #4a3d2c;
+  --color-amber-300: #5e4d37;
+  --color-amber-400: #786246;
+  --color-amber-500: #937855;
+  --color-amber-600: #af926a;
+  --color-amber-700: #c9ab81;
+  --color-amber-800: #e3c498;
+  --color-amber-850: #f4d9b4;
+  --color-amber-900: #fcedcf;
+  --color-amber-950: #fffaf0;
+  --color-amber-955: #fffaf0;
+
+  /* 3. Terracotta & Dusty Pink (originally Rose) */
+  --color-rose-50: #231a1a;
+  --color-rose-100: #312121;
+  --color-rose-150: #3f292a;
+  --color-rose-200: #503335;
+  --color-rose-250: #623e40;
+  --color-rose-300: #7a4d51;
+  --color-rose-400: #965f64;
+  --color-rose-500: #b0757a;
+  --color-rose-550: #c48a90;
+  --color-rose-600: #d6a1a7;
+  --color-rose-700: #e8b9bd;
+  --color-rose-800: #f5cfd2;
+  --color-rose-855: #fae4e6;
+  --color-rose-900: #fff0f1;
+  --color-rose-950: #fffafa;
+  --color-rose-955: #fffafa;
+
+  /* 4. Sage & Olive Green (originally Emerald) */
+  --color-emerald-50: #171d1a;
+  --color-emerald-100: #212c24;
+  --color-emerald-150: #2b392e;
+  --color-emerald-250: #3b4e3e;
+  --color-emerald-300: #4a6350;
+  --color-emerald-400: #5d7c65;
+  --color-emerald-500: #73977c;
+  --color-emerald-600: #8bb396;
+  --color-emerald-700: #a4cdb0;
+  --color-emerald-800: #c2e5cc;
+  --color-emerald-850: #c2e5cc;
+  --color-emerald-900: #ddf5e5;
+  --color-emerald-950: #f2faf4;
+  --color-emerald-955: #f2faf4;
+
+  /* 5. Pebbled Clay Grays & Plasters (originally Slate) */
+  --color-slate-50: #1b1b17;
+  --color-slate-100: #242420;
+  --color-slate-150: #2d2d26;
+  --color-slate-200: #373730;
+  --color-slate-300: #4b4b42;
+  --color-slate-305: #57574d;
+  --color-slate-400: #6d6d62;
+  --color-slate-500: #88887e;
+  --color-slate-600: #a3a398;
+  --color-slate-700: #bebeae;
+  --color-slate-800: #d3d3c7;
+  --color-slate-850: #e3e3d9;
+  --color-slate-900: #f2f2e6;
+  --color-slate-950: #fafaf5;
+}
+
+/* Ensure the background flips perfectly for everything using standard bg-white */
+.dark body {
+  background-color: #2a2a24;
+  color: #e3e3d9;
+}
+
+.dark .bg-white {
+  background-color: #1e1e1a !important;
+}
+
+/* Specific text/fill protections for white labels/icons inside primary colored items */
+.dark .text-white {
+  color: #fafaf5 !important;
+}
+
+.dark .stroke-white {
+  stroke: #fafaf5 !important;
+}
+
+.dark .fill-white {
+  fill: #fafaf5 !important;
+}
+
+/* Ensure white text inside medium/high primary solid buttons becomes dark near-charcoal for crisp legibility */
+.dark button.bg-indigo-600, .dark div.bg-indigo-600,
+.dark button.bg-indigo-500, .dark div.bg-indigo-500,
+.dark button.bg-indigo-700, .dark div.bg-indigo-700 {
+  color: #11110d !important;
+}
+.dark button.bg-indigo-600 *, .dark div.bg-indigo-600 *,
+.dark button.bg-indigo-500 *, .dark div.bg-indigo-500 *,
+.dark button.bg-indigo-700 * {
+  color: #11110d !important;
+  stroke: #11110d !important;
+}
+
+.dark button.bg-amber-500, .dark div.bg-amber-500,
+.dark button.bg-amber-600, .dark div.bg-amber-600 {
+  color: #11110d !important;
+}
+.dark button.bg-amber-500 *, .dark div.bg-amber-500 *,
+.dark button.bg-amber-600 *, .dark div.bg-amber-600 * {
+  color: #11110d !important;
+  stroke: #11110d !important;
+}
+
+.dark button.bg-rose-500, .dark div.bg-rose-500,
+.dark button.bg-rose-550, .dark div.bg-rose-550,
+.dark button.bg-rose-600, .dark div.bg-rose-600 {
+  color: #11110d !important;
+}
+.dark button.bg-rose-500 *, .dark div.bg-rose-500 *,
+.dark button.bg-rose-550 *, .dark div.bg-rose-550 *,
+.dark button.bg-rose-600 *, .dark div.bg-rose-600 * {
+  color: #11110d !important;
+  stroke: #11110d !important;
+}
+
+.dark button.bg-emerald-600, .dark div.bg-emerald-600,
+.dark button.bg-emerald-500, .dark div.bg-emerald-500 {
+  color: #11110d !important;
+}
+.dark button.bg-emerald-600 *, .dark div.bg-emerald-600 *,
+.dark button.bg-emerald-500 *, .dark div.bg-emerald-500 * {
+  color: #11110d !important;
+  stroke: #11110d !important;
+}
+
+/* Seamless transitions for color-changing components */
+.dark div, .dark button, .dark select, .dark input, .dark textarea {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.1s ease;
+}
+
+/* Form element enhancements in dark mode */
+.dark input, .dark textarea, .dark select {
+  background-color: #1b1b17 !important;
+  color: #e3e3d9 !important;
+  border-color: #2d2d26 !important;
+}
+
+.dark ::placeholder {
+  color: #6d6d62 !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

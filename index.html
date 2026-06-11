@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#587363" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>護理交班排班管理系統</title>
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <link rel="manifest" href="./manifest.json" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+
+    <!-- PWA Registration & Dynamic Icon Caching Script -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then((reg) => {
+              console.log('PWA Service Worker registered successfully:', reg.scope);
+              generateAndCacheIcons();
+            })
+            .catch((err) => {
+              console.error('Service Worker registration failed:', err);
+            });
+        });
+      }
+
+      function generateAndCacheIcons() {
+        if (!('caches' in window)) return;
+        const sizes = [192, 512];
+        caches.open('nurse-duty-v1').then((cache) => {
+          sizes.forEach((size) => {
+            const iconPath = `./icon-${size}.png`;
+            cache.match(iconPath).then((response) => {
+              if (!response) {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  const ratio = size / 512;
+                  
+                  // 1. Sage Green Rounded Background
+                  const rx = 112 * ratio;
+                  ctx.fillStyle = '#587363';
+                  ctx.beginPath();
+                  if (ctx.roundRect) {
+                    ctx.roundRect(0, 0, size, size, rx);
+                  } else {
+                    ctx.rect(0, 0, size, size);
+                  }
+                  ctx.fill();
+
+                  // 2. Clipboard Panel (Warm Cream)
+                  ctx.fillStyle = '#faf7f2';
+                  ctx.beginPath();
+                  if (ctx.roundRect) {
+                    ctx.roundRect(136 * ratio, 100 * ratio, 240 * ratio, 312 * ratio, 24 * ratio);
+                  } else {
+                    ctx.rect(136 * ratio, 100 * ratio, 240 * ratio, 312 * ratio);
+                  }
+                  ctx.fill();
+
+                  // 3. Clipboard Clip (Amber Clay)
+                  ctx.fillStyle = '#938067';
+                  ctx.beginPath();
+                  if (ctx.roundRect) {
+                    ctx.roundRect(206 * ratio, 70 * ratio, 100 * ratio, 40 * ratio, 10 * ratio);
+                  } else {
+                    ctx.rect(206 * ratio, 70 * ratio, 100 * ratio, 40 * ratio);
+                  }
+                  ctx.fill();
+
+                  // 4. Checklist Lines (Desaturated text color)
+                  ctx.strokeStyle = '#75756b';
+                  ctx.lineWidth = 18 * ratio;
+                  ctx.lineCap = 'round';
+                  
+                  ctx.beginPath();
+                  ctx.moveTo(196 * ratio, 175 * ratio);
+                  ctx.lineTo(326 * ratio, 175 * ratio);
+                  ctx.stroke();
+
+                  ctx.beginPath();
+                  ctx.moveTo(196 * ratio, 245 * ratio);
+                  ctx.lineTo(326 * ratio, 245 * ratio);
+                  ctx.stroke();
+
+                  ctx.beginPath();
+                  ctx.moveTo(196 * ratio, 315 * ratio);
+                  ctx.lineTo(286 * ratio, 315 * ratio);
+                  ctx.stroke();
+
+                  // 5. Checklist Bullets (Morandi Slate Blue)
+                  ctx.fillStyle = '#496277';
+                  [175, 245, 315].forEach((y) => {
+                    ctx.beginPath();
+                    ctx.arc(165 * ratio, y * ratio, 13 * ratio, 0, Math.PI * 2);
+                    ctx.fill();
+                  });
+
+                  // 6. Dynamic Curve (Stethoscope signature/nurse smile - Morandi Pink)
+                  ctx.strokeStyle = '#97656d';
+                  ctx.lineWidth = 14 * ratio;
+                  ctx.beginPath();
+                  ctx.arc(256 * ratio, 360 * ratio, 24 * ratio, 0, Math.PI);
+                  ctx.stroke();
+                }
+
+                canvas.toBlob((blob) => {
+                  if (blob) {
+                    const iconResponse = new Response(blob, {
+                      headers: { 'Content-Type': 'image/png' }
+                    });
+                    cache.put(iconPath, iconResponse);
+                    console.log(`PWA: Generated and cached ${size}x${size} png icon locally.`);
+                  }
+                }, 'image/png');
+              }
+            });
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
+

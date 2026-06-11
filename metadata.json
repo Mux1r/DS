@@ -1,0 +1,6 @@
+{
+  "name": "值班病人清單管理系統",
+  "description": "一個為臨床醫師設計的當天值班用病人清單管理應用程式。包含新病人 checklist（開醫囑、看病人、寫病歷）、護理師一般醫囑開立追蹤、以及交班病人特別關注功能。具備自動儲存與同步備份，簡約、色彩柔和協調的舒適介面。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
