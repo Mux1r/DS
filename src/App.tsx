@@ -1387,31 +1387,79 @@ export default function App() {
                             </span>
                           </div>
 
-                          {/* Right: traffic-light dots + ⋮ / expanded controls — both always rendered, animated via max-width */}
-                          <div className="flex items-center shrink-0 ml-auto select-none h-6">
-                            {/* Collapsed: 3 dots + ⋮ */}
-                            <div className={`flex items-center gap-1.5 overflow-hidden transition-all duration-200 ${expandedControlPatientId === p.id ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[80px] opacity-100'}`}>
-                              <button type="button" onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, orderDone: !item.orderDone } : item)); }} className="p-0.5 rounded-full cursor-pointer shrink-0" title="醫囑">
-                                <span className={`block w-2.5 h-2.5 rounded-full transition-colors ${p.orderDone ? 'bg-slate-200' : 'bg-rose-400'}`} />
-                              </button>
-                              <button type="button" onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, visited: !item.visited } : item)); }} className="p-0.5 rounded-full cursor-pointer shrink-0" title="探視">
-                                <span className={`block w-2.5 h-2.5 rounded-full transition-colors ${p.visited ? 'bg-slate-200' : 'bg-amber-400'}`} />
-                              </button>
-                              <button type="button" onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, chartDone: !item.chartDone } : item)); }} className="p-0.5 rounded-full cursor-pointer shrink-0" title="病歷">
-                                <span className={`block w-2.5 h-2.5 rounded-full transition-colors ${p.chartDone ? 'bg-slate-200' : 'bg-emerald-400'}`} />
-                              </button>
-                              <button onClick={(e) => { e.stopPropagation(); setExpandedControlPatientId(p.id); }} className="text-slate-300 hover:text-slate-600 hover:bg-slate-100 p-0.5 rounded transition-colors shrink-0" title="展開操作">
-                                <MoreVertical size={13} />
-                              </button>
-                            </div>
-                            {/* Expanded: text toggles + delete + X */}
-                            <div className={`flex items-center gap-1.5 overflow-hidden transition-all duration-200 ${expandedControlPatientId === p.id ? 'max-w-[240px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
-                              <button type="button" onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, orderDone: !item.orderDone } : item)); }} className={`px-1.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-colors border shrink-0 ${p.orderDone ? 'text-slate-300 border-transparent' : 'bg-rose-50 text-rose-500 border-rose-200'}`}>醫囑</button>
-                              <button type="button" onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, visited: !item.visited } : item)); }} className={`px-1.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-colors border shrink-0 ${p.visited ? 'text-slate-300 border-transparent' : 'bg-amber-50 text-amber-500 border-amber-200'}`}>探視</button>
-                              <button type="button" onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, chartDone: !item.chartDone } : item)); }} className={`px-1.5 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-colors border shrink-0 ${p.chartDone ? 'text-slate-300 border-transparent' : 'bg-emerald-50 text-emerald-600 border-emerald-400'}`}>病歷</button>
-                              <button onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.filter((pItem) => pItem.id !== p.id)); }} className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 p-0.5 rounded transition-colors shrink-0" title="刪除"><Trash2 size={11} /></button>
-                              <button onClick={(e) => { e.stopPropagation(); setExpandedControlPatientId(null); }} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-0.5 rounded transition-colors shrink-0"><X size={11} /></button>
-                            </div>
+                          {/* Right: morphing dot→pill buttons */}
+                          <div className="flex items-center gap-1.5 shrink-0 ml-auto select-none">
+                            {/* 醫囑: circle → pill */}
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, orderDone: !item.orderDone } : item)); }}
+                              title="醫囑"
+                              className={`relative overflow-hidden flex items-center justify-center rounded-full cursor-pointer border transition-all duration-300 ease-in-out shrink-0 ${
+                                expandedControlPatientId === p.id
+                                  ? p.orderDone ? 'w-[38px] h-5 border-transparent' : 'w-[38px] h-5 bg-rose-50 border-rose-200'
+                                  : 'w-5 h-5 border-transparent'
+                              }`}
+                            >
+                              <span className={`absolute flex items-center justify-center transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
+                                <span className={`block w-2.5 h-2.5 rounded-full ${p.orderDone ? 'bg-slate-200' : 'bg-rose-400'}`} />
+                              </span>
+                              <span className={`absolute text-xs font-semibold whitespace-nowrap transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100' : 'opacity-0 scale-75'} ${p.orderDone ? 'text-slate-300' : 'text-rose-500'}`}>醫囑</span>
+                            </button>
+                            {/* 探視: circle → pill */}
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, visited: !item.visited } : item)); }}
+                              title="探視"
+                              className={`relative overflow-hidden flex items-center justify-center rounded-full cursor-pointer border transition-all duration-300 ease-in-out shrink-0 ${
+                                expandedControlPatientId === p.id
+                                  ? p.visited ? 'w-[38px] h-5 border-transparent' : 'w-[38px] h-5 bg-amber-50 border-amber-200'
+                                  : 'w-5 h-5 border-transparent'
+                              }`}
+                            >
+                              <span className={`absolute flex items-center justify-center transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
+                                <span className={`block w-2.5 h-2.5 rounded-full ${p.visited ? 'bg-slate-200' : 'bg-amber-400'}`} />
+                              </span>
+                              <span className={`absolute text-xs font-semibold whitespace-nowrap transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100' : 'opacity-0 scale-75'} ${p.visited ? 'text-slate-300' : 'text-amber-500'}`}>探視</span>
+                            </button>
+                            {/* 病歷: circle → pill */}
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, chartDone: !item.chartDone } : item)); }}
+                              title="病歷"
+                              className={`relative overflow-hidden flex items-center justify-center rounded-full cursor-pointer border transition-all duration-300 ease-in-out shrink-0 ${
+                                expandedControlPatientId === p.id
+                                  ? p.chartDone ? 'w-[38px] h-5 border-transparent' : 'w-[38px] h-5 bg-emerald-50 border-emerald-400'
+                                  : 'w-5 h-5 border-transparent'
+                              }`}
+                            >
+                              <span className={`absolute flex items-center justify-center transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
+                                <span className={`block w-2.5 h-2.5 rounded-full ${p.chartDone ? 'bg-slate-200' : 'bg-emerald-400'}`} />
+                              </span>
+                              <span className={`absolute text-xs font-semibold whitespace-nowrap transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100' : 'opacity-0 scale-75'} ${p.chartDone ? 'text-slate-300' : 'text-emerald-600'}`}>病歷</span>
+                            </button>
+                            {/* ⋮ → fades out on expand */}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setExpandedControlPatientId(p.id); }}
+                              className={`text-slate-300 hover:text-slate-600 hover:bg-slate-100 p-0.5 rounded transition-all duration-200 shrink-0 overflow-hidden ${expandedControlPatientId === p.id ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[20px] opacity-100'}`}
+                              title="展開操作"
+                            >
+                              <MoreVertical size={13} />
+                            </button>
+                            {/* Delete → fades in on expand */}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.filter((pItem) => pItem.id !== p.id)); }}
+                              className={`text-slate-400 hover:text-rose-500 hover:bg-rose-50 p-0.5 rounded transition-all duration-200 shrink-0 overflow-hidden ${expandedControlPatientId === p.id ? 'max-w-[20px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}
+                              title="刪除"
+                            >
+                              <Trash2 size={11} />
+                            </button>
+                            {/* X → fades in on expand */}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setExpandedControlPatientId(null); }}
+                              className={`text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-0.5 rounded transition-all duration-200 shrink-0 overflow-hidden ${expandedControlPatientId === p.id ? 'max-w-[20px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}
+                            >
+                              <X size={11} />
+                            </button>
                           </div>
                         </div>
                       </div>
