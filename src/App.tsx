@@ -116,6 +116,18 @@ export default function App() {
   const [dragPatientId, setDragPatientId] = useState<string | null>(null);
   const [dragOverPatientId, setDragOverPatientId] = useState<string | null>(null);
 
+  const [sortOrders, setSortOrders] = useState<'bed' | 'user' | 'time'>('time');
+  const [userOrdersOrder, setUserOrdersOrder] = useState<string[]>([]);
+  const [isOrderEditMode, setIsOrderEditMode] = useState(false);
+  const [dragOrderId, setDragOrderId] = useState<string | null>(null);
+  const [dragOverOrderId, setDragOverOrderId] = useState<string | null>(null);
+
+  const [sortHandovers, setSortHandovers] = useState<'bed' | 'user' | 'time'>('time');
+  const [userHandoversOrder, setUserHandoversOrder] = useState<string[]>([]);
+  const [isHandoverEditMode, setIsHandoverEditMode] = useState(false);
+  const [dragHandoverId, setDragHandoverId] = useState<string | null>(null);
+  const [dragOverHandoverId, setDragOverHandoverId] = useState<string | null>(null);
+
   // --- Offline High-Security Storage state variables ---
 
   const getTodayDateString = () => {
@@ -861,10 +873,16 @@ export default function App() {
            (o.note && o.note.toLowerCase().includes(qStr)) ||
            (o.nurseName && o.nurseName.toLowerCase().includes(qStr));
   }).sort((a, b) => {
-    if (a.isCompleted !== b.isCompleted) {
-      return a.isCompleted ? 1 : -1;
+    if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
+    if (sortOrders === 'bed') return a.bed.localeCompare(b.bed, 'zh-TW', { numeric: true });
+    if (sortOrders === 'user') {
+      const ai = userOrdersOrder.indexOf(a.id);
+      const bi = userOrdersOrder.indexOf(b.id);
+      if (ai === -1 && bi === -1) return (b.createdAt || '').localeCompare(a.createdAt || '');
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
     }
-    // Secondary sort: newly created first
     return (b.createdAt || '').localeCompare(a.createdAt || '');
   });
 
@@ -876,6 +894,17 @@ export default function App() {
            (h.diagnosis && h.diagnosis.toLowerCase().includes(qStr)) ||
            h.attentionPoints.toLowerCase().includes(qStr) ||
            (h.note && h.note.toLowerCase().includes(qStr));
+  }).sort((a, b) => {
+    if (sortHandovers === 'bed') return a.bed.localeCompare(b.bed, 'zh-TW', { numeric: true });
+    if (sortHandovers === 'user') {
+      const ai = userHandoversOrder.indexOf(a.id);
+      const bi = userHandoversOrder.indexOf(b.id);
+      if (ai === -1 && bi === -1) return (a.createdAt || '').localeCompare(b.createdAt || '');
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    }
+    return (a.createdAt || '').localeCompare(b.createdAt || '');
   });
 
   const currentDutyState: DutyState = {
@@ -1710,16 +1739,21 @@ export default function App() {
             }`}
           >
             {/* Top compact button row */}
-            <div className="flex items-center gap-2" id="panel-general-orders-top-action">
-              <label className="inline-flex items-center gap-1 cursor-pointer text-xs font-semibold text-slate-500 hover:text-slate-700 select-none transition-colors">
-                <input
-                  type="checkbox"
-                  checked={hideCompletedOrders}
-                  onChange={(e) => setHideCompletedOrders(e.target.checked)}
-                  className="rounded border-slate-300 text-amber-500 focus:ring-amber-400 w-3 h-3 cursor-pointer"
-                />
-                隱藏已完成 ({generalOrders.filter(o=>o.isCompleted).length} 筆)
-              </label>
+            <div className="flex items-center gap-2 pr-12" id="panel-general-orders-top-action">
+              <div className="flex items-center gap-0.5">
+                <button type="button" onClick={() => setSortOrders('bed')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortOrders === 'bed' ? 'text-amber-500 bg-amber-50' : 'text-slate-400 hover:text-slate-600'}`} title="依床號排序"><Hash size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortOrders('user')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortOrders === 'user' ? 'text-amber-500 bg-amber-50' : 'text-slate-400 hover:text-slate-600'}`} title="依自訂順序排序"><UserIcon size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortOrders('time')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortOrders === 'time' ? 'text-amber-500 bg-amber-50' : 'text-slate-400 hover:text-slate-600'}`} title="依時間排序"><Clock size={12} strokeWidth={2.5} /></button>
+              </div>
+              <div className="w-px h-3.5 bg-slate-200 shrink-0" />
+              <button type="button" onClick={() => setHideCompletedOrders(h => !h)} className={`flex items-center gap-1 h-6 px-1 rounded transition-all shrink-0 ${hideCompletedOrders ? 'text-amber-500 bg-amber-50' : 'text-slate-400 hover:text-slate-600'}`} title={hideCompletedOrders ? '顯示所有醫囑' : '隱藏已完成醫囑'}>
+                {hideCompletedOrders ? <EyeOff size={12} strokeWidth={2.5} /> : <Eye size={12} strokeWidth={2.5} />}
+                <span className="text-[11px] font-semibold tabular-nums leading-none">{generalOrders.filter(o => o.isCompleted).length}</span>
+              </button>
+              <div className="w-px h-3.5 bg-slate-200 shrink-0" />
+              <button type="button" onClick={() => setIsOrderEditMode(m => !m)} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isOrderEditMode ? 'text-amber-600 bg-amber-50' : 'text-slate-400 hover:text-slate-600'}`} title={isOrderEditMode ? '結束編輯' : '編輯排序與刪除'}>
+                <Pencil size={12} strokeWidth={2.5} />
+              </button>
             </div>
 
             {/* Floating Overflow Add Button with dynamic hover scaling and layered drop-shadow */}
@@ -1844,19 +1878,36 @@ export default function App() {
                       <div
                         key={o.id}
                         id={`compact-order-card-${o.id}`}
-                        onClick={() => {
+                        draggable={isOrderEditMode}
+                        onDragStart={isOrderEditMode ? (e) => { e.dataTransfer.effectAllowed = 'move'; setDragOrderId(o.id); } : undefined}
+                        onDragOver={isOrderEditMode ? (e) => { e.preventDefault(); setDragOverOrderId(o.id); } : undefined}
+                        onDragLeave={isOrderEditMode ? () => setDragOverOrderId(null) : undefined}
+                        onDrop={isOrderEditMode ? (e) => {
+                          e.preventDefault();
+                          if (!dragOrderId || dragOrderId === o.id) { setDragOverOrderId(null); return; }
+                          const ids = filteredOrders.map(x => x.id);
+                          const from = ids.indexOf(dragOrderId); const to = ids.indexOf(o.id);
+                          if (from === -1 || to === -1) { setDragOverOrderId(null); return; }
+                          const next = [...ids]; next.splice(from, 1); next.splice(to, 0, dragOrderId);
+                          setUserOrdersOrder(next); setSortOrders('user');
+                          setDragOrderId(null); setDragOverOrderId(null);
+                        } : undefined}
+                        onClick={isOrderEditMode ? undefined : () => {
                           oEditFocusFieldRef.current = null;
                           setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name || '');
                           setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
                           setONote(o.note || ''); setONurse(o.nurseName || '');
                           setOPriority(o.priority || 'normal'); setShowAddOrder(true);
                         }}
-                        className={`border rounded-xl px-2.5 py-1.5 flex items-center gap-2 transition-all cursor-pointer ${
+                        className={`border rounded-xl px-2.5 py-1.5 flex items-center gap-2 transition-all ${isOrderEditMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${
+                          dragOverOrderId === o.id ? 'border-amber-400 bg-amber-50/50' :
                           o.isCompleted
                             ? 'border-slate-100 bg-slate-100/30 opacity-60'
                             : 'border-slate-150/80 bg-white hover:border-slate-200 shadow-3xs'
                         }`}
                       >
+                        {/* Edit mode grip */}
+                        {isOrderEditMode && <GripVertical size={14} className="text-slate-300 shrink-0 -ml-0.5" />}
                         {/* Interactive compact checkbox — wrapper expands hit zone to prevent accidental edit trigger */}
                         <div
                           onClick={(e) => e.stopPropagation()}
@@ -1916,14 +1967,16 @@ export default function App() {
                                 {o.orderTask}
                               </span>
                             </div>
-                            <button
-                              id={`del-o-btn-${o.id}`}
-                              onClick={(e) => { e.stopPropagation(); setGeneralOrders((prev) => prev.filter((item) => item.id !== o.id)); }}
-                              className="text-slate-300 hover:text-rose-500 p-0.5 rounded transition-colors shrink-0"
-                              title="刪除"
-                            >
-                              <Trash2 size={11} />
-                            </button>
+                            {isOrderEditMode && (
+                              <button
+                                id={`del-o-btn-${o.id}`}
+                                onClick={(e) => { e.stopPropagation(); setGeneralOrders((prev) => prev.filter((item) => item.id !== o.id)); }}
+                                className="text-slate-300 hover:text-rose-500 p-0.5 rounded transition-colors shrink-0"
+                                title="刪除"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -2048,16 +2101,21 @@ export default function App() {
             }`}
           >
             {/* Top compact button row */}
-            <div className="flex items-center gap-2" id="panel-handovers-top-action">
-              <label className="inline-flex items-center gap-1 cursor-pointer text-xs font-semibold text-slate-500 hover:text-slate-700 select-none transition-colors">
-                <input
-                  type="checkbox"
-                  checked={hideHandledHandovers}
-                  onChange={(e) => setHideHandledHandovers(e.target.checked)}
-                  className="rounded border-slate-300 text-rose-500 focus:ring-rose-400 w-3 h-3 cursor-pointer"
-                />
-                隱藏已完成 ({handoverPatients.filter(h => h.isHandedOver).length} 筆)
-              </label>
+            <div className="flex items-center gap-2 pr-12" id="panel-handovers-top-action">
+              <div className="flex items-center gap-0.5">
+                <button type="button" onClick={() => setSortHandovers('bed')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortHandovers === 'bed' ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-slate-600'}`} title="依床號排序"><Hash size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortHandovers('user')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortHandovers === 'user' ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-slate-600'}`} title="依自訂順序排序"><UserIcon size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortHandovers('time')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortHandovers === 'time' ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-slate-600'}`} title="依時間排序"><Clock size={12} strokeWidth={2.5} /></button>
+              </div>
+              <div className="w-px h-3.5 bg-slate-200 shrink-0" />
+              <button type="button" onClick={() => setHideHandledHandovers(h => !h)} className={`flex items-center gap-1 h-6 px-1 rounded transition-all shrink-0 ${hideHandledHandovers ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-slate-600'}`} title={hideHandledHandovers ? '顯示所有交班' : '隱藏已交班'}>
+                {hideHandledHandovers ? <EyeOff size={12} strokeWidth={2.5} /> : <Eye size={12} strokeWidth={2.5} />}
+                <span className="text-[11px] font-semibold tabular-nums leading-none">{handoverPatients.filter(h => h.isHandedOver).length}</span>
+              </button>
+              <div className="w-px h-3.5 bg-slate-200 shrink-0" />
+              <button type="button" onClick={() => setIsHandoverEditMode(m => !m)} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isHandoverEditMode ? 'text-rose-600 bg-rose-50' : 'text-slate-400 hover:text-slate-600'}`} title={isHandoverEditMode ? '結束編輯' : '編輯排序與刪除'}>
+                <Pencil size={12} strokeWidth={2.5} />
+              </button>
             </div>
             {/* Floating Overflow Add Button with dynamic hover scaling and layered drop-shadow */}
             <button
@@ -2223,18 +2281,35 @@ export default function App() {
                       <div
                         key={h.id}
                         id={`compact-handover-card-${h.id}`}
-                        onClick={() => {
+                        draggable={isHandoverEditMode}
+                        onDragStart={isHandoverEditMode ? (e) => { e.dataTransfer.effectAllowed = 'move'; setDragHandoverId(h.id); } : undefined}
+                        onDragOver={isHandoverEditMode ? (e) => { e.preventDefault(); setDragOverHandoverId(h.id); } : undefined}
+                        onDragLeave={isHandoverEditMode ? () => setDragOverHandoverId(null) : undefined}
+                        onDrop={isHandoverEditMode ? (e) => {
+                          e.preventDefault();
+                          if (!dragHandoverId || dragHandoverId === h.id) { setDragOverHandoverId(null); return; }
+                          const ids = filteredHandovers.map(x => x.id);
+                          const from = ids.indexOf(dragHandoverId); const to = ids.indexOf(h.id);
+                          if (from === -1 || to === -1) { setDragOverHandoverId(null); return; }
+                          const next = [...ids]; next.splice(from, 1); next.splice(to, 0, dragHandoverId);
+                          setUserHandoversOrder(next); setSortHandovers('user');
+                          setDragHandoverId(null); setDragOverHandoverId(null);
+                        } : undefined}
+                        onClick={isHandoverEditMode ? undefined : () => {
                           hEditFocusFieldRef.current = null;
                           setEditingHandoverId(h.id); setHBed(h.bed);
                           setHDiagnosis(h.diagnosis || ''); setHAttn(h.attentionPoints);
                           setHNote(h.note || ''); setHStatus(h.status); setShowAddHandover(true);
                         }}
-                        className={`border rounded-xl px-2.5 py-1.5 flex items-start gap-2.5 transition-all cursor-pointer ${
+                        className={`border rounded-xl px-2.5 py-1.5 flex items-start gap-2.5 transition-all ${isHandoverEditMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${
+                          dragOverHandoverId === h.id ? 'border-rose-400 bg-rose-50/50' :
                           critical
                             ? 'border-rose-200 bg-rose-50/25 shadow-3xs'
                             : 'border-slate-150 bg-white hover:border-slate-200 shadow-3xs'
                         }`}
                       >
+                        {/* Edit mode grip */}
+                        {isHandoverEditMode && <GripVertical size={14} className="text-slate-300 shrink-0 mt-0.5" />}
                         {/* Content flow */}
                         <div className="flex-grow min-w-0 flex flex-col gap-0.5">
                           <div className="flex items-center justify-between gap-1 flex-wrap">
@@ -2276,14 +2351,16 @@ export default function App() {
                               </span>
                             </div>
 
-                            <button
-                              id={`del-h-btn-${h.id}`}
-                              onClick={(e) => { e.stopPropagation(); setHandoverPatients((prev) => prev.filter((item) => item.id !== h.id)); }}
-                              className="text-slate-300 hover:text-rose-500 p-0.5 rounded transition-colors shrink-0"
-                              title="刪除"
-                            >
-                              <Trash2 size={11} />
-                            </button>
+                            {isHandoverEditMode && (
+                              <button
+                                id={`del-h-btn-${h.id}`}
+                                onClick={(e) => { e.stopPropagation(); setHandoverPatients((prev) => prev.filter((item) => item.id !== h.id)); }}
+                                className="text-slate-300 hover:text-rose-500 p-0.5 rounded transition-colors shrink-0"
+                                title="刪除"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            )}
                           </div>
 
                           {/* Secondary details context */}
