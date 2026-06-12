@@ -1454,7 +1454,8 @@ export default function App() {
                           )}
                           {/* Left: Bed, name, and diagnosis */}
                           <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                            <span
+                            {/* Bed tag — wrapper expands hit zone to prevent accidental card-click */}
+                            <div
                               onClick={(e) => {
                                 e.stopPropagation();
                                 editFocusFieldRef.current = 'bed';
@@ -1464,10 +1465,12 @@ export default function App() {
                                 setPNote(p.note || '');
                                 setShowAddPatient(true);
                               }}
-                              className="font-mono text-sm font-bold px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100/30 rounded-md shrink-0 hover:bg-indigo-100 transition-colors"
+                              className="shrink-0 p-1.5 -m-1.5 cursor-pointer"
                             >
-                              {p.bed}
-                            </span>
+                              <span className="font-mono text-sm font-bold px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100/30 rounded-md hover:bg-indigo-100 transition-colors">
+                                {p.bed}
+                              </span>
+                            </div>
                             <span
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1487,10 +1490,10 @@ export default function App() {
                           {/* Right: morphing dot→pill buttons */}
                           <div className="flex items-center shrink-0 ml-auto select-none">
                             {isPatientEditMode ? (
-                              /* Edit mode: show only delete button */
+                              /* Edit mode: w-7 h-7 matches ⋮ button size for consistent card height */
                               <button
                                 onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.filter((pItem) => pItem.id !== p.id)); }}
-                                className="text-slate-300 hover:text-rose-500 hover:bg-rose-50 p-0.5 rounded transition-all duration-200 shrink-0"
+                                className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all duration-200 shrink-0"
                                 title="刪除"
                               >
                                 <Trash2 size={13} />
