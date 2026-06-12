@@ -1437,14 +1437,6 @@ export default function App() {
                               </span>
                               <span className={`absolute text-xs font-semibold whitespace-nowrap transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100' : 'opacity-0 scale-75'} ${p.chartDone ? 'text-slate-300' : 'text-emerald-600'}`}>病歷</span>
                             </button>
-                            {/* ⋮ → fades out on expand */}
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setExpandedControlPatientId(p.id); }}
-                              className={`text-slate-300 hover:text-slate-600 hover:bg-slate-100 p-0.5 rounded transition-all duration-200 shrink-0 overflow-hidden ${expandedControlPatientId === p.id ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[20px] opacity-100'}`}
-                              title="展開操作"
-                            >
-                              <MoreVertical size={13} />
-                            </button>
                             {/* Delete → fades in on expand */}
                             <button
                               onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.filter((pItem) => pItem.id !== p.id)); }}
@@ -1459,6 +1451,14 @@ export default function App() {
                               className={`text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-0.5 rounded transition-all duration-200 shrink-0 overflow-hidden ${expandedControlPatientId === p.id ? 'max-w-[20px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}
                             >
                               <X size={11} />
+                            </button>
+                            {/* ⋮ → fades out on expand, last element so no phantom gap */}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setExpandedControlPatientId(p.id); }}
+                              className={`text-slate-300 hover:text-slate-600 hover:bg-slate-100 p-0.5 rounded transition-all duration-200 shrink-0 overflow-hidden ${expandedControlPatientId === p.id ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[20px] opacity-100'}`}
+                              title="展開操作"
+                            >
+                              <MoreVertical size={13} />
                             </button>
                           </div>
                         </div>

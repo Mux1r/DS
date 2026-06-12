@@ -1,7 +1,7 @@
 {
-  "name": "護理交班排班管理系統",
-  "short_name": "護理交班",
-  "description": "簡潔、高效的護理師交班與醫囑管理工具",
+  "name": "值班管理系統",
+  "short_name": "Duty System",
+  "description": "簡潔、高效的值班醫囑管理工具",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
