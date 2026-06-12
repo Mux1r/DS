@@ -1439,7 +1439,7 @@ export default function App() {
                           setPNote(p.note || '');
                           setShowAddPatient(true);
                         }}
-                        className={`border rounded-xl px-3 py-1.5 transition-all ${isPatientEditMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${
+                        className={`border rounded-xl px-3 py-1.5 transition-colors duration-150 ${isPatientEditMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${
                           dragOverPatientId === p.id ? 'border-indigo-400 bg-indigo-50/50' :
                           allDone
                             ? 'border-emerald-100 bg-emerald-50/5 opacity-70 hover:opacity-100'
@@ -1488,7 +1488,7 @@ export default function App() {
                           </div>
 
                           {/* Right: morphing dot→pill buttons */}
-                          <div className="flex items-center shrink-0 ml-auto select-none">
+                          <div className="flex items-center shrink-0 ml-auto select-none min-w-[28px]">
                             {isPatientEditMode ? (
                               /* Edit mode: w-7 h-7 matches ⋮ button size for consistent card height */
                               <button
