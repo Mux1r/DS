@@ -45,7 +45,8 @@ import {
   Hash,
   GripVertical,
   Eye,
-  EyeOff
+  EyeOff,
+  PlusCircle
 } from 'lucide-react';
 
 export default function App() {
@@ -676,6 +677,19 @@ export default function App() {
     setQpError('');
   };
 
+  const dispatchAndContinue = () => {
+    if (!qpBed.trim()) { setQpError('請輸入床號！'); return; }
+    if (mobileTab === 'new') {
+      addPatient({ id: `new-${Date.now()}`, bed: qpBed.trim().toUpperCase(), name: '', diagnosis: qpDiagnosis.trim() || '無明確診斷', note: qpContent.trim(), orderDone: false, visited: false, chartDone: false, createdAt: new Date().toISOString() });
+    } else if (mobileTab === 'orders') {
+      addOrder({ id: `order-${Date.now()}`, bed: qpBed.trim().toUpperCase(), name: '不具名', diagnosis: qpDiagnosis.trim() || '無', orderTask: qpContent.trim() || '補開醫囑項目', note: '', isCompleted: false, nurseName: undefined, priority: qpPriority, createdAt: new Date().toISOString() });
+    } else {
+      addHandover({ id: `handover-${Date.now()}`, bed: qpBed.trim().toUpperCase(), name: '不具名', diagnosis: qpDiagnosis.trim() || '無確切診斷', note: '', attentionPoints: qpContent.trim() || '特別關注事項', status: 'unstable', isHandedOver: false, createdAt: new Date().toISOString() });
+    }
+    clearQp();
+    setTimeout(() => qpBedRef.current?.focus(), 50);
+  };
+
   // --- Handlers for high-level operations ---
   const handleImport = (newState: DutyState) => {
     setNewPatients(newState.newPatients || []);
@@ -1091,19 +1105,37 @@ export default function App() {
             className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-4 px-3 md:pt-8 md:px-6"
           >
             <div className="w-full max-w-4xl bg-gradient-to-b from-emerald-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-emerald-100 dark:border-slate-200/40 flex flex-col max-h-[92vh] animate-scale-up duration-200">
-              {/* Header info */}
-              <div className="flex items-center justify-end px-4 py-2 border-b border-emerald-100/50">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowQuickPhoneAdd(false);
-                    clearQp();
-                  }}
-                  className="text-slate-400 hover:text-slate-650 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
-                  title="關閉"
-                >
-                  ✕
-                </button>
+              {/* Header: dispatch buttons left, continue+close right */}
+              <div className="flex items-center justify-between px-4 py-2 border-b border-emerald-100/50 shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <button type="button" onClick={dispatchToPatient} className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-all active:scale-95 cursor-pointer">
+                    <Plus size={11} className="stroke-[3]" /><span>新病人</span>
+                  </button>
+                  <button type="button" onClick={dispatchToOrder} className="flex items-center gap-1 px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition-all active:scale-95 cursor-pointer">
+                    <Plus size={11} className="stroke-[3]" /><span>醫囑</span>
+                  </button>
+                  <button type="button" onClick={dispatchToHandover} className="flex items-center gap-1 px-2.5 py-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-lg transition-all active:scale-95 cursor-pointer">
+                    <Plus size={11} className="stroke-[3]" /><span>交班</span>
+                  </button>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={dispatchAndContinue}
+                    className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer"
+                    title="儲存並新增下一筆速記"
+                  >
+                    <PlusCircle size={17} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowQuickPhoneAdd(false); clearQp(); }}
+                    className="text-slate-400 hover:text-slate-650 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
+                    title="關閉"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
 
               {/* Form Content Area */}
@@ -1180,48 +1212,6 @@ export default function App() {
                 )}
               </div>
 
-              {/* Row 3: Dispatch Target Selector Buttons */}
-              <div className="bg-slate-50 p-6 rounded-b-2xl border-t border-slate-100 flex flex-col gap-3">
-                <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between w-full">
-                  <div className="flex-grow grid grid-cols-3 gap-2">
-                    {/* Dispatch Buttons */}
-                    <button
-                      type="button"
-                      onClick={dispatchToPatient}
-                      className="flex items-center justify-center gap-1 py-3 px-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md cursor-pointer transition-all active:scale-95 duration-200"
-                    >
-                      <Plus size={14} className="stroke-[3]" />
-                      <span>新病人</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={dispatchToOrder}
-                      className="flex items-center justify-center gap-1 py-3 px-2 bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md cursor-pointer transition-all active:scale-95 duration-200"
-                    >
-                      <Plus size={14} className="stroke-[3]" />
-                      <span>醫囑</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={dispatchToHandover}
-                      className="flex items-center justify-center gap-1 py-3 px-2 bg-rose-500 hover:bg-rose-600 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md cursor-pointer transition-all active:scale-95 duration-200"
-                    >
-                      <Plus size={14} className="stroke-[3]" />
-                      <span>交班</span>
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={clearQp}
-                    className="md:shrink-0 py-3 px-5 text-slate-500 hover:text-slate-800 text-sm font-bold rounded-xl border border-slate-200 hover:bg-white transition-all bg-slate-100/50 cursor-pointer text-center"
-                  >
-                    清除重填
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         )}
