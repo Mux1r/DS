@@ -43,7 +43,9 @@ import {
   MoreVertical,
   Pencil,
   Hash,
-  GripVertical
+  GripVertical,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 export default function App() {
@@ -1216,10 +1218,10 @@ export default function App() {
               mobileTab !== 'new' ? 'hidden' : 'flex'
             }`}
           >
-            {/* Top compact button row */}
-            <div className="flex items-center gap-2" id="panel-new-patients-top-action">
-              {/* Sort buttons: bed / user / time */}
-              <div className="flex items-center gap-1">
+            {/* Top compact button row — pr-12 keeps items clear of the floating + button */}
+            <div className="flex items-center gap-2 pr-12" id="panel-new-patients-top-action">
+              {/* Group 1: sort */}
+              <div className="flex items-center gap-0.5">
                 <button
                   type="button"
                   onClick={() => setSortNewPatients('bed')}
@@ -1245,20 +1247,30 @@ export default function App() {
                   <Clock size={12} strokeWidth={2.5} />
                 </button>
               </div>
-              <label className="inline-flex items-center gap-1 cursor-pointer text-xs font-semibold text-slate-500 hover:text-slate-700 select-none transition-colors">
-                <input
-                  type="checkbox"
-                  checked={hideCompletedPatients}
-                  onChange={(e) => setHideCompletedPatients(e.target.checked)}
-                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3 h-3 cursor-pointer"
-                />
-                隱藏已完成 ({newPatients.filter(p => p.orderDone && p.visited && p.chartDone).length} 筆)
-              </label>
-              {/* Edit mode toggle */}
+              {/* Divider */}
+              <div className="w-px h-3.5 bg-slate-200 shrink-0" />
+              {/* Group 2: hide completed */}
+              <button
+                type="button"
+                onClick={() => setHideCompletedPatients(h => !h)}
+                className={`flex items-center gap-1 h-6 px-1 rounded transition-all shrink-0 ${hideCompletedPatients ? 'text-indigo-500 bg-indigo-50' : 'text-slate-400 hover:text-slate-600'}`}
+                title={hideCompletedPatients ? '顯示所有病患' : '隱藏已完成病患'}
+              >
+                {hideCompletedPatients
+                  ? <EyeOff size={12} strokeWidth={2.5} />
+                  : <Eye size={12} strokeWidth={2.5} />
+                }
+                <span className="text-[11px] font-semibold tabular-nums leading-none">
+                  {newPatients.filter(p => p.orderDone && p.visited && p.chartDone).length}
+                </span>
+              </button>
+              {/* Divider */}
+              <div className="w-px h-3.5 bg-slate-200 shrink-0" />
+              {/* Group 3: edit mode */}
               <button
                 type="button"
                 onClick={() => setIsPatientEditMode(m => !m)}
-                className={`ml-auto flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isPatientEditMode ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isPatientEditMode ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:text-slate-600'}`}
                 title={isPatientEditMode ? '結束編輯' : '編輯排序與刪除'}
               >
                 <Pencil size={12} strokeWidth={2.5} />
