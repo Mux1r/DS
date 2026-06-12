@@ -1548,20 +1548,22 @@ export default function App() {
                                   </span>
                                   <span className={`absolute text-xs font-semibold whitespace-nowrap transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100' : 'opacity-0 scale-75'} ${p.chartDone ? 'text-slate-300' : 'text-emerald-600'}`}>病歷</span>
                                 </button>
-                                {/* Single toggle button: ⋮ ↔ X crossfade */}
+                                {/* Single toggle button: extends to card's right/top/bottom edges for fat hit zone */}
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setExpandedControlPatientId(expandedControlPatientId === p.id ? null : p.id); }}
-                                  className="relative ml-1.5 w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors duration-150 shrink-0"
+                                  className="group relative ml-1.5 -mr-3 -my-1.5 pr-3 py-1.5 flex items-center justify-center rounded-r-xl transition-colors duration-150 shrink-0"
                                   title={expandedControlPatientId === p.id ? '收起' : '展開 Toggle'}
                                 >
-                                  <MoreVertical
-                                    size={13}
-                                    className={`absolute transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-0 scale-50 rotate-90' : 'opacity-100 scale-100 rotate-0'}`}
-                                  />
-                                  <X
-                                    size={12}
-                                    className={`absolute transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90'}`}
-                                  />
+                                  <span className="relative w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 group-hover:text-slate-600 group-hover:bg-slate-100 transition-colors duration-150">
+                                    <MoreVertical
+                                      size={13}
+                                      className={`absolute transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-0 scale-50 rotate-90' : 'opacity-100 scale-100 rotate-0'}`}
+                                    />
+                                    <X
+                                      size={12}
+                                      className={`absolute transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90'}`}
+                                    />
+                                  </span>
                                 </button>
                               </>
                             )}
