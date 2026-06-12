@@ -1448,12 +1448,11 @@ export default function App() {
                       >
                         {/* Compact bed, name, diagnosis, triggers, and action buttons in one line */}
                         <div className="flex items-center justify-between gap-2.5 w-full">
-                          {/* Edit mode: drag handle */}
-                          {isPatientEditMode && (
-                            <GripVertical size={14} className="text-slate-300 shrink-0 -ml-1" />
-                          )}
-                          {/* Left: Bed, name, and diagnosis */}
+                          {/* Left: Bed, name, and diagnosis — grip inside so justify-between always has 2 items */}
                           <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            {isPatientEditMode && (
+                              <GripVertical size={14} className="text-slate-300 shrink-0" />
+                            )}
                             {/* Bed tag — wrapper expands hit zone to prevent accidental card-click */}
                             <div
                               onClick={(e) => {
@@ -1548,10 +1547,10 @@ export default function App() {
                                   </span>
                                   <span className={`absolute text-xs font-semibold whitespace-nowrap transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100' : 'opacity-0 scale-75'} ${p.chartDone ? 'text-slate-300' : 'text-emerald-600'}`}>病歷</span>
                                 </button>
-                                {/* Single toggle button: extends to card's right/top/bottom edges for fat hit zone */}
+                                {/* Single toggle button: extends to card's right edge, vertical hit zone via card padding */}
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setExpandedControlPatientId(expandedControlPatientId === p.id ? null : p.id); }}
-                                  className="group relative ml-1.5 -mr-3 -my-1.5 pr-3 py-1.5 flex items-center justify-center rounded-r-xl transition-colors duration-150 shrink-0"
+                                  className="group relative ml-1.5 -mr-3 pr-3 flex items-center justify-center rounded-r-xl transition-colors duration-150 shrink-0 self-stretch"
                                   title={expandedControlPatientId === p.id ? '收起' : '展開 Toggle'}
                                 >
                                   <span className="relative w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 group-hover:text-slate-600 group-hover:bg-slate-100 transition-colors duration-150">
