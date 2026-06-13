@@ -113,95 +113,95 @@ input, textarea, select, button {
 /* --- DARK MODE SELECTOR OVERRIDES --- */
 .dark {
   /* 1. Slate Blue-Gray (originally Indigo) */
-  --color-indigo-50: #192026;
-  --color-indigo-100: #212c36;
-  --color-indigo-150: #2b3945;
-  --color-indigo-200: #374857;
-  --color-indigo-300: #495e72;
-  --color-indigo-400: #5d7891;
-  --color-indigo-500: #7393b0;
-  --color-indigo-600: #8baecd;
-  --color-indigo-700: #a7c9eb;
-  --color-indigo-800: #c4dffa;
-  --color-indigo-850: #dbecfd;
-  --color-indigo-900: #edf5fe;
+  --color-indigo-50: #222a31;
+  --color-indigo-100: #2a3641;
+  --color-indigo-150: #344350;
+  --color-indigo-200: #405260;
+  --color-indigo-300: #526778;
+  --color-indigo-400: #668196;
+  --color-indigo-500: #7d9cb5;
+  --color-indigo-600: #96b8d2;
+  --color-indigo-700: #b2d1ee;
+  --color-indigo-800: #cce3fb;
+  --color-indigo-850: #e0effe;
+  --color-indigo-900: #f0f7ff;
   --color-indigo-950: #fafcff;
 
   /* 2. Warm Ochre & Clay (originally Amber) */
-  --color-amber-50: #221e19;
-  --color-amber-100: #2f271e;
-  --color-amber-150: #3c3125;
-  --color-amber-200: #4a3d2c;
-  --color-amber-300: #5e4d37;
-  --color-amber-400: #786246;
-  --color-amber-500: #937855;
-  --color-amber-600: #af926a;
-  --color-amber-700: #c9ab81;
-  --color-amber-800: #e3c498;
-  --color-amber-850: #f4d9b4;
-  --color-amber-900: #fcedcf;
+  --color-amber-50: #2c2722;
+  --color-amber-100: #393129;
+  --color-amber-150: #463c30;
+  --color-amber-200: #544837;
+  --color-amber-300: #685742;
+  --color-amber-400: #826c52;
+  --color-amber-500: #9d8261;
+  --color-amber-600: #ba9c77;
+  --color-amber-700: #d4b58d;
+  --color-amber-800: #ebcda4;
+  --color-amber-850: #f7e1be;
+  --color-amber-900: #fdf0d6;
   --color-amber-950: #fffaf0;
   --color-amber-955: #fffaf0;
 
   /* 3. Terracotta & Dusty Pink (originally Rose) */
-  --color-rose-50: #231a1a;
-  --color-rose-100: #312121;
-  --color-rose-150: #3f292a;
-  --color-rose-200: #503335;
-  --color-rose-250: #623e40;
-  --color-rose-300: #7a4d51;
-  --color-rose-400: #965f64;
-  --color-rose-500: #b0757a;
-  --color-rose-550: #c48a90;
-  --color-rose-600: #d6a1a7;
-  --color-rose-700: #e8b9bd;
-  --color-rose-800: #f5cfd2;
-  --color-rose-855: #fae4e6;
-  --color-rose-900: #fff0f1;
-  --color-rose-950: #fffafa;
-  --color-rose-955: #fffafa;
+  --color-rose-50: #2e2424;
+  --color-rose-100: #3c2c2c;
+  --color-rose-150: #4a3435;
+  --color-rose-200: #5b3e40;
+  --color-rose-250: #6d494c;
+  --color-rose-300: #85585c;
+  --color-rose-400: #a06970;
+  --color-rose-500: #ba7f85;
+  --color-rose-550: #ce9499;
+  --color-rose-600: #dfadb2;
+  --color-rose-700: #eec4c8;
+  --color-rose-800: #f8d8db;
+  --color-rose-855: #fce8ea;
+  --color-rose-900: #fff2f3;
+  --color-rose-950: #fffbfb;
+  --color-rose-955: #fffbfb;
 
   /* 4. Sage & Olive Green (originally Emerald) */
-  --color-emerald-50: #171d1a;
-  --color-emerald-100: #212c24;
-  --color-emerald-150: #2b392e;
-  --color-emerald-250: #3b4e3e;
-  --color-emerald-300: #4a6350;
-  --color-emerald-400: #5d7c65;
-  --color-emerald-500: #73977c;
-  --color-emerald-600: #8bb396;
-  --color-emerald-700: #a4cdb0;
-  --color-emerald-800: #c2e5cc;
-  --color-emerald-850: #c2e5cc;
-  --color-emerald-900: #ddf5e5;
-  --color-emerald-950: #f2faf4;
-  --color-emerald-955: #f2faf4;
+  --color-emerald-50: #212923;
+  --color-emerald-100: #2b382e;
+  --color-emerald-150: #354538;
+  --color-emerald-250: #455847;
+  --color-emerald-300: #546d59;
+  --color-emerald-400: #678770;
+  --color-emerald-500: #7ea289;
+  --color-emerald-600: #96bea1;
+  --color-emerald-700: #b0d6ba;
+  --color-emerald-800: #ccebd4;
+  --color-emerald-850: #ccebd4;
+  --color-emerald-900: #e3f7e9;
+  --color-emerald-950: #f4fbf6;
+  --color-emerald-955: #f4fbf6;
 
   /* 5. Pebbled Clay Grays & Plasters (originally Slate) */
-  --color-slate-50: #1b1b17;
-  --color-slate-100: #242420;
-  --color-slate-150: #2d2d26;
-  --color-slate-200: #373730;
-  --color-slate-300: #4b4b42;
-  --color-slate-305: #57574d;
-  --color-slate-400: #6d6d62;
-  --color-slate-500: #88887e;
-  --color-slate-600: #a3a398;
-  --color-slate-700: #bebeae;
-  --color-slate-800: #d3d3c7;
-  --color-slate-850: #e3e3d9;
-  --color-slate-900: #f2f2e6;
+  --color-slate-50: #272722;
+  --color-slate-100: #30302b;
+  --color-slate-150: #3a3a34;
+  --color-slate-200: #44443d;
+  --color-slate-300: #585850;
+  --color-slate-305: #636359;
+  --color-slate-400: #78786e;
+  --color-slate-500: #929289;
+  --color-slate-600: #adadA2;
+  --color-slate-700: #c8c8b8;
+  --color-slate-800: #dbdbcd;
+  --color-slate-850: #eaeade;
+  --color-slate-900: #f4f4e8;
   --color-slate-950: #fafaf5;
 }
 
 /* Ensure the background flips perfectly for everything using standard bg-white */
 .dark body {
-  background-color: #2a2a24;
-  color: #e3e3d9;
+  background-color: #363630;
+  color: #eaeade;
 }
 
 .dark .bg-white {
-  background-color: #1e1e1a !important;
+  background-color: #2c2c27 !important;
 }
 
 /* Specific text/fill protections for white labels/icons inside primary colored items */
@@ -269,9 +269,9 @@ input, textarea, select, button {
 
 /* Form element enhancements in dark mode */
 .dark input, .dark textarea, .dark select {
-  background-color: #1b1b17 !important;
-  color: #e3e3d9 !important;
-  border-color: #2d2d26 !important;
+  background-color: #272722 !important;
+  color: #eaeade !important;
+  border-color: #3a3a34 !important;
 }
 
 .dark ::placeholder {
