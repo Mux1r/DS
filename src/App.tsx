@@ -46,7 +46,8 @@ import {
   GripVertical,
   Eye,
   EyeOff,
-  PlusCircle
+  PlusCircle,
+  RotateCw
 } from 'lucide-react';
 
 export default function App() {
@@ -1062,6 +1063,16 @@ export default function App() {
                 title="主控台"
               >
                 <Sliders size={14} />
+              </button>
+
+              {/* Refresh */}
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all cursor-pointer shrink-0"
+                title="重新整理"
+              >
+                <RotateCw size={14} />
               </button>
 
               {/* Dark mode — always visible */}
