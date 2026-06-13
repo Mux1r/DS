@@ -163,6 +163,9 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const isLoadingFromFirestore = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const panelNewRef = useRef<HTMLDivElement>(null);
+  const panelOrdersRef = useRef<HTMLDivElement>(null);
+  const panelHandoversRef = useRef<HTMLDivElement>(null);
 
   // --- Inline Patient Form Fields ---
   const [pBed, setPBed] = useState('');
@@ -220,6 +223,24 @@ export default function App() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isDateDropdownOpen]);
+
+  useEffect(() => {
+    if (!isPatientEditMode && !isOrderEditMode && !isHandoverEditMode) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (isPatientEditMode && panelNewRef.current && !panelNewRef.current.contains(target)) {
+        setIsPatientEditMode(false);
+      }
+      if (isOrderEditMode && panelOrdersRef.current && !panelOrdersRef.current.contains(target)) {
+        setIsOrderEditMode(false);
+      }
+      if (isHandoverEditMode && panelHandoversRef.current && !panelHandoversRef.current.contains(target)) {
+        setIsHandoverEditMode(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isPatientEditMode, isOrderEditMode, isHandoverEditMode]);
 
   // Firebase auth listener
   useEffect(() => {
@@ -1280,7 +1301,8 @@ export default function App() {
         >
           
           {/* ================= COLUMN 1: 新病人 Checklist ================= */}
-          <div 
+          <div
+            ref={panelNewRef}
             id="panel-new-patients"
             className={`relative flex flex-col gap-2.5 bg-white rounded-xl p-3 border border-slate-150/80 shadow-xs transition-colors duration-200 ${
               mobileTab !== 'new' ? 'hidden' : 'flex'
@@ -1780,7 +1802,8 @@ export default function App() {
           </div>
 
           {/* ================= COLUMN 2: 一般醫囑開立 ================= */}
-          <div 
+          <div
+            ref={panelOrdersRef}
             id="panel-general-orders"
             className={`relative flex flex-col gap-2.5 bg-white rounded-xl p-3 border border-slate-150/80 shadow-xs transition-colors duration-200 ${
               mobileTab !== 'orders' ? 'hidden' : 'flex'
@@ -2142,7 +2165,8 @@ export default function App() {
           </div>
 
           {/* ================= COLUMN 3: 交班病人特別關注 ================= */}
-          <div 
+          <div
+            ref={panelHandoversRef}
             id="panel-handovers"
             className={`relative flex flex-col gap-2.5 bg-white rounded-xl p-3 border border-slate-150/80 shadow-xs transition-colors duration-200 ${
               mobileTab !== 'handovers' ? 'hidden' : 'flex'
