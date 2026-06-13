@@ -2216,7 +2216,8 @@ export default function App() {
                         <label className="text-xs font-black text-slate-700">臨床安全分級</label>
                         <div className="flex items-center gap-2 bg-slate-100/60 p-1.5 rounded-xl self-start w-full md:w-auto">
                           {(['stable', 'unstable', 'critical'] as const).map((stat) => {
-                            const labels = { stable: '🟢 穩定 (Stable)', unstable: '🟡 變動 (Unstable)', critical: '🔴 危急 (Critical)' };
+                            const labels = { stable: '穩定', unstable: '變動', critical: '危急' };
+                            const dotColors = { stable: 'bg-emerald-500', unstable: 'bg-amber-400', critical: 'bg-rose-500' };
                             const activeColors = {
                               stable: 'bg-emerald-600 text-white shadow-sm border-emerald-500 focus:ring-emerald-350 font-bold',
                               unstable: 'bg-amber-500 text-white shadow-sm border-amber-400 focus:ring-amber-300 font-bold',
@@ -2227,12 +2228,13 @@ export default function App() {
                                 key={stat}
                                 type="button"
                                 onClick={() => setHStatus(stat)}
-                                className={`flex-1 md:flex-initial text-xs py-2 px-4 rounded-lg transition-all cursor-pointer border ${
-                                  hStatus === stat 
+                                className={`flex-1 md:flex-initial flex items-center justify-center gap-1.5 text-xs py-2 px-4 rounded-lg transition-all cursor-pointer border ${
+                                  hStatus === stat
                                     ? activeColors[stat]
                                     : 'border-transparent bg-transparent text-slate-600 hover:text-slate-900 font-medium hover:bg-white/60'
                                 }`}
                               >
+                                <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${dotColors[stat]}`} />
                                 {labels[stat]}
                               </button>
                             );
@@ -2326,12 +2328,9 @@ export default function App() {
                               {h.name && h.name !== '未輸入姓名' && h.name !== '不具名' && (
                                 <span className="font-bold text-sm text-slate-850 shrink-0">{h.name}</span>
                               )}
-                              {critical && (
-                                <span className="text-xs font-bold text-rose-600 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded shrink-0">🚨 危急</span>
-                              )}
-                              {unstable && (
-                                <span className="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded shrink-0">⚠️ 變動</span>
-                              )}
+                              <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${
+                                critical ? 'bg-rose-500' : unstable ? 'bg-amber-400' : 'bg-emerald-500'
+                              }`} />
                               <span
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -2381,12 +2380,6 @@ export default function App() {
                     borderStyle = 'border-rose-200 bg-rose-50/5 hover:bg-rose-50/10 shadow-rose-50/30 shadow-2xs';
                   }
 
-                  const badges = {
-                    critical: 'bg-rose-100 text-rose-800 border-rose-200 font-bold',
-                    unstable: 'bg-amber-100 text-amber-800 border-amber-200',
-                    stable: 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                  };
-                  const statusLabels = { critical: '🚨 命危/極不穩', unstable: '⚠️ 變動中', stable: '常規' };
 
                   return (
                     <div
@@ -2422,9 +2415,9 @@ export default function App() {
                               {h.name}
                             </span>
                           )}
-                          <span className={`text-xs px-1.5 py-0.5 rounded border font-medium ${badges[h.status]}`}>
-                            {statusLabels[h.status]}
-                          </span>
+                          <span className={`inline-block w-2.5 h-2.5 rounded-full shrink-0 ${
+                            critical ? 'bg-rose-500 ring-2 ring-rose-200' : unstable ? 'bg-amber-400 ring-2 ring-amber-200' : 'bg-emerald-500 ring-2 ring-emerald-200'
+                          }`} />
                         </div>
 
                         <div className="flex items-center gap-1 ml-auto">
@@ -2442,14 +2435,8 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Main Dx */}
+                      {/* Main Content */}
                       <div className="text-xs text-slate-650 space-y-1.5 leading-snug pl-0.5">
-                        {h.diagnosis && h.diagnosis !== '無' && (
-                          <p className="truncate text-xs text-slate-500">
-                            Dx: <span className="font-medium text-slate-700 select-all">{h.diagnosis}</span>
-                          </p>
-                        )}
-
                         {/* Direct Clinical Guide (Critical call-to-action) */}
                         <div
                           onClick={(e) => {
@@ -2473,6 +2460,12 @@ export default function App() {
                             {h.attentionPoints}
                           </p>
                         </div>
+
+                        {h.diagnosis && h.diagnosis !== '無' && (
+                          <p className="truncate text-xs text-slate-500">
+                            Dx: <span className="font-medium text-slate-700 select-all">{h.diagnosis}</span>
+                          </p>
+                        )}
 
                         {h.note && (
                           <p className="text-xs italic bg-slate-100/30 p-1.5 rounded border-l border-slate-200 text-slate-550">
