@@ -993,7 +993,7 @@ export default function App() {
                 </button>
 
                 {isDateDropdownOpen && (
-                  <div className="absolute left-0 top-full mt-1.5 bg-white border border-slate-200/80 rounded-xl shadow-lg shadow-slate-200/60 z-50 py-1.5 min-w-[110px] overflow-hidden">
+                  <div className="absolute left-0 top-full mt-1.5 bg-white border border-slate-200/80 rounded-xl z-50 py-1.5 min-w-[110px] overflow-hidden">
                     {availableDates.map(d => {
                       const isToday = d === getTodayDateString();
                       const isSelected = d === selectedDate;
