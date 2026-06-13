@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DutyState, NewPatient, GeneralOrder, HandoverPatient, SyncStatus } from './types';
 import { getInitialState, saveState, formatTime } from './utils';
 import { db, auth } from './firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import LoginScreen from './components/LoginScreen';
 
@@ -319,35 +319,37 @@ export default function App() {
     loadDates();
   }, [user]);
 
-  // 2. Load data for selectedDate from Firebase
+  // 2. Real-time listener for selectedDate — auto-syncs across devices
   useEffect(() => {
     if (!user) return;
     isLoadingFromFirestore.current = true;
     setSyncStatus({ lastSynced: null, isSyncing: true, statusText: '從 Firebase 載入中...', error: false });
 
-    const loadDate = async () => {
-      try {
-        const dateRef = doc(db, 'users', user.uid, 'dates', selectedDate);
-        const snap = await getDoc(dateRef);
-        if (snap.exists()) {
-          const data = snap.data();
-          setNewPatients(data.patients || []);
-          setGeneralOrders(data.orders || []);
-          setHandoverPatients(data.handovers || []);
-        } else {
-          setNewPatients([]);
-          setGeneralOrders([]);
-          setHandoverPatients([]);
-        }
-        const t = new Date().toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
-        setSyncStatus({ lastSynced: new Date().toLocaleTimeString(), isSyncing: false, statusText: `☁️ Firebase 雲端同步 · ${t} 已載入`, error: false });
-      } catch (e) {
-        setSyncStatus({ lastSynced: null, isSyncing: false, statusText: '⚠️ Firebase 載入失敗，請確認網路', error: true });
-      } finally {
-        setTimeout(() => { isLoadingFromFirestore.current = false; }, 200);
+    const dateRef = doc(db, 'users', user.uid, 'dates', selectedDate);
+    const unsub = onSnapshot(dateRef, (snap) => {
+      // Skip snapshots caused by our own pending writes to avoid save loops
+      if (snap.metadata.hasPendingWrites) return;
+
+      isLoadingFromFirestore.current = true;
+      if (snap.exists()) {
+        const data = snap.data();
+        setNewPatients(data.patients || []);
+        setGeneralOrders(data.orders || []);
+        setHandoverPatients(data.handovers || []);
+      } else {
+        setNewPatients([]);
+        setGeneralOrders([]);
+        setHandoverPatients([]);
       }
-    };
-    loadDate();
+      const t = new Date().toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
+      setSyncStatus({ lastSynced: new Date().toLocaleTimeString(), isSyncing: false, statusText: `☁️ Firebase 雲端同步 · ${t} 已載入`, error: false });
+      setTimeout(() => { isLoadingFromFirestore.current = false; }, 200);
+    }, (_err) => {
+      setSyncStatus({ lastSynced: null, isSyncing: false, statusText: '⚠️ Firebase 載入失敗，請確認網路', error: true });
+      isLoadingFromFirestore.current = false;
+    });
+
+    return () => unsub();
   }, [user, selectedDate]);
 
   // 3. Sync and index newly logged beds registry in local localStorage to support clinical diagnostic suggestions auto-fill
@@ -454,10 +456,10 @@ export default function App() {
       } catch (e) {
         setSyncStatus({ lastSynced: null, isSyncing: false, statusText: '⚠️ Firebase 同步失敗，請確認網路', error: true });
       }
-    }, 1500);
+    }, 300);
 
     return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
-  }, [newPatients, generalOrders, handoverPatients]);
+  }, [user, selectedDate, newPatients, generalOrders, handoverPatients]);
 
   // --- Secure DUAL-MODE Mutators for Database Operations ---
   // Helper to remove any undefined properties recursively to prevent Firestore crashes
@@ -1489,10 +1491,11 @@ export default function App() {
                           {/* Right: morphing dot→pill buttons */}
                           <div className="flex items-center shrink-0 ml-auto select-none min-w-[28px]">
                             {isPatientEditMode ? (
-                              /* Edit mode: w-7 h-7 matches ⋮ button size for consistent card height */
+                              /* Edit mode: unique key prevents React from reusing circle button DOM nodes (avoids transition-all height animation jitter) */
                               <button
+                                key="patient-edit-trash"
                                 onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.filter((pItem) => pItem.id !== p.id)); }}
-                                className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all duration-200 shrink-0"
+                                className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors shrink-0"
                                 title="刪除"
                               >
                                 <Trash2 size={13} />
@@ -1501,6 +1504,7 @@ export default function App() {
                               <>
                                 {/* 醫囑: circle → pill */}
                                 <button
+                                  key="patient-dot-order"
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, orderDone: !item.orderDone } : item)); }}
                                   title="醫囑"
@@ -1517,6 +1521,7 @@ export default function App() {
                                 </button>
                                 {/* 探視: circle → pill */}
                                 <button
+                                  key="patient-dot-visited"
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, visited: !item.visited } : item)); }}
                                   title="探視"
@@ -1533,6 +1538,7 @@ export default function App() {
                                 </button>
                                 {/* 病歷: circle → pill */}
                                 <button
+                                  key="patient-dot-chart"
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, chartDone: !item.chartDone } : item)); }}
                                   title="病歷"
@@ -1549,6 +1555,7 @@ export default function App() {
                                 </button>
                                 {/* Single toggle button: extends to card's right edge, vertical hit zone via card padding */}
                                 <button
+                                  key="patient-dot-toggle"
                                   onClick={(e) => { e.stopPropagation(); setExpandedControlPatientId(expandedControlPatientId === p.id ? null : p.id); }}
                                   className="group relative ml-1.5 -mr-3 pr-3 flex items-center justify-center rounded-r-xl transition-colors duration-150 shrink-0 self-stretch"
                                   title={expandedControlPatientId === p.id ? '收起' : '展開 Toggle'}
