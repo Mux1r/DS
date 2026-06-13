@@ -986,7 +986,7 @@ export default function App() {
                   title="選擇值班日期"
                 >
                   {selectedDate === getTodayDateString()
-                    ? <><span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" /><span>今日</span></>
+                    ? <><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" /><span>今日</span></>
                     : <span>{selectedDate.slice(5).replace('-', '/')}</span>
                   }
                   <ChevronDown size={11} className={`text-slate-400 transition-transform duration-200 ${isDateDropdownOpen ? 'rotate-180' : ''}`} />
@@ -1010,7 +1010,7 @@ export default function App() {
                             isSelected ? 'bg-slate-50 font-semibold text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                           }`}
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isToday ? 'bg-rose-500' : 'bg-transparent'}`} />
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isToday ? 'bg-emerald-500 animate-pulse' : 'bg-transparent'}`} />
                           <span>{isToday ? '今日' : d.slice(5).replace('-', '/')}</span>
                           {isSelected && <Check size={10} className="ml-auto text-slate-400 shrink-0" />}
                         </button>
