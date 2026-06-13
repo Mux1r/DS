@@ -1515,7 +1515,7 @@ export default function App() {
                               }}
                               className="shrink-0 p-1.5 -m-1.5 cursor-pointer"
                             >
-                              <span className="font-mono text-sm font-bold px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100/30 rounded-md hover:bg-indigo-100 transition-colors">
+                              <span className="font-mono text-sm font-bold px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100/30 rounded-md hover:bg-indigo-100 transition-colors dark:bg-indigo-200/70 dark:text-indigo-850 dark:border-indigo-300/40">
                                 {p.bed}
                               </span>
                             </div>
@@ -1992,7 +1992,7 @@ export default function App() {
                                   setONote(o.note || '');
                                   setOPriority(o.priority || 'normal'); setShowAddOrder(true);
                                 }}
-                                className="font-mono text-sm font-bold px-1.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-100/30 rounded-md shrink-0 hover:bg-amber-100 transition-colors"
+                                className="font-mono text-sm font-bold px-1.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-100/30 rounded-md shrink-0 hover:bg-amber-100 transition-colors dark:bg-amber-200/70 dark:text-amber-850 dark:border-amber-300/40"
                               >
                                 {o.bed}
                               </span>
@@ -2084,7 +2084,7 @@ export default function App() {
                                 setONote(o.note || '');
                                 setOPriority(o.priority || 'normal'); setShowAddOrder(true);
                               }}
-                              className="font-mono text-sm font-bold px-1.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-100/30 rounded-md hover:bg-amber-100 transition-colors"
+                              className="font-mono text-sm font-bold px-1.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-100/30 rounded-md hover:bg-amber-100 transition-colors dark:bg-amber-200/70 dark:text-amber-850 dark:border-amber-300/40"
                             >
                               {o.bed}
                             </span>
@@ -2373,7 +2373,7 @@ export default function App() {
                                   setHNote(h.note || ''); setHStatus(h.status); setShowAddHandover(true);
                                 }}
                                 className={`font-mono text-sm font-bold px-1.5 py-0.5 rounded-md border shrink-0 hover:opacity-80 transition-opacity ${
-                                  critical ? 'bg-rose-100/80 text-rose-800 border-rose-200' : 'bg-slate-100 text-slate-700 border-slate-200'
+                                  critical ? 'bg-rose-100/80 text-rose-800 border-rose-200 dark:bg-rose-200/70 dark:text-rose-855 dark:border-rose-300/40' : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-300/70 dark:text-slate-850 dark:border-slate-400/40'
                                 }`}
                               >
                                 {h.bed}
@@ -2471,7 +2471,7 @@ export default function App() {
                               setHNote(h.note || ''); setHStatus(h.status); setShowAddHandover(true);
                             }}
                             className={`font-mono text-sm font-bold px-1.5 py-0.5 rounded-md border hover:opacity-80 transition-opacity ${
-                              critical ? 'bg-rose-100 text-rose-800 border-rose-200' : 'bg-slate-100 text-slate-700 border-slate-200'
+                              critical ? 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-200/70 dark:text-rose-855 dark:border-rose-300/40' : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-300/70 dark:text-slate-850 dark:border-slate-400/40'
                             }`}
                           >
                             {h.bed}

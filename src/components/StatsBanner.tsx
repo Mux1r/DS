@@ -21,7 +21,7 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
 
   return (
     <div 
-      className="bg-slate-100/80 border border-slate-200/50 p-1 rounded-xl w-full flex flex-row gap-1 mb-3.5 shadow-3xs" 
+      className="bg-slate-100/80 border border-slate-200/50 p-1 rounded-xl w-full flex flex-row gap-1 mb-3.5 shadow-3xs dark:bg-slate-200/50 dark:border-slate-300/40"
       id="stats-tab-banner-container"
     >
       {/* Tab 1: New Patients */}
@@ -39,9 +39,9 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
         <span className="hidden sm:inline">新病人</span>
         <span className="sm:hidden">新病人</span>
         <span className={`px-1 py-0.5 rounded-md font-extrabold text-[10px] font-mono leading-none shrink-0 ${
-          activeTab === 'new' 
-            ? 'bg-white/20 text-white' 
-            : 'bg-indigo-50 text-indigo-700 border border-indigo-100/30'
+          activeTab === 'new'
+            ? 'bg-white/20 text-white'
+            : 'bg-indigo-50 text-indigo-700 border border-indigo-100/30 dark:bg-indigo-200/60 dark:text-indigo-850 dark:border-indigo-300/30'
         }`}>
           {pendingWorkNew}
         </span>
@@ -54,17 +54,17 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
         onClick={() => onTabChange('orders')}
         className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 md:px-3 rounded-lg border border-transparent transition-all text-xs md:text-[13px] font-bold cursor-pointer select-none ${
           activeTab === 'orders'
-            ? 'bg-amber-500 text-white shadow-xs'
-            : 'text-slate-600 hover:text-amber-600 hover:bg-white/60'
+            ? 'bg-amber-500 text-white shadow-xs dark:bg-amber-600'
+            : 'text-slate-600 hover:text-amber-600 hover:bg-white/60 dark:hover:bg-slate-200/40'
         }`}
       >
         <ListTodo size={13} className="stroke-[2.5] shrink-0" />
         <span className="hidden sm:inline">醫囑</span>
         <span className="sm:hidden">醫囑</span>
         <span className={`px-1 py-0.5 rounded-md font-extrabold text-[10px] font-mono leading-none shrink-0 ${
-          activeTab === 'orders' 
-            ? 'bg-white/25 text-white' 
-            : 'bg-amber-50 text-amber-700 border border-amber-100/30'
+          activeTab === 'orders'
+            ? 'bg-white/25 text-white'
+            : 'bg-amber-50 text-amber-700 border border-amber-100/30 dark:bg-amber-200/60 dark:text-amber-850 dark:border-amber-300/30'
         }`}>
           {pendingOrdersCount}
         </span>
@@ -85,9 +85,9 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
         <span className="hidden sm:inline">交班</span>
         <span className="sm:hidden">交班</span>
         <span className={`px-1 py-0.5 rounded-md font-extrabold text-[10px] font-mono leading-none shrink-0 ${
-          activeTab === 'handovers' 
-            ? 'bg-white/20 text-white' 
-            : 'bg-rose-50 text-rose-700 border border-rose-100/30'
+          activeTab === 'handovers'
+            ? 'bg-white/20 text-white'
+            : 'bg-rose-50 text-rose-700 border border-rose-100/30 dark:bg-rose-200/60 dark:text-rose-855 dark:border-rose-300/30'
         }`}>
           {pendingHandoversCount}
         </span>
