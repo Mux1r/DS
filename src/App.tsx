@@ -906,7 +906,7 @@ export default function App() {
       if (bi === -1) return -1;
       return ai - bi;
     }
-    return a.createdAt.localeCompare(b.createdAt);
+    return b.createdAt.localeCompare(a.createdAt);
   });
 
   const filteredOrders = generalOrders.filter(o => {
@@ -949,7 +949,7 @@ export default function App() {
       if (bi === -1) return -1;
       return ai - bi;
     }
-    return (a.createdAt || '').localeCompare(b.createdAt || '');
+    return (b.createdAt || '').localeCompare(a.createdAt || '');
   });
 
   const currentDutyState: DutyState = {
