@@ -2331,18 +2331,20 @@ export default function App() {
                               <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${
                                 critical ? 'bg-rose-500' : unstable ? 'bg-amber-400' : 'bg-emerald-500'
                               }`} />
-                              <span
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  hEditFocusFieldRef.current = 'attn';
-                                  setEditingHandoverId(h.id); setHBed(h.bed);
-                                  setHDiagnosis(h.diagnosis || ''); setHAttn(h.attentionPoints);
-                                  setHNote(h.note || ''); setHStatus(h.status); setShowAddHandover(true);
-                                }}
-                                className="text-sm font-semibold leading-relaxed truncate text-slate-900 hover:opacity-70 transition-opacity"
-                              >
-                                {h.attentionPoints}
-                              </span>
+                              {h.diagnosis && h.diagnosis !== '無' && (
+                                <span
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    hEditFocusFieldRef.current = 'diagnosis';
+                                    setEditingHandoverId(h.id); setHBed(h.bed);
+                                    setHDiagnosis(h.diagnosis || ''); setHAttn(h.attentionPoints);
+                                    setHNote(h.note || ''); setHStatus(h.status); setShowAddHandover(true);
+                                  }}
+                                  className="text-sm font-semibold leading-relaxed truncate text-slate-900 hover:opacity-70 transition-opacity"
+                                >
+                                  {h.diagnosis}
+                                </span>
+                              )}
                             </div>
 
                             {isHandoverEditMode && (
@@ -2358,13 +2360,24 @@ export default function App() {
                           </div>
 
                           {/* Secondary details context */}
-                          {(h.diagnosis || h.note) && (
-                            <div className="text-xs text-slate-400 leading-normal flex items-center gap-1.5">
-                              {h.diagnosis && h.diagnosis !== '無' && (
-                                <span className="text-slate-500 font-medium truncate">Dx: {h.diagnosis}</span>
+                          {(h.attentionPoints || h.note) && (
+                            <div className="text-xs text-slate-500 leading-normal flex items-start gap-1.5">
+                              {h.attentionPoints && (
+                                <span
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    hEditFocusFieldRef.current = 'attn';
+                                    setEditingHandoverId(h.id); setHBed(h.bed);
+                                    setHDiagnosis(h.diagnosis || ''); setHAttn(h.attentionPoints);
+                                    setHNote(h.note || ''); setHStatus(h.status); setShowAddHandover(true);
+                                  }}
+                                  className="truncate hover:opacity-70 transition-opacity"
+                                >
+                                  {h.attentionPoints}
+                                </span>
                               )}
                               {h.note && (
-                                <span className="truncate italic">註: {h.note}</span>
+                                <span className="truncate italic text-slate-400">註: {h.note}</span>
                               )}
                             </div>
                           )}
