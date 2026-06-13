@@ -78,6 +78,8 @@ export default function App() {
   // Search filter query across all columns in real-time
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
+  const dateDropdownRef = useRef<HTMLDivElement>(null);
 
   // Core application lists
   const [newPatients, setNewPatients] = useState<NewPatient[]>([]);
@@ -207,6 +209,17 @@ export default function App() {
   const qpContentRef = useRef<HTMLTextAreaElement>(null);
 
   const lastEnterRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!isDateDropdownOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dateDropdownRef.current && !dateDropdownRef.current.contains(e.target as Node)) {
+        setIsDateDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isDateDropdownOpen]);
 
   // Firebase auth listener
   useEffect(() => {
@@ -963,20 +976,49 @@ export default function App() {
             <div className={`items-center gap-3 shrink-0 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
               <span className="text-sm font-bold tracking-tight text-slate-800 font-sans">Duty List</span>
               <div className="h-4 w-px bg-slate-200 shrink-0"></div>
-              <select
-                value={selectedDate}
-                onChange={(e) => {
-                  setSelectedDate(e.target.value);
-                  localStorage.setItem('duty_selected_date', e.target.value);
-                }}
-                className="text-sm font-semibold text-slate-500 bg-transparent focus:outline-hidden cursor-pointer"
-                title="選擇值班日期"
-              >
-                {availableDates.map(d => {
-                  const isToday = d === getTodayDateString();
-                  return <option key={d} value={d}>{isToday ? '今日' : d.replace(/-/g, '.')}</option>;
-                })}
-              </select>
+              <div ref={dateDropdownRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsDateDropdownOpen(o => !o)}
+                  className={`flex items-center gap-1 text-sm font-semibold px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                    isDateDropdownOpen ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                  title="選擇值班日期"
+                >
+                  {selectedDate === getTodayDateString()
+                    ? <><span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" /><span>今日</span></>
+                    : <span>{selectedDate.slice(5).replace('-', '/')}</span>
+                  }
+                  <ChevronDown size={11} className={`text-slate-400 transition-transform duration-200 ${isDateDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isDateDropdownOpen && (
+                  <div className="absolute left-0 top-full mt-1.5 bg-white border border-slate-200/80 rounded-xl shadow-lg shadow-slate-200/60 z-50 py-1.5 min-w-[110px] overflow-hidden">
+                    {availableDates.map(d => {
+                      const isToday = d === getTodayDateString();
+                      const isSelected = d === selectedDate;
+                      return (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => {
+                            setSelectedDate(d);
+                            localStorage.setItem('duty_selected_date', d);
+                            setIsDateDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm transition-colors cursor-pointer ${
+                            isSelected ? 'bg-slate-50 font-semibold text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          }`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isToday ? 'bg-rose-500' : 'bg-transparent'}`} />
+                          <span>{isToday ? '今日' : d.slice(5).replace('-', '/')}</span>
+                          {isSelected && <Check size={10} className="ml-auto text-slate-400 shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* DESKTOP: phone button inline in Row 1 */}
