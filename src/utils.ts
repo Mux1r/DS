@@ -43,7 +43,6 @@ export const getInitialState = (): DutyState => {
         orderTask: '加開 Acetaminophen 1# PO Q6H PRN >= 38.5C',
         note: '王護理師通知：病人體溫現在 38.3C 開始有點發冷。',
         isCompleted: true,
-        nurseName: '王護理師',
         priority: 'high',
         createdAt: new Date().toISOString(),
       },
@@ -55,7 +54,6 @@ export const getInitialState = (): DutyState => {
         orderTask: '開立復健會診與 F/U Lipid Profile',
         note: '白天主治醫師交待忘記放，今晚補開。',
         isCompleted: false,
-        nurseName: '李護理師',
         priority: 'normal',
         createdAt: new Date().toISOString(),
       }
@@ -143,7 +141,6 @@ export const generateHandoverText = (state: DutyState): string => {
       const prioMap = { high: '🔴 緊急', normal: '🟡 一般', low: '🔵 稍晚' };
       text += `${idx + 1}. 床號：[${o.bed}] 姓名：${o.name || '無'} (${prioMap[o.priority]})\n`;
       text += `   醫囑內容：${o.orderTask}\n`;
-      if (o.nurseName) text += `   通知人員：${o.nurseName}\n`;
       text += `   備註：${o.note || '無'}\n\n`;
     });
   }

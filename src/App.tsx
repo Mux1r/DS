@@ -173,7 +173,6 @@ export default function App() {
   const [oDiagnosis, setODiagnosis] = useState('');
   const [oTask, setOTask] = useState('');
   const [oNote, setONote] = useState('');
-  const [oNurse, setONurse] = useState('');
   const [oPriority, setOPriority] = useState<GeneralOrder['priority']>('normal');
   const [oError, setOError] = useState('');
 
@@ -275,7 +274,7 @@ export default function App() {
     e: React.KeyboardEvent<HTMLInputElement>,
     nextRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>
   ) => {
-    if (e.key === ' ' || e.key === 'Enter') {
+    if (e.key === 'Enter') {
       e.preventDefault();
       nextRef.current?.focus();
     }
@@ -367,7 +366,7 @@ export default function App() {
         if (!profiles[key]) {
           profiles[key] = { bed: key, diagnosis: '', patients: [], orders: [], handovers: [] };
         }
-        if (p.diagnosis && p.diagnosis !== '無明確診斷' && p.diagnosis !== '無') {
+        if (p.diagnosis && p.diagnosis !== '無') {
           profiles[key].diagnosis = p.diagnosis;
         }
         const patientList = profiles[key].patients || [];
@@ -613,7 +612,7 @@ export default function App() {
       id: `new-${Date.now()}`,
       bed: qpBed.trim().toUpperCase(),
       name: '',
-      diagnosis: qpDiagnosis.trim() || '無明確診斷',
+      diagnosis: qpDiagnosis.trim(),
       note: qpContent.trim(),
       orderDone: false,
       visited: false,
@@ -639,7 +638,6 @@ export default function App() {
       orderTask: qpContent.trim() || '補開醫囑項目',
       note: '',
       isCompleted: false,
-      nurseName: undefined,
       priority: qpPriority,
       createdAt: new Date().toISOString()
     };
@@ -682,9 +680,9 @@ export default function App() {
   const dispatchAndContinue = () => {
     if (!qpBed.trim()) { setQpError('請輸入床號！'); return; }
     if (mobileTab === 'new') {
-      addPatient({ id: `new-${Date.now()}`, bed: qpBed.trim().toUpperCase(), name: '', diagnosis: qpDiagnosis.trim() || '無明確診斷', note: qpContent.trim(), orderDone: false, visited: false, chartDone: false, createdAt: new Date().toISOString() });
+      addPatient({ id: `new-${Date.now()}`, bed: qpBed.trim().toUpperCase(), name: '', diagnosis: qpDiagnosis.trim(), note: qpContent.trim(), orderDone: false, visited: false, chartDone: false, createdAt: new Date().toISOString() });
     } else if (mobileTab === 'orders') {
-      addOrder({ id: `order-${Date.now()}`, bed: qpBed.trim().toUpperCase(), name: '不具名', diagnosis: qpDiagnosis.trim() || '無', orderTask: qpContent.trim() || '補開醫囑項目', note: '', isCompleted: false, nurseName: undefined, priority: qpPriority, createdAt: new Date().toISOString() });
+      addOrder({ id: `order-${Date.now()}`, bed: qpBed.trim().toUpperCase(), name: '不具名', diagnosis: qpDiagnosis.trim() || '無', orderTask: qpContent.trim() || '補開醫囑項目', note: '', isCompleted: false, priority: qpPriority, createdAt: new Date().toISOString() });
     } else {
       addHandover({ id: `handover-${Date.now()}`, bed: qpBed.trim().toUpperCase(), name: '不具名', diagnosis: qpDiagnosis.trim() || '無確切診斷', note: '', attentionPoints: qpContent.trim() || '特別關注事項', status: 'unstable', isHandedOver: false, createdAt: new Date().toISOString() });
     }
@@ -720,7 +718,7 @@ export default function App() {
       updatePatient(editingPatientId, {
         bed: pBed.trim().toUpperCase(),
         name: '',
-        diagnosis: pDiagnosis.trim() || '無明確診斷',
+        diagnosis: pDiagnosis.trim(),
         note: pNote.trim()
       });
       setEditingPatientId(null);
@@ -730,7 +728,7 @@ export default function App() {
         id: `new-${Date.now()}`,
         bed: pBed.trim().toUpperCase(),
         name: '',
-        diagnosis: pDiagnosis.trim() || '無明確診斷',
+        diagnosis: pDiagnosis.trim(),
         note: pNote.trim(),
         orderDone: false,
         visited: false,
@@ -769,7 +767,6 @@ export default function App() {
         orderTask: oTask.trim(),
         diagnosis: oDiagnosis.trim() || '無',
         note: oNote.trim(),
-        nurseName: oNurse.trim() || undefined,
         priority: oPriority
       });
       setEditingOrderId(null);
@@ -783,7 +780,6 @@ export default function App() {
         orderTask: oTask.trim(),
         note: oNote.trim(),
         isCompleted: false,
-        nurseName: oNurse.trim() || undefined,
         priority: oPriority,
         createdAt: new Date().toISOString()
       };
@@ -796,7 +792,6 @@ export default function App() {
     setODiagnosis('');
     setOTask('');
     setONote('');
-    setONurse('');
     setOPriority('normal');
     setOError('');
     setShowAddOrder(false);
@@ -886,8 +881,7 @@ export default function App() {
            (o.name && o.name.toLowerCase().includes(qStr)) ||
            (o.diagnosis && o.diagnosis.toLowerCase().includes(qStr)) ||
            o.orderTask.toLowerCase().includes(qStr) ||
-           (o.note && o.note.toLowerCase().includes(qStr)) ||
-           (o.nurseName && o.nurseName.toLowerCase().includes(qStr));
+           (o.note && o.note.toLowerCase().includes(qStr));
   }).sort((a, b) => {
     if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
     if (sortOrders === 'bed') return a.bed.localeCompare(b.bed, 'zh-TW', { numeric: true });
@@ -1782,7 +1776,7 @@ export default function App() {
                       <button type="submit" className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white transition-colors cursor-pointer" title="確認">
                         <Check size={15} className="stroke-[3]" />
                       </button>
-                      <button type="button" onClick={() => { setShowAddOrder(false); setEditingOrderId(null); setOBed(''); setOTask(''); setODiagnosis(''); setONote(''); setONurse(''); setOPriority('normal'); setOError(''); }} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold" title="關閉">✕</button>
+                      <button type="button" onClick={() => { setShowAddOrder(false); setEditingOrderId(null); setOBed(''); setOTask(''); setODiagnosis(''); setONote(''); setOPriority('normal'); setOError(''); }} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold" title="關閉">✕</button>
                     </div>
                     <div className="p-6 md:p-8 flex flex-col gap-5 overflow-y-auto flex-grow">
                       {/* Bed and Diagnosis in the same row */}
@@ -1897,7 +1891,7 @@ export default function App() {
                           oEditFocusFieldRef.current = null;
                           setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name || '');
                           setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
-                          setONote(o.note || ''); setONurse(o.nurseName || '');
+                          setONote(o.note || '');
                           setOPriority(o.priority || 'normal'); setShowAddOrder(true);
                         }}
                         className={`border rounded-xl px-2.5 py-1.5 flex items-center gap-2 transition-all ${isOrderEditMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${
@@ -1942,7 +1936,7 @@ export default function App() {
                                   oEditFocusFieldRef.current = 'bed';
                                   setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name || '');
                                   setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
-                                  setONote(o.note || ''); setONurse(o.nurseName || '');
+                                  setONote(o.note || '');
                                   setOPriority(o.priority || 'normal'); setShowAddOrder(true);
                                 }}
                                 className="font-mono text-sm font-bold px-1.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-100/30 rounded-md shrink-0 hover:bg-amber-100 transition-colors"
@@ -1958,7 +1952,7 @@ export default function App() {
                                   oEditFocusFieldRef.current = 'task';
                                   setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name || '');
                                   setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
-                                  setONote(o.note || ''); setONurse(o.nurseName || '');
+                                  setONote(o.note || '');
                                   setOPriority(o.priority || 'normal'); setShowAddOrder(true);
                                 }}
                                 className={`text-sm font-semibold leading-relaxed truncate hover:opacity-70 transition-opacity ${
@@ -1992,7 +1986,7 @@ export default function App() {
                         oEditFocusFieldRef.current = null;
                         setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name || '');
                         setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
-                        setONote(o.note || ''); setONurse(o.nurseName || '');
+                        setONote(o.note || '');
                         setOPriority(o.priority || 'normal'); setShowAddOrder(true);
                       }}
                       className={`border rounded-xl p-3.5 flex items-center gap-2.5 transition-all cursor-pointer ${
@@ -2034,7 +2028,7 @@ export default function App() {
                                 oEditFocusFieldRef.current = 'bed';
                                 setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name || '');
                                 setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
-                                setONote(o.note || ''); setONurse(o.nurseName || '');
+                                setONote(o.note || '');
                                 setOPriority(o.priority || 'normal'); setShowAddOrder(true);
                               }}
                               className="font-mono text-sm font-bold px-1.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-100/30 rounded-md hover:bg-amber-100 transition-colors"
@@ -2070,7 +2064,7 @@ export default function App() {
                             oEditFocusFieldRef.current = 'task';
                             setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name || '');
                             setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
-                            setONote(o.note || ''); setONurse(o.nurseName || '');
+                            setONote(o.note || '');
                             setOPriority(o.priority || 'normal'); setShowAddOrder(true);
                           }}
                           className={`text-sm font-semibold leading-relaxed hover:opacity-70 transition-opacity ${

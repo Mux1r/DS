@@ -38,7 +38,6 @@ export default function GeneralOrderTab({
   const [diagnosis, setDiagnosis] = useState('');
   const [orderTask, setOrderTask] = useState('');
   const [note, setNote] = useState('');
-  const [nurseName, setNurseName] = useState('');
   const [priority, setPriority] = useState<GeneralOrder['priority']>('normal');
   const [errorMsg, setErrorMsg] = useState('');
   
@@ -63,7 +62,6 @@ export default function GeneralOrderTab({
       orderTask: orderTask.trim(),
       note: note.trim(),
       isCompleted: false,
-      nurseName: nurseName.trim() || undefined,
       priority,
     });
 
@@ -73,7 +71,6 @@ export default function GeneralOrderTab({
     setDiagnosis('');
     setOrderTask('');
     setNote('');
-    setNurseName('');
     setPriority('normal');
     setErrorMsg('');
   };

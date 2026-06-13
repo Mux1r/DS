@@ -49,7 +49,7 @@ export default function NewPatientTab({
     onAddPatient({
       bed: bed.trim(),
       name: name.trim() || '不具名',
-      diagnosis: diagnosis.trim() || '無明確診斷',
+      diagnosis: diagnosis.trim(),
       note: note.trim() || '',
       orderDone: false,
       visited: false,

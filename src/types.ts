@@ -23,7 +23,6 @@ export interface GeneralOrder {
   orderTask: string;  // 醫囑開立內容 (nurse request)
   note: string;       // 備註 / 對應狀況
   isCompleted: boolean;
-  nurseName?: string; // 通知本床的護理師
   priority: 'low' | 'normal' | 'high';
   createdAt: string;
 }
