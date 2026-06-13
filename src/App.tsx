@@ -1254,7 +1254,7 @@ export default function App() {
                 </div>
 
                 {qpError && (
-                  <p className="text-xs text-rose-600 bg-rose-50 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100">
+                  <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-200/60 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100">
                     <AlertCircle size={14} />
                     {qpError}
                   </p>
@@ -1293,7 +1293,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setSortNewPatients('bed')}
-                  className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortNewPatients === 'bed' ? 'text-indigo-500 bg-indigo-50' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortNewPatients === 'bed' ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-200/60' : 'text-slate-400 hover:text-slate-600'}`}
                   title="依床號排序"
                 >
                   <Hash size={12} strokeWidth={2.5} />
@@ -1301,7 +1301,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setSortNewPatients('user')}
-                  className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortNewPatients === 'user' ? 'text-indigo-500 bg-indigo-50' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortNewPatients === 'user' ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-200/60' : 'text-slate-400 hover:text-slate-600'}`}
                   title="依自訂順序排序"
                 >
                   <UserIcon size={12} strokeWidth={2.5} />
@@ -1309,7 +1309,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setSortNewPatients('time')}
-                  className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortNewPatients === 'time' ? 'text-indigo-500 bg-indigo-50' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortNewPatients === 'time' ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-200/60' : 'text-slate-400 hover:text-slate-600'}`}
                   title="依時間排序"
                 >
                   <Clock size={12} strokeWidth={2.5} />
@@ -1321,7 +1321,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setHideCompletedPatients(h => !h)}
-                className={`flex items-center gap-1 h-6 px-1 rounded transition-all shrink-0 ${hideCompletedPatients ? 'text-indigo-500 bg-indigo-50' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`flex items-center gap-1 h-6 px-1 rounded transition-all shrink-0 ${hideCompletedPatients ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-200/60' : 'text-slate-400 hover:text-slate-600'}`}
                 title={hideCompletedPatients ? '顯示所有病患' : '隱藏已完成病患'}
               >
                 {hideCompletedPatients
@@ -1338,7 +1338,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setIsPatientEditMode(m => !m)}
-                className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isPatientEditMode ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isPatientEditMode ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-200/60' : 'text-slate-400 hover:text-slate-600'}`}
                 title={isPatientEditMode ? '結束編輯' : '編輯排序與刪除'}
               >
                 <Pencil size={12} strokeWidth={2.5} />
@@ -1428,7 +1428,7 @@ export default function App() {
                       </div>
 
                       {pError && (
-                        <p className="text-xs text-rose-600 bg-rose-50 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100 animate-pulse">
+                        <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-200/60 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100 animate-pulse">
                           <AlertCircle size={14} />
                           {pError}
                         </p>
@@ -1789,17 +1789,17 @@ export default function App() {
             {/* Top compact button row */}
             <div className="flex items-center gap-2 pr-12" id="panel-general-orders-top-action">
               <div className="flex items-center gap-0.5">
-                <button type="button" onClick={() => setSortOrders('bed')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortOrders === 'bed' ? 'text-amber-500 bg-amber-50' : 'text-slate-400 hover:text-slate-600'}`} title="依床號排序"><Hash size={12} strokeWidth={2.5} /></button>
-                <button type="button" onClick={() => setSortOrders('user')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortOrders === 'user' ? 'text-amber-500 bg-amber-50' : 'text-slate-400 hover:text-slate-600'}`} title="依自訂順序排序"><UserIcon size={12} strokeWidth={2.5} /></button>
-                <button type="button" onClick={() => setSortOrders('time')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortOrders === 'time' ? 'text-amber-500 bg-amber-50' : 'text-slate-400 hover:text-slate-600'}`} title="依時間排序"><Clock size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortOrders('bed')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortOrders === 'bed' ? 'text-amber-500 bg-amber-50 dark:bg-amber-200/60' : 'text-slate-400 hover:text-slate-600'}`} title="依床號排序"><Hash size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortOrders('user')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortOrders === 'user' ? 'text-amber-500 bg-amber-50 dark:bg-amber-200/60' : 'text-slate-400 hover:text-slate-600'}`} title="依自訂順序排序"><UserIcon size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortOrders('time')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortOrders === 'time' ? 'text-amber-500 bg-amber-50 dark:bg-amber-200/60' : 'text-slate-400 hover:text-slate-600'}`} title="依時間排序"><Clock size={12} strokeWidth={2.5} /></button>
               </div>
               <div className="w-px h-3.5 bg-slate-200 shrink-0" />
-              <button type="button" onClick={() => setHideCompletedOrders(h => !h)} className={`flex items-center gap-1 h-6 px-1 rounded transition-all shrink-0 ${hideCompletedOrders ? 'text-amber-500 bg-amber-50' : 'text-slate-400 hover:text-slate-600'}`} title={hideCompletedOrders ? '顯示所有醫囑' : '隱藏已完成醫囑'}>
+              <button type="button" onClick={() => setHideCompletedOrders(h => !h)} className={`flex items-center gap-1 h-6 px-1 rounded transition-all shrink-0 ${hideCompletedOrders ? 'text-amber-500 bg-amber-50 dark:bg-amber-200/60' : 'text-slate-400 hover:text-slate-600'}`} title={hideCompletedOrders ? '顯示所有醫囑' : '隱藏已完成醫囑'}>
                 {hideCompletedOrders ? <EyeOff size={12} strokeWidth={2.5} /> : <Eye size={12} strokeWidth={2.5} />}
                 <span className="text-[11px] font-semibold tabular-nums leading-none">{generalOrders.filter(o => o.isCompleted).length}</span>
               </button>
               <div className="w-px h-3.5 bg-slate-200 shrink-0" />
-              <button type="button" onClick={() => setIsOrderEditMode(m => !m)} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isOrderEditMode ? 'text-amber-600 bg-amber-50' : 'text-slate-400 hover:text-slate-600'}`} title={isOrderEditMode ? '結束編輯' : '編輯排序與刪除'}>
+              <button type="button" onClick={() => setIsOrderEditMode(m => !m)} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isOrderEditMode ? 'text-amber-600 bg-amber-50 dark:bg-amber-200/60' : 'text-slate-400 hover:text-slate-600'}`} title={isOrderEditMode ? '結束編輯' : '編輯排序與刪除'}>
                 <Pencil size={12} strokeWidth={2.5} />
               </button>
             </div>
@@ -1894,7 +1894,7 @@ export default function App() {
                       {/* Priority and Nurse name fields removed by request */}
 
                       {oError && (
-                        <p className="text-xs text-rose-600 bg-rose-50 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100 animate-pulse">
+                        <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-200/60 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100 animate-pulse">
                           <AlertCircle size={14} />
                           {oError}
                         </p>
@@ -2151,17 +2151,17 @@ export default function App() {
             {/* Top compact button row */}
             <div className="flex items-center gap-2 pr-12" id="panel-handovers-top-action">
               <div className="flex items-center gap-0.5">
-                <button type="button" onClick={() => setSortHandovers('bed')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortHandovers === 'bed' ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-slate-600'}`} title="依床號排序"><Hash size={12} strokeWidth={2.5} /></button>
-                <button type="button" onClick={() => setSortHandovers('user')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortHandovers === 'user' ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-slate-600'}`} title="依自訂順序排序"><UserIcon size={12} strokeWidth={2.5} /></button>
-                <button type="button" onClick={() => setSortHandovers('time')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortHandovers === 'time' ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-slate-600'}`} title="依時間排序"><Clock size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortHandovers('bed')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortHandovers === 'bed' ? 'text-rose-500 bg-rose-50 dark:bg-rose-200/60' : 'text-slate-400 hover:text-slate-600'}`} title="依床號排序"><Hash size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortHandovers('user')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortHandovers === 'user' ? 'text-rose-500 bg-rose-50 dark:bg-rose-200/60' : 'text-slate-400 hover:text-slate-600'}`} title="依自訂順序排序"><UserIcon size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortHandovers('time')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortHandovers === 'time' ? 'text-rose-500 bg-rose-50 dark:bg-rose-200/60' : 'text-slate-400 hover:text-slate-600'}`} title="依時間排序"><Clock size={12} strokeWidth={2.5} /></button>
               </div>
               <div className="w-px h-3.5 bg-slate-200 shrink-0" />
-              <button type="button" onClick={() => setHideHandledHandovers(h => !h)} className={`flex items-center gap-1 h-6 px-1 rounded transition-all shrink-0 ${hideHandledHandovers ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-slate-600'}`} title={hideHandledHandovers ? '顯示所有交班' : '隱藏已交班'}>
+              <button type="button" onClick={() => setHideHandledHandovers(h => !h)} className={`flex items-center gap-1 h-6 px-1 rounded transition-all shrink-0 ${hideHandledHandovers ? 'text-rose-500 bg-rose-50 dark:bg-rose-200/60' : 'text-slate-400 hover:text-slate-600'}`} title={hideHandledHandovers ? '顯示所有交班' : '隱藏已交班'}>
                 {hideHandledHandovers ? <EyeOff size={12} strokeWidth={2.5} /> : <Eye size={12} strokeWidth={2.5} />}
                 <span className="text-[11px] font-semibold tabular-nums leading-none">{handoverPatients.filter(h => h.isHandedOver).length}</span>
               </button>
               <div className="w-px h-3.5 bg-slate-200 shrink-0" />
-              <button type="button" onClick={() => setIsHandoverEditMode(m => !m)} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isHandoverEditMode ? 'text-rose-600 bg-rose-50' : 'text-slate-400 hover:text-slate-600'}`} title={isHandoverEditMode ? '結束編輯' : '編輯排序與刪除'}>
+              <button type="button" onClick={() => setIsHandoverEditMode(m => !m)} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isHandoverEditMode ? 'text-rose-600 bg-rose-50 dark:bg-rose-200/60' : 'text-slate-400 hover:text-slate-600'}`} title={isHandoverEditMode ? '結束編輯' : '編輯排序與刪除'}>
                 <Pencil size={12} strokeWidth={2.5} />
               </button>
             </div>
@@ -2296,7 +2296,7 @@ export default function App() {
                       </div>
 
                       {hError && (
-                        <p className="text-xs text-rose-600 bg-rose-50 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100 animate-pulse">
+                        <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-200/60 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100 animate-pulse">
                           <AlertCircle size={14} />
                           {hError}
                         </p>
