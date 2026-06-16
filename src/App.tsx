@@ -1349,7 +1349,7 @@ export default function App() {
                   <textarea
                     ref={qpContentRef}
                     required
-                    rows={4}
+                    rows={2}
                     value={qpContent}
                     onChange={(e) => {
                       setQpContent(e.target.value);
@@ -1365,44 +1365,62 @@ export default function App() {
                       }
                     })}
                     placeholder="護理師交代之細節/內容 * (例如: 發燒38.5、suction... 按 Ctrl+Enter 可直接指派分流)"
-                    className="w-full text-sm text-slate-800 p-4 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-4 focus:ring-emerald-100 placeholder-slate-400 font-bold resize-none min-h-[140px]"
+                    className="w-full text-sm text-slate-800 p-4 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-4 focus:ring-emerald-100 placeholder-slate-400 font-bold resize-none"
                     title="交代細節/項目 (必填)"
                   />
                 </div>
 
-                {/* Existing orders for this bed — context display */}
+                {/* Bed context: patient note (left) + orders checklist (right) */}
                 {qpBed.trim() && (() => {
-                  const bedOrders = generalOrders.filter(
-                    o => o.bed.trim().toUpperCase() === qpBed.trim().toUpperCase()
-                  );
-                  if (bedOrders.length === 0) return null;
+                  const bed = qpBed.trim().toUpperCase();
+                  const patientForBed = newPatients.find(p => p.bed.trim().toUpperCase() === bed);
+                  const bedOrders = generalOrders.filter(o => o.bed.trim().toUpperCase() === bed);
+                  if (!patientForBed && bedOrders.length === 0) return null;
                   return (
-                    <div className="flex flex-col gap-1.5">
-                      <p className="text-[11px] font-semibold text-slate-400 tracking-wide">此床現有醫囑</p>
-                      <div className="flex flex-col gap-1">
-                        {bedOrders.map(o => (
-                          <div
-                            key={o.id}
-                            className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border text-sm transition-all ${
-                              o.isCompleted
-                                ? 'bg-slate-50 border-slate-100 opacity-70'
-                                : 'bg-amber-50/40 border-amber-100'
-                            }`}
-                          >
-                            <span className={`w-4.5 h-4.5 flex items-center justify-center rounded-md border shrink-0 ${
-                              o.isCompleted
-                                ? 'bg-emerald-600 border-emerald-600 text-white'
-                                : 'border-slate-300 bg-white'
-                            }`}>
-                              {o.isCompleted && <Check size={11} className="stroke-[3]" />}
-                            </span>
-                            <span className={`font-semibold leading-snug flex-1 ${
-                              o.isCompleted ? 'text-slate-400 line-through' : 'text-amber-900'
-                            }`}>
-                              {o.orderTask}
-                            </span>
-                          </div>
-                        ))}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-px bg-slate-200/60" />
+                        <span className="text-[10px] text-slate-400 font-semibold shrink-0">此床記錄</span>
+                        <div className="flex-1 h-px bg-slate-200/60" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-slate-400 font-medium">備註</span>
+                          {patientForBed ? (
+                            <textarea
+                              value={patientForBed.note}
+                              onChange={e => updatePatient(patientForBed.id, { note: e.target.value })}
+                              rows={3}
+                              placeholder="病患備註"
+                              className="w-full text-xs text-slate-600 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-medium resize-none"
+                            />
+                          ) : (
+                            <p className="text-xs text-slate-300 italic px-1">—</p>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-slate-400 font-medium">醫囑</span>
+                          {bedOrders.length > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              {bedOrders.map(o => (
+                                <div key={o.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs ${
+                                  o.isCompleted ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-amber-50/50 border-amber-100'
+                                }`}>
+                                  <span className={`flex items-center justify-center rounded border shrink-0 ${
+                                    o.isCompleted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
+                                  } w-[14px] h-[14px]`}>
+                                    {o.isCompleted && <Check size={9} className="stroke-[3]" />}
+                                  </span>
+                                  <span className={`font-semibold leading-snug flex-1 ${
+                                    o.isCompleted ? 'text-slate-400 line-through' : 'text-amber-900'
+                                  }`}>{o.orderTask}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-slate-300 italic px-1">—</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -1571,17 +1589,73 @@ export default function App() {
                       <div className="flex flex-col gap-1.5 w-full">
                         <textarea
                           ref={pNoteRef}
-                          rows={4}
+                          rows={2}
                           value={pNote}
                           onChange={(e) => setPNote(e.target.value)}
                           onKeyDown={(e) => handleTextAreaKeyDown(e, () => {
                             handleAddPatientSubmit({ preventDefault: () => {} } as React.FormEvent);
                           })}
                           placeholder="病況備註 / 交代事項 (例如: 引流、每日追蹤指標、特殊治療...)"
-                          className="w-full text-sm text-slate-800 p-4 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-4 focus:ring-indigo-100 placeholder-slate-400 font-medium resize-none min-h-[140px]"
+                          className="w-full text-sm text-slate-800 p-4 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-4 focus:ring-indigo-100 placeholder-slate-400 font-medium resize-none"
                           title="備註"
                         />
                       </div>
+
+                      {/* Bed context: patient note (left) + orders checklist (right) */}
+                      {pBed.trim() && (() => {
+                        const bed = pBed.trim().toUpperCase();
+                        const patientForBed = newPatients.find(p => p.bed.trim().toUpperCase() === bed && p.id !== editingPatientId);
+                        const bedOrders = generalOrders.filter(o => o.bed.trim().toUpperCase() === bed);
+                        if (!patientForBed && bedOrders.length === 0) return null;
+                        return (
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-px bg-slate-200/60" />
+                              <span className="text-[10px] text-slate-400 font-semibold shrink-0">此床記錄</span>
+                              <div className="flex-1 h-px bg-slate-200/60" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] text-slate-400 font-medium">備註</span>
+                                {patientForBed ? (
+                                  <textarea
+                                    value={patientForBed.note}
+                                    onChange={e => updatePatient(patientForBed.id, { note: e.target.value })}
+                                    rows={3}
+                                    placeholder="病患備註"
+                                    className="w-full text-xs text-slate-600 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-medium resize-none"
+                                  />
+                                ) : (
+                                  <p className="text-xs text-slate-300 italic px-1">—</p>
+                                )}
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] text-slate-400 font-medium">醫囑</span>
+                                {bedOrders.length > 0 ? (
+                                  <div className="flex flex-col gap-1">
+                                    {bedOrders.map(o => (
+                                      <div key={o.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs ${
+                                        o.isCompleted ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-amber-50/50 border-amber-100'
+                                      }`}>
+                                        <span className={`flex items-center justify-center rounded border shrink-0 ${
+                                          o.isCompleted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
+                                        } w-[14px] h-[14px]`}>
+                                          {o.isCompleted && <Check size={9} className="stroke-[3]" />}
+                                        </span>
+                                        <span className={`font-semibold leading-snug flex-1 ${
+                                          o.isCompleted ? 'text-slate-400 line-through' : 'text-amber-900'
+                                        }`}>{o.orderTask}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-slate-300 italic px-1">—</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       {pError && (
                         <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-200/60 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100 animate-pulse">
@@ -2033,7 +2107,7 @@ export default function App() {
                         <textarea
                           ref={oTaskRef}
                           required
-                          rows={4}
+                          rows={2}
                           value={oTask}
                           onChange={(e) => {
                             setOTask(e.target.value);
@@ -2043,10 +2117,66 @@ export default function App() {
                             handleAddOrderSubmit({ preventDefault: () => {} } as React.FormEvent);
                           })}
                           placeholder="醫囑內容 * (例如: 加開 Acetaminophen 3# PO...)"
-                          className="w-full text-sm text-slate-800 p-4 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-4 focus:ring-amber-100 placeholder-slate-400 font-bold resize-none min-h-[140px]"
+                          className="w-full text-sm text-slate-800 p-4 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-4 focus:ring-amber-100 placeholder-slate-400 font-bold resize-none"
                           title="醫囑內容 (必填)"
                         />
                       </div>
+
+                      {/* Bed context: patient note (left) + orders checklist (right) */}
+                      {oBed.trim() && (() => {
+                        const bed = oBed.trim().toUpperCase();
+                        const patientForBed = newPatients.find(p => p.bed.trim().toUpperCase() === bed);
+                        const bedOrders = generalOrders.filter(o => o.bed.trim().toUpperCase() === bed);
+                        if (!patientForBed && bedOrders.length === 0) return null;
+                        return (
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-px bg-slate-200/60" />
+                              <span className="text-[10px] text-slate-400 font-semibold shrink-0">此床記錄</span>
+                              <div className="flex-1 h-px bg-slate-200/60" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] text-slate-400 font-medium">備註</span>
+                                {patientForBed ? (
+                                  <textarea
+                                    value={patientForBed.note}
+                                    onChange={e => updatePatient(patientForBed.id, { note: e.target.value })}
+                                    rows={3}
+                                    placeholder="病患備註"
+                                    className="w-full text-xs text-slate-600 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-medium resize-none"
+                                  />
+                                ) : (
+                                  <p className="text-xs text-slate-300 italic px-1">—</p>
+                                )}
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] text-slate-400 font-medium">醫囑</span>
+                                {bedOrders.length > 0 ? (
+                                  <div className="flex flex-col gap-1">
+                                    {bedOrders.map(o => (
+                                      <div key={o.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs ${
+                                        o.isCompleted ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-amber-50/50 border-amber-100'
+                                      }`}>
+                                        <span className={`flex items-center justify-center rounded border shrink-0 ${
+                                          o.isCompleted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
+                                        } w-[14px] h-[14px]`}>
+                                          {o.isCompleted && <Check size={9} className="stroke-[3]" />}
+                                        </span>
+                                        <span className={`font-semibold leading-snug flex-1 ${
+                                          o.isCompleted ? 'text-slate-400 line-through' : 'text-amber-900'
+                                        }`}>{o.orderTask}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-slate-300 italic px-1">—</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       {/* Priority and Nurse name fields removed by request */}
 
@@ -2394,7 +2524,7 @@ export default function App() {
                         <textarea
                           ref={hAttnRef}
                           required
-                          rows={4}
+                          rows={2}
                           value={hAttn}
                           onChange={(e) => {
                             setHAttn(e.target.value);
@@ -2404,23 +2534,66 @@ export default function App() {
                             handleAddHandoverSubmit({ preventDefault: () => {} } as React.FormEvent);
                           })}
                           placeholder="特別關注 & 處理指引 * (例如: 呼吸喘喘 check ABG & CXR...)"
-                          className="w-full text-sm text-slate-800 p-4 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-4 focus:ring-rose-100 placeholder-slate-400 font-bold resize-none min-h-[120px]"
+                          className="w-full text-sm text-slate-800 p-4 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-4 focus:ring-rose-100 placeholder-slate-400 font-bold resize-none"
                           title="特定關注交代重點"
                         />
                       </div>
 
-                      {/* Extra notes */}
-                      <div className="flex flex-col gap-1.5 w-full">
-                        <input
-                          type="text"
-                          autoComplete="off"
-                          value={hNote}
-                          onChange={(e) => setHNote(e.target.value)}
-                          placeholder="其餘備註資訊 (例如: 水分限制、歷史病歷、D.N.R. 簽章等其餘病歷備註...)"
-                          className="w-full text-sm px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-4 focus:ring-rose-100 text-slate-800 placeholder-slate-400"
-                          title="其餘備註資訊"
-                        />
-                      </div>
+                      {/* Bed context: patient note (left) + orders checklist (right) */}
+                      {hBed.trim() && (() => {
+                        const bed = hBed.trim().toUpperCase();
+                        const patientForBed = newPatients.find(p => p.bed.trim().toUpperCase() === bed);
+                        const bedOrders = generalOrders.filter(o => o.bed.trim().toUpperCase() === bed);
+                        if (!patientForBed && bedOrders.length === 0) return null;
+                        return (
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-px bg-slate-200/60" />
+                              <span className="text-[10px] text-slate-400 font-semibold shrink-0">此床記錄</span>
+                              <div className="flex-1 h-px bg-slate-200/60" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] text-slate-400 font-medium">備註</span>
+                                {patientForBed ? (
+                                  <textarea
+                                    value={patientForBed.note}
+                                    onChange={e => updatePatient(patientForBed.id, { note: e.target.value })}
+                                    rows={3}
+                                    placeholder="病患備註"
+                                    className="w-full text-xs text-slate-600 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-medium resize-none"
+                                  />
+                                ) : (
+                                  <p className="text-xs text-slate-300 italic px-1">—</p>
+                                )}
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] text-slate-400 font-medium">醫囑</span>
+                                {bedOrders.length > 0 ? (
+                                  <div className="flex flex-col gap-1">
+                                    {bedOrders.map(o => (
+                                      <div key={o.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs ${
+                                        o.isCompleted ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-amber-50/50 border-amber-100'
+                                      }`}>
+                                        <span className={`flex items-center justify-center rounded border shrink-0 ${
+                                          o.isCompleted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
+                                        } w-[14px] h-[14px]`}>
+                                          {o.isCompleted && <Check size={9} className="stroke-[3]" />}
+                                        </span>
+                                        <span className={`font-semibold leading-snug flex-1 ${
+                                          o.isCompleted ? 'text-slate-400 line-through' : 'text-amber-900'
+                                        }`}>{o.orderTask}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-slate-300 italic px-1">—</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       {/* Status Pills Selector */}
                       <div className="flex flex-col gap-2 w-full">
