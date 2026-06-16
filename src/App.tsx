@@ -46,7 +46,6 @@ import {
   GripVertical,
   Eye,
   EyeOff,
-  PlusCircle,
   RotateCw
 } from 'lucide-react';
 
@@ -683,19 +682,6 @@ export default function App() {
     setQpError('');
   };
 
-  const dispatchAndContinue = () => {
-    if (!qpBed.trim()) { setQpError('請輸入床號！'); return; }
-    if (mobileTab === 'new') {
-      addPatient({ id: `new-${Date.now()}`, bed: qpBed.trim().toUpperCase(), name: '', diagnosis: qpDiagnosis.trim(), note: qpContent.trim(), orderDone: false, visited: false, chartDone: false, createdAt: new Date().toISOString() });
-    } else if (mobileTab === 'orders') {
-      addOrder({ id: `order-${Date.now()}`, bed: qpBed.trim().toUpperCase(), name: '不具名', diagnosis: qpDiagnosis.trim() || '無', orderTask: qpContent.trim() || '補開醫囑項目', note: '', isCompleted: false, priority: qpPriority, createdAt: new Date().toISOString() });
-    } else {
-      addHandover({ id: `handover-${Date.now()}`, bed: qpBed.trim().toUpperCase(), name: '不具名', diagnosis: qpDiagnosis.trim() || '無確切診斷', note: '', attentionPoints: qpContent.trim() || '特別關注事項', status: 'unstable', isHandedOver: false, createdAt: new Date().toISOString() });
-    }
-    clearQp();
-    setTimeout(() => qpBedRef.current?.focus(), 50);
-  };
-
   // --- Handlers for high-level operations ---
   const handleImport = (newState: DutyState) => {
     setNewPatients(newState.newPatients || []);
@@ -1307,14 +1293,6 @@ export default function App() {
                   </button>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={dispatchAndContinue}
-                    className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer"
-                    title="儲存並新增下一筆速記"
-                  >
-                    <PlusCircle size={17} />
-                  </button>
                   <button
                     type="button"
                     onClick={() => { setShowQuickPhoneAdd(false); clearQp(); }}
