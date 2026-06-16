@@ -1370,6 +1370,44 @@ export default function App() {
                   />
                 </div>
 
+                {/* Existing orders for this bed — context display */}
+                {qpBed.trim() && (() => {
+                  const bedOrders = generalOrders.filter(
+                    o => o.bed.trim().toUpperCase() === qpBed.trim().toUpperCase()
+                  );
+                  if (bedOrders.length === 0) return null;
+                  return (
+                    <div className="flex flex-col gap-1.5">
+                      <p className="text-[11px] font-semibold text-slate-400 tracking-wide">此床現有醫囑</p>
+                      <div className="flex flex-col gap-1">
+                        {bedOrders.map(o => (
+                          <div
+                            key={o.id}
+                            className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border text-sm transition-all ${
+                              o.isCompleted
+                                ? 'bg-slate-50 border-slate-100 opacity-70'
+                                : 'bg-amber-50/40 border-amber-100'
+                            }`}
+                          >
+                            <span className={`w-4.5 h-4.5 flex items-center justify-center rounded-md border shrink-0 ${
+                              o.isCompleted
+                                ? 'bg-emerald-600 border-emerald-600 text-white'
+                                : 'border-slate-300 bg-white'
+                            }`}>
+                              {o.isCompleted && <Check size={11} className="stroke-[3]" />}
+                            </span>
+                            <span className={`font-semibold leading-snug flex-1 ${
+                              o.isCompleted ? 'text-slate-400 line-through' : 'text-amber-900'
+                            }`}>
+                              {o.orderTask}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {qpError && (
                   <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-200/60 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100">
                     <AlertCircle size={14} />
