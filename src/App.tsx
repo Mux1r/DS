@@ -152,6 +152,8 @@ export default function App() {
     const d = new Date(); d.setDate(d.getDate() + 1);
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   });
+  const [editingDropdownShiftId, setEditingDropdownShiftId] = useState<string | null>(null);
+  const [dropdownEditEnd, setDropdownEditEnd] = useState('');
 
   // Synchronization status for header
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({
@@ -1102,7 +1104,7 @@ export default function App() {
 
                 {/* Shift list dropdown */}
                 {isDateDropdownOpen && (
-                  <div className="absolute left-0 top-full mt-1.5 bg-white border border-slate-200/80 rounded-xl z-50 py-1.5 min-w-[130px] overflow-hidden shadow-lg">
+                  <div className="absolute left-0 top-full mt-1.5 bg-white border border-slate-200/80 rounded-xl z-50 py-1.5 min-w-[180px] shadow-lg">
                     {availableShifts.length === 0 && (
                       <div className="px-3 py-2 text-xs text-slate-400">尚無值班記錄</div>
                     )}
@@ -1110,26 +1112,78 @@ export default function App() {
                       const today = getTodayDateString();
                       const isActive = today >= s.startDate && today <= s.endDate;
                       const isSelected = s.id === selectedShiftId;
+                      const isEditingThis = editingDropdownShiftId === s.id;
                       const label = s.startDate === s.endDate
                         ? s.startDate.slice(5).replace('-', '/')
                         : `${s.startDate.slice(5).replace('-', '/')}–${s.endDate.slice(5).replace('-', '/')}`;
+
+                      if (isEditingThis) {
+                        return (
+                          <div key={s.id} className="px-2.5 py-2 space-y-1.5 border-b border-slate-100 last:border-0">
+                            <p className="text-[10px] text-slate-400 font-semibold">{s.startDate.slice(5).replace('-','/')} 開始 → 結束日</p>
+                            <input
+                              type="date"
+                              value={dropdownEditEnd}
+                              min={s.startDate}
+                              onChange={e => setDropdownEditEnd(e.target.value)}
+                              autoFocus
+                              className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                            />
+                            <div className="flex gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setEditingDropdownShiftId(null)}
+                                className="flex-1 py-1 text-[10px] text-slate-400 hover:bg-slate-100 rounded-lg cursor-pointer"
+                              >取消</button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (dropdownEditEnd) {
+                                    handleEditShift(s.id, s.startDate, dropdownEditEnd);
+                                    setEditingDropdownShiftId(null);
+                                  }
+                                }}
+                                className="flex-1 py-1 text-[10px] bg-indigo-600 text-white font-bold rounded-lg cursor-pointer hover:bg-indigo-700"
+                              >儲存</button>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       return (
-                        <button
+                        <div
                           key={s.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedShiftId(s.id);
-                            localStorage.setItem('duty_selected_shift_id', s.id);
-                            setIsDateDropdownOpen(false);
-                          }}
-                          className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm transition-colors cursor-pointer ${
-                            isSelected ? 'bg-slate-50 font-semibold text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          className={`flex items-center gap-1 px-2 py-1.5 transition-colors ${
+                            isSelected ? 'bg-slate-50' : 'hover:bg-slate-50'
                           }`}
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-200'}`} />
-                          <span>{label}</span>
-                          {isSelected && <Check size={10} className="ml-auto text-slate-400 shrink-0" />}
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedShiftId(s.id);
+                              localStorage.setItem('duty_selected_shift_id', s.id);
+                              setIsDateDropdownOpen(false);
+                              setEditingDropdownShiftId(null);
+                            }}
+                            className="flex-1 flex items-center gap-2 text-left cursor-pointer"
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-200'}`} />
+                            <span className={`text-sm font-${isSelected ? 'semibold text-slate-900' : 'medium text-slate-600'}`}>{label}</span>
+                            {isSelected && <Check size={10} className="text-slate-400 shrink-0" />}
+                          </button>
+                          <button
+                            type="button"
+                            title="修改結束日期"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setEditingDropdownShiftId(s.id);
+                              setDropdownEditEnd(s.endDate);
+                            }}
+                            className="w-6 h-6 flex items-center justify-center text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all cursor-pointer shrink-0"
+                          >
+                            <Pencil size={10} />
+                          </button>
+                        </div>
                       );
                     })}
                   </div>
