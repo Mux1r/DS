@@ -558,8 +558,8 @@ export default function App() {
     setHandoverPatients((prev) => prev.filter((item) => item.id !== hId));
   };
 
-  const BED_PROFILES_KEY = 'bed_profiles_v1';
-  const BED_PROFILES_DATE_KEY = 'bed_profiles_v1_date';
+  const BED_PROFILES_KEY = `bed_profiles_${selectedShiftId || 'global'}`;
+  const BED_PROFILES_DATE_KEY = `bed_profiles_${selectedShiftId || 'global'}_date`;
 
   const getValidBedProfiles = (): Record<string, any> => {
     try {
