@@ -5,26 +5,22 @@
 
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
-import { DutyState, SyncStatus } from '../types';
+import { DutyState, SyncStatus, Shift } from '../types';
 import { generateHandoverText, exportJSON } from '../utils';
-import { 
-  ClipboardCopy, 
-  Download, 
-  Upload, 
-  Clock, 
-  RefreshCw, 
-  Check, 
+import {
+  ClipboardCopy,
+  Download,
+  Upload,
+  Check,
   AlertCircle,
   Trash2,
   X,
-  Sliders,
   Settings,
   Database,
-  Activity,
-  Info,
-  ShieldCheck,
   ChevronRight,
-  ClipboardCheck
+  ClipboardCheck,
+  Pencil,
+  CalendarDays
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -36,15 +32,24 @@ interface HeaderProps {
   setIsSidebarOpen: (open: boolean) => void;
   user?: User | null;
   onSignOut?: () => void;
+  availableShifts?: Shift[];
+  selectedShiftId?: string;
+  onSelectShift?: (id: string) => void;
+  onEditShift?: (id: string, startDate: string, endDate: string) => void;
+  onDeleteShift?: (id: string) => void;
 }
 
-export default function Header({ state, syncStatus, onImport, onClear, isSidebarOpen, setIsSidebarOpen, user, onSignOut }: HeaderProps) {
+export default function Header({ state, syncStatus, onImport, onClear, isSidebarOpen, setIsSidebarOpen, user, onSignOut, availableShifts = [], selectedShiftId = '', onSelectShift, onEditShift, onDeleteShift }: HeaderProps) {
   const [copiedHandover, setCopiedHandover] = useState(false);
   const [copiedRaw, setCopiedRaw] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [editingShiftId, setEditingShiftId] = useState<string | null>(null);
+  const [editStart, setEditStart] = useState('');
+  const [editEnd, setEditEnd] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Live digital clock
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -175,6 +180,116 @@ export default function Header({ state, syncStatus, onImport, onClear, isSidebar
                   >
                     登出
                   </button>
+                </div>
+              )}
+
+              {/* SECTION: SHIFT MANAGEMENT */}
+              {availableShifts.length > 0 && (
+                <div className="space-y-1.5 pt-2 pb-2 border-b border-slate-100">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 mb-2">
+                    <CalendarDays size={12} className="text-indigo-500" />
+                    <span>值班區間管理</span>
+                  </div>
+                  {availableShifts.map(shift => {
+                    const label = shift.startDate === shift.endDate
+                      ? shift.startDate.slice(5).replace('-', '/')
+                      : `${shift.startDate.slice(5).replace('-', '/')} – ${shift.endDate.slice(5).replace('-', '/')}`;
+                    const isSelected = shift.id === selectedShiftId;
+                    const isEditing = editingShiftId === shift.id;
+
+                    if (isEditing) {
+                      return (
+                        <div key={shift.id} className="bg-indigo-50 rounded-xl p-2.5 space-y-1.5 border border-indigo-100">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-slate-400 w-8 shrink-0">開始</span>
+                            <input
+                              type="date"
+                              value={editStart}
+                              onChange={e => setEditStart(e.target.value)}
+                              className="flex-1 text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-slate-400 w-8 shrink-0">結束</span>
+                            <input
+                              type="date"
+                              value={editEnd}
+                              min={editStart}
+                              onChange={e => setEditEnd(e.target.value)}
+                              className="flex-1 text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                            />
+                          </div>
+                          <div className="flex gap-1.5 justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setEditingShiftId(null)}
+                              className="px-2.5 py-1 text-[10px] text-slate-400 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
+                            >取消</button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (editStart && editEnd) {
+                                  onEditShift?.(shift.id, editStart, editEnd);
+                                  setEditingShiftId(null);
+                                }
+                              }}
+                              className="px-2.5 py-1 text-[10px] bg-indigo-600 text-white font-bold rounded-lg transition-all cursor-pointer hover:bg-indigo-700"
+                            >儲存</button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (deleteConfirmId === shift.id) {
+                      return (
+                        <div key={shift.id} className="bg-rose-50 rounded-xl p-2.5 border border-rose-100">
+                          <p className="text-[11px] text-rose-700 font-semibold mb-2">確認刪除「{label}」？</p>
+                          <div className="flex gap-1.5 justify-end">
+                            <button type="button" onClick={() => setDeleteConfirmId(null)} className="px-2.5 py-1 text-[10px] text-slate-400 hover:bg-slate-100 rounded-lg cursor-pointer">取消</button>
+                            <button
+                              type="button"
+                              onClick={() => { onDeleteShift?.(shift.id); setDeleteConfirmId(null); }}
+                              className="px-2.5 py-1 text-[10px] bg-rose-600 text-white font-bold rounded-lg cursor-pointer hover:bg-rose-700"
+                            >刪除</button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={shift.id}
+                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl transition-all ${
+                          isSelected ? 'bg-indigo-50 border border-indigo-100' : 'hover:bg-slate-50 border border-transparent'
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => { onSelectShift?.(shift.id); setIsSidebarOpen(false); }}
+                          className="flex-1 flex items-center gap-2 text-left cursor-pointer"
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSelected ? 'bg-indigo-500' : 'bg-slate-300'}`} />
+                          <span className={`text-xs font-semibold ${isSelected ? 'text-indigo-700' : 'text-slate-600'}`}>{label}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setEditingShiftId(shift.id); setEditStart(shift.startDate); setEditEnd(shift.endDate); }}
+                          className="w-6 h-6 flex items-center justify-center text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all cursor-pointer shrink-0"
+                          title="編輯日期"
+                        >
+                          <Pencil size={11} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmId(shift.id)}
+                          className="w-6 h-6 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all cursor-pointer shrink-0"
+                          title="刪除值班"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 

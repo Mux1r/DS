@@ -39,6 +39,12 @@ export interface HandoverPatient {
   createdAt: string;
 }
 
+export interface Shift {
+  id: string;        // equals startDate — used as Firebase document ID (backward-compatible with dates/ path)
+  startDate: string; // "2026-06-13"
+  endDate: string;   // "2026-06-14"
+}
+
 export interface DutyState {
   newPatients: NewPatient[];
   generalOrders: GeneralOrder[];

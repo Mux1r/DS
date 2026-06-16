@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { DutyState, NewPatient, GeneralOrder, HandoverPatient, SyncStatus } from './types';
+import { DutyState, NewPatient, GeneralOrder, HandoverPatient, SyncStatus, Shift } from './types';
 import { getInitialState, saveState, formatTime } from './utils';
 import { db, auth } from './firebase';
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
@@ -142,13 +142,16 @@ export default function App() {
     return `${year}-${month}-${day}`;
   };
 
-  const [selectedDate, setSelectedDate] = useState<string>(() => {
-    const saved = localStorage.getItem('duty_selected_date');
-    return saved || getTodayDateString();
+  const [selectedShiftId, setSelectedShiftId] = useState<string>(() => {
+    return localStorage.getItem('duty_selected_shift_id') || localStorage.getItem('duty_selected_date') || '';
   });
-  const [availableDates, setAvailableDates] = useState<string[]>([]);
-  const [isAddingDate, setIsAddingDate] = useState<boolean>(false);
-  const [newDateInput, setNewDateInput] = useState<string>(getTodayDateString());
+  const [availableShifts, setAvailableShifts] = useState<Shift[]>([]);
+  const [showAddShiftForm, setShowAddShiftForm] = useState(false);
+  const [addShiftStart, setAddShiftStart] = useState(getTodayDateString());
+  const [addShiftEnd, setAddShiftEnd] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  });
 
   // Synchronization status for header
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({
@@ -214,15 +217,16 @@ export default function App() {
   const lastEnterRef = useRef<number>(0);
 
   useEffect(() => {
-    if (!isDateDropdownOpen) return;
+    if (!isDateDropdownOpen && !showAddShiftForm) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (dateDropdownRef.current && !dateDropdownRef.current.contains(e.target as Node)) {
         setIsDateDropdownOpen(false);
+        setShowAddShiftForm(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isDateDropdownOpen]);
+  }, [isDateDropdownOpen, showAddShiftForm]);
 
   useEffect(() => {
     if (!isPatientEditMode && !isOrderEditMode && !isHandoverEditMode) return;
@@ -331,35 +335,93 @@ export default function App() {
     }
   };
 
-  // 1. Load available dates from Firebase when user logs in
+  // 1. Load available shifts from Firebase when user logs in (with migration from old dates format)
   useEffect(() => {
     if (!user) return;
-    const loadDates = async () => {
-      const todayStr = getTodayDateString();
+    const loadShifts = async () => {
       try {
         const metaRef = doc(db, 'users', user.uid, 'metadata', 'summary');
         const metaSnap = await getDoc(metaRef);
-        let datesList: string[] = metaSnap.exists() ? (metaSnap.data().dates || []) : [];
-        if (!datesList.includes(todayStr)) {
-          datesList = [todayStr, ...datesList].sort((a, b) => b.localeCompare(a));
-          await setDoc(metaRef, { dates: datesList }, { merge: true });
+        let shiftsList: Shift[] = metaSnap.exists() ? (metaSnap.data().shifts || []) : [];
+
+        // Migrate old single-date format to shift format (one-time)
+        if (shiftsList.length === 0 && metaSnap.exists()) {
+          const oldDates: string[] = metaSnap.data().dates || [];
+          if (oldDates.length > 0) {
+            shiftsList = oldDates.map(d => ({ id: d, startDate: d, endDate: d }));
+            await setDoc(metaRef, { shifts: shiftsList }, { merge: true });
+          }
         }
-        setAvailableDates(datesList);
+
+        setAvailableShifts(shiftsList);
+        if (shiftsList.length > 0 && !shiftsList.find(s => s.id === selectedShiftId)) {
+          setSelectedShiftId(shiftsList[0].id);
+          localStorage.setItem('duty_selected_shift_id', shiftsList[0].id);
+        }
       } catch (e) {
-        console.error('Error loading dates', e);
-        setAvailableDates([todayStr]);
+        console.error('Error loading shifts', e);
+        setAvailableShifts([]);
       }
     };
-    loadDates();
+    loadShifts();
   }, [user]);
 
-  // 2. Real-time listener for selectedDate — auto-syncs across devices
+  const handleAddShift = async (startDate: string, endDate: string) => {
+    const id = startDate; // use startDate as ID — backward-compatible with dates/ Firebase path
+    if (availableShifts.find(s => s.id === id)) return; // already exists
+    const newShift: Shift = { id, startDate, endDate };
+    const newList = [newShift, ...availableShifts].sort((a, b) => b.startDate.localeCompare(a.startDate));
+    setAvailableShifts(newList);
+    setSelectedShiftId(id);
+    localStorage.setItem('duty_selected_shift_id', id);
+    setShowAddShiftForm(false);
+    if (user) {
+      try {
+        const metaRef = doc(db, 'users', user.uid, 'metadata', 'summary');
+        await setDoc(metaRef, { shifts: newList }, { merge: true });
+      } catch (e) {
+        console.error('Error adding shift', e);
+      }
+    }
+  };
+
+  const handleEditShift = async (id: string, startDate: string, endDate: string) => {
+    const updated = availableShifts.map(s => s.id === id ? { ...s, startDate, endDate } : s);
+    setAvailableShifts(updated);
+    if (user) {
+      try {
+        const metaRef = doc(db, 'users', user.uid, 'metadata', 'summary');
+        await setDoc(metaRef, { shifts: updated }, { merge: true });
+      } catch (e) {
+        console.error('Error editing shift', e);
+      }
+    }
+  };
+
+  const handleDeleteShift = async (id: string) => {
+    const updated = availableShifts.filter(s => s.id !== id);
+    setAvailableShifts(updated);
+    if (selectedShiftId === id && updated.length > 0) {
+      setSelectedShiftId(updated[0].id);
+      localStorage.setItem('duty_selected_shift_id', updated[0].id);
+    }
+    if (user) {
+      try {
+        const metaRef = doc(db, 'users', user.uid, 'metadata', 'summary');
+        await setDoc(metaRef, { shifts: updated }, { merge: true });
+      } catch (e) {
+        console.error('Error deleting shift', e);
+      }
+    }
+  };
+
+  // 2. Real-time listener for selectedShiftId — auto-syncs across devices
   useEffect(() => {
-    if (!user) return;
+    if (!user || !selectedShiftId) return;
     isLoadingFromFirestore.current = true;
     setSyncStatus({ lastSynced: null, isSyncing: true, statusText: '從 Firebase 載入中...', error: false });
 
-    const dateRef = doc(db, 'users', user.uid, 'dates', selectedDate);
+    const dateRef = doc(db, 'users', user.uid, 'dates', selectedShiftId);
     const unsub = onSnapshot(dateRef, (snap) => {
       // Skip snapshots caused by our own pending writes to avoid save loops
       if (snap.metadata.hasPendingWrites) return;
@@ -384,16 +446,12 @@ export default function App() {
     });
 
     return () => unsub();
-  }, [user, selectedDate]);
+  }, [user, selectedShiftId]);
 
   // 3. Sync and index newly logged beds registry in local localStorage to support clinical diagnostic suggestions auto-fill
   useEffect(() => {
     try {
-      const savedProfilesStr = localStorage.getItem('bed_profiles_v1');
-      let profiles: Record<string, any> = {};
-      if (savedProfilesStr) {
-        profiles = JSON.parse(savedProfilesStr);
-      }
+      let profiles = getValidBedProfiles();
       
       newPatients.forEach((p) => {
         const key = p.bed.trim().toUpperCase();
@@ -452,7 +510,10 @@ export default function App() {
         profiles[key].handovers = handoversList;
       });
 
-      localStorage.setItem('bed_profiles_v1', JSON.stringify(profiles));
+      localStorage.setItem(BED_PROFILES_KEY, JSON.stringify(profiles));
+      if (!localStorage.getItem(BED_PROFILES_DATE_KEY)) {
+        localStorage.setItem(BED_PROFILES_DATE_KEY, new Date().toISOString());
+      }
     } catch (e) {
       console.error('Error syncing bed profiles', e);
     }
@@ -460,30 +521,20 @@ export default function App() {
 
   // 4. Debounced auto-save to Firebase on any state change
   useEffect(() => {
-    if (!user || isLoadingFromFirestore.current) return;
+    if (!user || !selectedShiftId || isLoadingFromFirestore.current) return;
 
     setSyncStatus(prev => ({ ...prev, isSyncing: true, statusText: '同步中...' }));
 
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        const dateRef = doc(db, 'users', user.uid, 'dates', selectedDate);
+        const dateRef = doc(db, 'users', user.uid, 'dates', selectedShiftId);
         await setDoc(dateRef, {
           patients: newPatients,
           orders: generalOrders,
           handovers: handoverPatients,
           updatedAt: serverTimestamp(),
         });
-
-        // Ensure selectedDate is in the dates list
-        const metaRef = doc(db, 'users', user.uid, 'metadata', 'summary');
-        const metaSnap = await getDoc(metaRef);
-        let datesList: string[] = metaSnap.exists() ? (metaSnap.data().dates || []) : [];
-        if (!datesList.includes(selectedDate)) {
-          datesList = [selectedDate, ...datesList].sort((a, b) => b.localeCompare(a));
-          await setDoc(metaRef, { dates: datesList }, { merge: true });
-          setAvailableDates(datesList);
-        }
 
         const t = new Date().toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
         setSyncStatus({ lastSynced: new Date().toLocaleTimeString(), isSyncing: false, statusText: `☁️ 已同步 · ${t}`, error: false });
@@ -493,7 +544,7 @@ export default function App() {
     }, 300);
 
     return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
-  }, [user, selectedDate, newPatients, generalOrders, handoverPatients]);
+  }, [user, selectedShiftId, newPatients, generalOrders, handoverPatients]);
 
   // --- Secure DUAL-MODE Mutators for Database Operations ---
   // Helper to remove any undefined properties recursively to prevent Firestore crashes
@@ -551,14 +602,34 @@ export default function App() {
     setHandoverPatients((prev) => prev.filter((item) => item.id !== hId));
   };
 
+  const BED_PROFILES_KEY = 'bed_profiles_v1';
+  const BED_PROFILES_DATE_KEY = 'bed_profiles_v1_date';
+
+  const getValidBedProfiles = (): Record<string, any> => {
+    try {
+      const dateStr = localStorage.getItem(BED_PROFILES_DATE_KEY);
+      if (dateStr) {
+        const diffMs = Date.now() - new Date(dateStr).getTime();
+        if (diffMs >= 2 * 24 * 60 * 60 * 1000) {
+          localStorage.removeItem(BED_PROFILES_KEY);
+          localStorage.removeItem(BED_PROFILES_DATE_KEY);
+          return {};
+        }
+      }
+      const savedStr = localStorage.getItem(BED_PROFILES_KEY);
+      return savedStr ? JSON.parse(savedStr) : {};
+    } catch (e) {
+      return {};
+    }
+  };
+
   const checkAndAutofillBed = (inputBed: string, type: 'patient' | 'order' | 'handover') => {
     const norm = inputBed.trim().toUpperCase();
     if (!norm) return;
-    
+
     try {
-      const profilesStr = localStorage.getItem('bed_profiles_v1');
-      if (profilesStr) {
-        const profiles = JSON.parse(profilesStr);
+      const profiles = getValidBedProfiles();
+      if (Object.keys(profiles).length > 0) {
         const profile = profiles[norm];
         if (profile) {
           // 1. Auto-fill diagnosis
@@ -605,13 +676,10 @@ export default function App() {
     const norm = inputBed.trim().toUpperCase();
     if (!norm) return;
     try {
-      const profilesStr = localStorage.getItem('bed_profiles_v1');
-      if (profilesStr) {
-        const profiles = JSON.parse(profilesStr);
-        const profile = profiles[norm];
-        if (profile && profile.diagnosis) {
-          setQpDiagnosis(profile.diagnosis);
-        }
+      const profiles = getValidBedProfiles();
+      const profile = profiles[norm];
+      if (profile && profile.diagnosis) {
+        setQpDiagnosis(profile.diagnosis);
       }
     } catch (e) {
       console.error('Error in checkAndAutofillQpBed', e);
@@ -622,17 +690,14 @@ export default function App() {
     const norm = qpBed.trim().toUpperCase();
     if (!norm) return 0;
     try {
-      const profilesStr = localStorage.getItem('bed_profiles_v1');
-      if (profilesStr) {
-        const profiles = JSON.parse(profilesStr);
-        const profile = profiles[norm];
-        if (profile) {
-          let c = 0;
-          if (profile.patients) c += profile.patients.length;
-          if (profile.orders) c += profile.orders.length;
-          if (profile.handovers) c += profile.handovers.length;
-          return c;
-        }
+      const profiles = getValidBedProfiles();
+      const profile = profiles[norm];
+      if (profile) {
+        let c = 0;
+        if (profile.patients) c += profile.patients.length;
+        if (profile.orders) c += profile.orders.length;
+        if (profile.handovers) c += profile.handovers.length;
+        return c;
       }
     } catch (e) {}
     return 0;
@@ -984,6 +1049,14 @@ export default function App() {
         setIsSidebarOpen={setIsSidebarOpen}
         user={user}
         onSignOut={handleSignOut}
+        availableShifts={availableShifts}
+        selectedShiftId={selectedShiftId}
+        onSelectShift={(id) => {
+          setSelectedShiftId(id);
+          localStorage.setItem('duty_selected_shift_id', id);
+        }}
+        onEditShift={handleEditShift}
+        onDeleteShift={handleDeleteShift}
       />
 
       {/* Main Container */}
@@ -997,46 +1070,133 @@ export default function App() {
             <div className={`items-center gap-3 shrink-0 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
               <span className="text-sm font-bold tracking-tight text-slate-800 font-sans">Duty List</span>
               <div className="h-4 w-px bg-slate-200 shrink-0"></div>
-              <div ref={dateDropdownRef} className="relative">
+
+              {/* Shift selector + add button (shared ref for click-outside) */}
+              <div ref={dateDropdownRef} className="relative flex items-center gap-1">
+                {/* Dropdown toggle */}
                 <button
                   type="button"
-                  onClick={() => setIsDateDropdownOpen(o => !o)}
+                  onClick={() => { setIsDateDropdownOpen(o => !o); setShowAddShiftForm(false); }}
                   className={`flex items-center gap-1 text-sm font-semibold px-2 py-1 rounded-lg transition-all cursor-pointer ${
                     isDateDropdownOpen ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
-                  title="選擇值班日期"
+                  title="選擇值班區間"
                 >
-                  {selectedDate === getTodayDateString()
-                    ? <><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" /><span>今日</span></>
-                    : <span>{selectedDate.slice(5).replace('-', '/')}</span>
-                  }
+                  {(() => {
+                    const shift = availableShifts.find(s => s.id === selectedShiftId);
+                    const today = getTodayDateString();
+                    if (!shift) return <span className="text-slate-400">無值班</span>;
+                    const isActive = today >= shift.startDate && today <= shift.endDate;
+                    const label = shift.startDate === shift.endDate
+                      ? shift.startDate.slice(5).replace('-', '/')
+                      : `${shift.startDate.slice(5).replace('-', '/')}–${shift.endDate.slice(5).replace('-', '/')}`;
+                    return (
+                      <>
+                        {isActive && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />}
+                        <span>{label}</span>
+                      </>
+                    );
+                  })()}
                   <ChevronDown size={11} className={`text-slate-400 transition-transform duration-200 ${isDateDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
+                {/* Shift list dropdown */}
                 {isDateDropdownOpen && (
-                  <div className="absolute left-0 top-full mt-1.5 bg-white border border-slate-200/80 rounded-xl z-50 py-1.5 min-w-[110px] overflow-hidden">
-                    {availableDates.map(d => {
-                      const isToday = d === getTodayDateString();
-                      const isSelected = d === selectedDate;
+                  <div className="absolute left-0 top-full mt-1.5 bg-white border border-slate-200/80 rounded-xl z-50 py-1.5 min-w-[130px] overflow-hidden shadow-lg">
+                    {availableShifts.length === 0 && (
+                      <div className="px-3 py-2 text-xs text-slate-400">尚無值班記錄</div>
+                    )}
+                    {availableShifts.map(s => {
+                      const today = getTodayDateString();
+                      const isActive = today >= s.startDate && today <= s.endDate;
+                      const isSelected = s.id === selectedShiftId;
+                      const label = s.startDate === s.endDate
+                        ? s.startDate.slice(5).replace('-', '/')
+                        : `${s.startDate.slice(5).replace('-', '/')}–${s.endDate.slice(5).replace('-', '/')}`;
                       return (
                         <button
-                          key={d}
+                          key={s.id}
                           type="button"
                           onClick={() => {
-                            setSelectedDate(d);
-                            localStorage.setItem('duty_selected_date', d);
+                            setSelectedShiftId(s.id);
+                            localStorage.setItem('duty_selected_shift_id', s.id);
                             setIsDateDropdownOpen(false);
                           }}
                           className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm transition-colors cursor-pointer ${
                             isSelected ? 'bg-slate-50 font-semibold text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                           }`}
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isToday ? 'bg-emerald-500 animate-pulse' : 'bg-transparent'}`} />
-                          <span>{isToday ? '今日' : d.slice(5).replace('-', '/')}</span>
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-200'}`} />
+                          <span>{label}</span>
                           {isSelected && <Check size={10} className="ml-auto text-slate-400 shrink-0" />}
                         </button>
                       );
                     })}
+                  </div>
+                )}
+
+                {/* Add shift button — amber pulse when today not covered by any shift */}
+                {(() => {
+                  const today = getTodayDateString();
+                  const todayCovered = availableShifts.some(s => today >= s.startDate && today <= s.endDate);
+                  return todayCovered ? (
+                    <button
+                      type="button"
+                      onClick={() => { setShowAddShiftForm(o => !o); setIsDateDropdownOpen(false); }}
+                      title="新增值班區間"
+                      className="flex items-center justify-center w-5 h-5 rounded-full text-slate-300 hover:text-slate-500 hover:bg-slate-100 transition-all cursor-pointer"
+                    >
+                      <Plus size={11} strokeWidth={2.5} />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => { setShowAddShiftForm(o => !o); setIsDateDropdownOpen(false); }}
+                      title="新增今日值班"
+                      className="relative flex items-center justify-center w-5 h-5 rounded-full bg-amber-400 hover:bg-amber-500 text-white shadow-sm transition-all cursor-pointer hover:scale-110 active:scale-95"
+                    >
+                      <span className="absolute inset-0 rounded-full bg-amber-400 animate-ping opacity-60" />
+                      <Plus size={11} className="stroke-[3] relative z-10" />
+                    </button>
+                  );
+                })()}
+
+                {/* Add shift popover form */}
+                {showAddShiftForm && (
+                  <div className="absolute left-0 top-full mt-1.5 bg-white border border-slate-200/80 rounded-xl z-50 p-3 shadow-lg min-w-[200px]">
+                    <p className="text-[11px] font-semibold text-slate-500 mb-2">新增值班區間</p>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] text-slate-400 w-8 shrink-0">開始</span>
+                        <input
+                          type="date"
+                          value={addShiftStart}
+                          onChange={e => setAddShiftStart(e.target.value)}
+                          className="flex-1 text-xs border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] text-slate-400 w-8 shrink-0">結束</span>
+                        <input
+                          type="date"
+                          value={addShiftEnd}
+                          min={addShiftStart}
+                          onChange={e => setAddShiftEnd(e.target.value)}
+                          className="flex-1 text-xs border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                        />
+                      </div>
+                      {availableShifts.find(s => s.id === addShiftStart) && (
+                        <p className="text-[10px] text-amber-600">此開始日期已存在</p>
+                      )}
+                      <button
+                        type="button"
+                        disabled={!addShiftStart || !addShiftEnd || !!availableShifts.find(s => s.id === addShiftStart)}
+                        onClick={() => handleAddShift(addShiftStart, addShiftEnd)}
+                        className="w-full py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white rounded-lg transition-all cursor-pointer"
+                      >
+                        建立值班
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
