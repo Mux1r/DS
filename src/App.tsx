@@ -450,67 +450,21 @@ export default function App() {
     return () => unsub();
   }, [user, selectedShiftId]);
 
-  // 3. Sync and index newly logged beds registry in local localStorage to support clinical diagnostic suggestions auto-fill
+  // 3. Index bed→diagnosis mapping for autofill suggestions (diagnosis only, no cross-shift patient data)
   useEffect(() => {
     try {
-      let profiles = getValidBedProfiles();
-      
-      newPatients.forEach((p) => {
-        const key = p.bed.trim().toUpperCase();
-        if (!key) return;
-        if (!profiles[key]) {
-          profiles[key] = { bed: key, diagnosis: '', patients: [], orders: [], handovers: [] };
-        }
-        if (p.diagnosis && p.diagnosis !== '無') {
-          profiles[key].diagnosis = p.diagnosis;
-        }
-        const patientList = profiles[key].patients || [];
-        const index = patientList.findIndex((item: any) => item.id === p.id);
-        if (index >= 0) {
-          patientList[index] = p;
-        } else {
-          patientList.push(p);
-        }
-        profiles[key].patients = patientList;
-      });
+      const profiles = getValidBedProfiles();
 
-      generalOrders.forEach((o) => {
-        const key = o.bed.trim().toUpperCase();
+      const updateDiagnosis = (bed: string, diagnosis: string, skip: string[]) => {
+        if (!bed || !diagnosis || skip.includes(diagnosis)) return;
+        const key = bed.trim().toUpperCase();
         if (!key) return;
-        if (!profiles[key]) {
-          profiles[key] = { bed: key, diagnosis: '', patients: [], orders: [], handovers: [] };
-        }
-        if (o.diagnosis && o.diagnosis !== '無' && o.diagnosis !== '無確切診斷') {
-          profiles[key].diagnosis = o.diagnosis;
-        }
-        const ordersList = profiles[key].orders || [];
-        const index = ordersList.findIndex((item: any) => item.id === o.id);
-        if (index >= 0) {
-          ordersList[index] = o;
-        } else {
-          ordersList.push(o);
-        }
-        profiles[key].orders = ordersList;
-      });
+        profiles[key] = { ...(profiles[key] || {}), bed: key, diagnosis };
+      };
 
-      handoverPatients.forEach((h) => {
-        const key = h.bed.trim().toUpperCase();
-        if (!key) return;
-        if (!profiles[key]) {
-          profiles[key] = { bed: key, diagnosis: '', patients: [], orders: [], handovers: [] };
-        }
-        if (h.diagnosis && h.diagnosis !== '無確切診斷' && h.diagnosis !== '無') {
-          profiles[key].diagnosis = h.diagnosis;
-        }
-        const handoversList = profiles[key].handovers || [];
-        const index = handoversList.findIndex((item: any) => item.id === h.id);
-        if (index >= 0) {
-          handoversList[index] = h;
-        } else {
-          handoversList.push(h);
-        }
-        profiles[key].handovers = handoversList;
-      });
+      newPatients.forEach(p => updateDiagnosis(p.bed, p.diagnosis, ['無']));
+      generalOrders.forEach(o => updateDiagnosis(o.bed, o.diagnosis, ['無', '無確切診斷']));
+      handoverPatients.forEach(h => updateDiagnosis(h.bed, h.diagnosis, ['無', '無確切診斷']));
 
       localStorage.setItem(BED_PROFILES_KEY, JSON.stringify(profiles));
       if (!localStorage.getItem(BED_PROFILES_DATE_KEY)) {
@@ -628,46 +582,12 @@ export default function App() {
   const checkAndAutofillBed = (inputBed: string, type: 'patient' | 'order' | 'handover') => {
     const norm = inputBed.trim().toUpperCase();
     if (!norm) return;
-
     try {
-      const profiles = getValidBedProfiles();
-      if (Object.keys(profiles).length > 0) {
-        const profile = profiles[norm];
-        if (profile) {
-          // 1. Auto-fill diagnosis
-          if (profile.diagnosis) {
-            if (type === 'patient') {
-              setPDiagnosis(profile.diagnosis);
-            } else if (type === 'order') {
-              setODiagnosis(profile.diagnosis);
-            } else if (type === 'handover') {
-              setHDiagnosis(profile.diagnosis);
-            }
-          }
-          
-          // 2. Auto-load list items (bringing back previous list history for this bed)
-          if (profile.patients && profile.patients.length > 0) {
-            profile.patients.forEach((p: any) => {
-              if (!newPatients.some(curr => curr.id === p.id)) {
-                addPatient(p);
-              }
-            });
-          }
-          if (profile.orders && profile.orders.length > 0) {
-            profile.orders.forEach((o: any) => {
-              if (!generalOrders.some(curr => curr.id === o.id)) {
-                addOrder(o);
-              }
-            });
-          }
-          if (profile.handovers && profile.handovers.length > 0) {
-            profile.handovers.forEach((h: any) => {
-              if (!handoverPatients.some(curr => curr.id === h.id)) {
-                addHandover(h);
-              }
-            });
-          }
-        }
+      const profile = getValidBedProfiles()[norm];
+      if (profile?.diagnosis) {
+        if (type === 'patient') setPDiagnosis(profile.diagnosis);
+        else if (type === 'order') setODiagnosis(profile.diagnosis);
+        else if (type === 'handover') setHDiagnosis(profile.diagnosis);
       }
     } catch (e) {
       console.error('Error in checkAndAutofillBed', e);
@@ -688,22 +608,6 @@ export default function App() {
     }
   };
 
-  const currentQpBedProfilesCount = () => {
-    const norm = qpBed.trim().toUpperCase();
-    if (!norm) return 0;
-    try {
-      const profiles = getValidBedProfiles();
-      const profile = profiles[norm];
-      if (profile) {
-        let c = 0;
-        if (profile.patients) c += profile.patients.length;
-        if (profile.orders) c += profile.orders.length;
-        if (profile.handovers) c += profile.handovers.length;
-        return c;
-      }
-    } catch (e) {}
-    return 0;
-  };
 
   const dispatchToPatient = () => {
     if (!qpBed.trim()) {
