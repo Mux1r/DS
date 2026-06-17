@@ -936,9 +936,10 @@ export default function App() {
         state={currentDutyState}
         syncStatus={syncStatus}
         onImport={handleImport}
-        onClear={handleClear}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
         user={user}
         onSignOut={handleSignOut}
         availableShifts={availableShifts}
@@ -1242,14 +1243,6 @@ export default function App() {
                 <RotateCw size={14} />
               </button>
 
-              {/* Dark mode — always visible */}
-              <button
-                type="button"
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all cursor-pointer shrink-0"
-              >
-                {isDarkMode ? <Sun size={14} className="text-amber-500" /> : <Moon size={14} />}
-              </button>
             </div>
           </div>
 
@@ -1364,7 +1357,7 @@ export default function App() {
                         dispatchToOrder();
                       }
                     })}
-                    placeholder="護理師交代之細節/內容 * (例如: 發燒38.5、suction... 按 Ctrl+Enter 可直接指派分流)"
+                    placeholder="內容"
                     className="w-full text-sm text-slate-800 p-4 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-4 focus:ring-emerald-100 placeholder-slate-400 font-bold resize-none"
                     title="交代細節/項目 (必填)"
                   />
@@ -1595,7 +1588,7 @@ export default function App() {
                           onKeyDown={(e) => handleTextAreaKeyDown(e, () => {
                             handleAddPatientSubmit({ preventDefault: () => {} } as React.FormEvent);
                           })}
-                          placeholder="病況備註 / 交代事項 (例如: 引流、每日追蹤指標、特殊治療...)"
+                          placeholder="內容"
                           className="w-full text-sm text-slate-800 p-4 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-4 focus:ring-indigo-100 placeholder-slate-400 font-medium resize-none"
                           title="備註"
                         />
@@ -2116,7 +2109,7 @@ export default function App() {
                           onKeyDown={(e) => handleTextAreaKeyDown(e, () => {
                             handleAddOrderSubmit({ preventDefault: () => {} } as React.FormEvent);
                           })}
-                          placeholder="醫囑內容 * (例如: 加開 Acetaminophen 3# PO...)"
+                          placeholder="內容"
                           className="w-full text-sm text-slate-800 p-4 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-4 focus:ring-amber-100 placeholder-slate-400 font-bold resize-none"
                           title="醫囑內容 (必填)"
                         />
@@ -2533,7 +2526,7 @@ export default function App() {
                           onKeyDown={(e) => handleTextAreaKeyDown(e, () => {
                             handleAddHandoverSubmit({ preventDefault: () => {} } as React.FormEvent);
                           })}
-                          placeholder="特別關注 & 處理指引 * (例如: 呼吸喘喘 check ABG & CXR...)"
+                          placeholder="內容"
                           className="w-full text-sm text-slate-800 p-4 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-4 focus:ring-rose-100 placeholder-slate-400 font-bold resize-none"
                           title="特定關注交代重點"
                         />

@@ -16,20 +16,22 @@ import {
   Trash2,
   X,
   Settings,
-  Database,
   ChevronRight,
   ClipboardCheck,
   Pencil,
-  CalendarDays
+  CalendarDays,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface HeaderProps {
   state: DutyState;
   syncStatus: SyncStatus;
   onImport: (newState: DutyState) => void;
-  onClear: () => void;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
+  isDarkMode: boolean;
+  onToggleDarkMode: () => void;
   user?: User | null;
   onSignOut?: () => void;
   availableShifts?: Shift[];
@@ -39,13 +41,12 @@ interface HeaderProps {
   onDeleteShift?: (id: string) => void;
 }
 
-export default function Header({ state, syncStatus, onImport, onClear, isSidebarOpen, setIsSidebarOpen, user, onSignOut, availableShifts = [], selectedShiftId = '', onSelectShift, onEditShift, onDeleteShift }: HeaderProps) {
+export default function Header({ state, syncStatus, onImport, isSidebarOpen, setIsSidebarOpen, isDarkMode, onToggleDarkMode, user, onSignOut, availableShifts = [], selectedShiftId = '', onSelectShift, onEditShift, onDeleteShift }: HeaderProps) {
   const [copiedHandover, setCopiedHandover] = useState(false);
   const [copiedRaw, setCopiedRaw] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState('');
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Live digital clock
@@ -323,34 +324,27 @@ export default function Header({ state, syncStatus, onImport, onClear, isSidebar
                   )}
                 </button>
 
-                {/* Highly intuitive Personal Sync Guideline Card inside sidebar */}
-                <div className="bg-gradient-to-br from-indigo-50/50 to-slate-50 border border-slate-200/40 text-slate-650 p-3 rounded-xl space-y-2 select-none" id="sidebar-personal-sync-guide">
-                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-950 font-sans">
-                    <Database size={12} className="text-indigo-600" />
-                    <span>☁️ Firebase 雲端同步</span>
-                  </div>
-                  <p className="text-[10px] leading-relaxed text-slate-500 font-medium">
-                    資料已透過 Firebase 自動同步至雲端，登入同一 Google 帳號即可在手機、電腦、平板無縫存取值班記錄。
-                  </p>
-                  <p className="text-[10px] leading-relaxed text-slate-400">
-                    JSON 匯出/匯入功能可用於備份或與他人交接資料。
-                  </p>
-                </div>
               </div>
 
-              {/* SECTION C: CLINICAL WIPE OUT (DANGER ZONE) */}
-              <div className="pt-4 border-t border-slate-100" id="sidebar-section-danger">
+              {/* SECTION C: DISPLAY SETTINGS */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 mb-2">
+                  {isDarkMode ? <Moon size={12} className="text-slate-400" /> : <Sun size={12} className="text-slate-400" />}
+                  <span>顯示設定</span>
+                </div>
                 <button
                   type="button"
-                  id="clear-all-duty-btn"
-                  onClick={() => {
-                    setShowClearConfirm(true);
-                  }}
-                  className="w-full flex items-center justify-center gap-1.5 text-xs py-2.5 bg-rose-50 hover:bg-rose-105 text-rose-750 hover:text-rose-800 rounded-xl transition-all cursor-pointer font-bold border border-rose-200/40"
-                  title="清空值班病人與醫囑"
+                  onClick={onToggleDarkMode}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs bg-slate-50 text-slate-700 hover:text-indigo-600 border border-slate-150 rounded-xl transition-all cursor-pointer group font-semibold"
                 >
-                  <Trash2 size={13} />
-                  <span>清空本期所有資料</span>
+                  <span className="flex items-center gap-1.5">
+                    {isDarkMode
+                      ? <Sun size={13} className="text-amber-500" />
+                      : <Moon size={13} className="text-slate-400 group-hover:text-indigo-500" />
+                    }
+                    {isDarkMode ? '切換淺色主題' : '切換深色主題'}
+                  </span>
+                  <ChevronRight size={11} className="text-slate-300 group-hover:text-indigo-400" />
                 </button>
               </div>
 
@@ -358,7 +352,7 @@ export default function Header({ state, syncStatus, onImport, onClear, isSidebar
 
             {/* Sidebar Footer */}
             <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 text-center text-[10px] text-slate-400 font-mono shrink-0">
-              Clinical Shift v3.0.0 · Firebase Cloud Sync
+              Clinical Shift v3.0.0
             </div>
           </div>
         </div>
@@ -420,37 +414,6 @@ export default function Header({ state, syncStatus, onImport, onClear, isSidebar
         </div>
       )}
 
-      {/* Clear Confirmation Dialog */}
-      {showClearConfirm && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-55" id="clear-confirm-overlay">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-sm p-5 border border-slate-100" id="clear-confirm-container">
-            <h3 className="font-semibold text-slate-800 text-sm flex items-center gap-2 mb-4 text-rose-600">
-              <AlertCircle size={16} />
-              確認清空所有病人與醫囑項目？
-            </h3>
-            <div className="flex justify-end gap-2 text-right">
-              <button
-                id="cancel-clear-btn"
-                onClick={() => setShowClearConfirm(false)}
-                className="px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
-              >
-                保留資料
-              </button>
-              <button
-                id="confirm-clear-btn"
-                onClick={() => {
-                  onClear();
-                  setShowClearConfirm(false);
-                  setIsSidebarOpen(false); // Close sidebar drawer on state clear
-                }}
-                className="px-3.5 py-1.5 text-xs bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition-all cursor-pointer"
-              >
-                確認清除
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
