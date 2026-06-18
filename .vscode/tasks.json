@@ -2,6 +2,20 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Auto Git Pull on Open",
+      "type": "shell",
+      "command": "git pull --ff-only",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "clear": true
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Publish to GitHub",
       "type": "shell",
       "command": "git add -A; $s = git status --porcelain; if ($s) { git commit -m \"Update: $(Get-Date -Format 'yyyy-MM-dd HH:mm')\" }; git push origin master",
