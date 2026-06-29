@@ -103,6 +103,7 @@ export default function App() {
 
   // Expanded control row state for compact patient cards
   const [expandedControlPatientId, setExpandedControlPatientId] = useState<string | null>(null);
+  const [inlineOrderText, setInlineOrderText] = useState('');
 
   // Edit states to allow clicking on items to edit them, inline!
   const [editingPatientId, setEditingPatientId] = useState<string | null>(null);
@@ -638,9 +639,9 @@ export default function App() {
     const newO: GeneralOrder = {
       id: `order-${Date.now()}`,
       bed: qpBed.trim().toUpperCase(),
-      name: '不具名',
-      diagnosis: qpDiagnosis.trim() || '無',
-      orderTask: qpContent.trim() || '補開醫囑項目',
+      name: '',
+      diagnosis: qpDiagnosis.trim(),
+      orderTask: qpContent.trim(),
       note: '',
       isCompleted: false,
       priority: qpPriority,
@@ -660,10 +661,10 @@ export default function App() {
     const newH: HandoverPatient = {
       id: `handover-${Date.now()}`,
       bed: qpBed.trim().toUpperCase(),
-      name: '不具名',
-      diagnosis: qpDiagnosis.trim() || '無確切診斷',
+      name: '',
+      diagnosis: qpDiagnosis.trim(),
       note: '',
-      attentionPoints: qpContent.trim() || '特別關注事項',
+      attentionPoints: qpContent.trim(),
       status: 'unstable',
       isHandedOver: false,
       createdAt: new Date().toISOString()
@@ -749,7 +750,7 @@ export default function App() {
       return;
     }
 
-    const orderName = oName.trim() || '不具名';
+    const orderName = oName.trim();
 
     if (editingOrderId) {
       // Edit Mode
@@ -757,7 +758,7 @@ export default function App() {
         bed: oBed.trim().toUpperCase(),
         name: orderName,
         orderTask: oTask.trim(),
-        diagnosis: oDiagnosis.trim() || '無',
+        diagnosis: oDiagnosis.trim(),
         note: oNote.trim(),
         priority: oPriority
       });
@@ -768,7 +769,7 @@ export default function App() {
         id: `order-${Date.now()}`,
         bed: oBed.trim().toUpperCase(),
         name: orderName,
-        diagnosis: oDiagnosis.trim() || '無',
+        diagnosis: oDiagnosis.trim(),
         orderTask: oTask.trim(),
         note: oNote.trim(),
         isCompleted: false,
@@ -800,14 +801,14 @@ export default function App() {
       return;
     }
 
-    const handoverName = hName.trim() || '不具名';
+    const handoverName = hName.trim();
 
     if (editingHandoverId) {
       // Edit Mode
       updateHandover(editingHandoverId, {
         bed: hBed.trim().toUpperCase(),
         name: handoverName,
-        diagnosis: hDiagnosis.trim() || '無確切診斷',
+        diagnosis: hDiagnosis.trim(),
         attentionPoints: hAttn.trim(),
         status: hStatus,
         note: hNote.trim()
@@ -819,7 +820,7 @@ export default function App() {
         id: `handover-${Date.now()}`,
         bed: hBed.trim().toUpperCase(),
         name: handoverName,
-        diagnosis: hDiagnosis.trim() || '無確切診斷',
+        diagnosis: hDiagnosis.trim(),
         note: hNote.trim(),
         attentionPoints: hAttn.trim(),
         status: hStatus,
@@ -841,6 +842,26 @@ export default function App() {
   };
 
   // --- Filtering & Searching logic across columns with premium deep-matching ---
+
+  // ponytail: floor(8-21) + room(01-21=A, 50-72=B) + optional bed digit(1-3)
+  const parseBed = (bed: string): number => {
+    const m = bed.trim().match(/^(8|9|1[0-9]|2[01])(\d{2})(\d?)$/);
+    if (!m) return 999999;
+    return parseInt(m[1]) * 1000 + parseInt(m[2]) * 10 + (m[3] ? parseInt(m[3]) : 0);
+  };
+
+  const renderBed = (bed: string) => {
+    const m = bed.trim().match(/^(8|9|1[0-9]|2[01])(\d{2})(\d?)$/);
+    if (!m) return <>{bed}</>;
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+        <span>{m[1]}</span>
+        <span>{m[2]}</span>
+        {m[3] && <span style={{ fontWeight: 400 }}>-{m[3]}</span>}
+      </span>
+    );
+  };
+
   const qStr = searchQuery.toLowerCase().trim();
 
   const filteredNew = newPatients.filter(p => {
@@ -854,7 +875,7 @@ export default function App() {
     const aDone = a.orderDone && a.visited && a.chartDone;
     const bDone = b.orderDone && b.visited && b.chartDone;
     if (aDone !== bDone) return aDone ? 1 : -1;
-    if (sortNewPatients === 'bed') return a.bed.localeCompare(b.bed, 'zh-TW', { numeric: true });
+    if (sortNewPatients === 'bed') return parseBed(a.bed) - parseBed(b.bed);
     if (sortNewPatients === 'user') {
       const ai = userPatientOrder.indexOf(a.id);
       const bi = userPatientOrder.indexOf(b.id);
@@ -870,13 +891,13 @@ export default function App() {
     if (hideCompletedOrders && o.isCompleted) return false;
     if (!qStr) return true;
     return o.bed.toLowerCase().includes(qStr) ||
-           (o.name && o.name.toLowerCase().includes(qStr)) ||
+           (o.name && o.name !== '不具名' && o.name && o.name !== '不具名'.toLowerCase().includes(qStr)) ||
            (o.diagnosis && o.diagnosis.toLowerCase().includes(qStr)) ||
            o.orderTask.toLowerCase().includes(qStr) ||
            (o.note && o.note.toLowerCase().includes(qStr));
   }).sort((a, b) => {
     if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
-    if (sortOrders === 'bed') return a.bed.localeCompare(b.bed, 'zh-TW', { numeric: true });
+    if (sortOrders === 'bed') return parseBed(a.bed) - parseBed(b.bed);
     if (sortOrders === 'user') {
       const ai = userOrdersOrder.indexOf(a.id);
       const bi = userOrdersOrder.indexOf(b.id);
@@ -892,12 +913,12 @@ export default function App() {
     if (hideHandledHandovers && h.isHandedOver) return false;
     if (!qStr) return true;
     return h.bed.toLowerCase().includes(qStr) ||
-           (h.name && h.name.toLowerCase().includes(qStr)) ||
+           (h.name && h.name !== '不具名' && h.name && h.name !== '不具名'.toLowerCase().includes(qStr)) ||
            (h.diagnosis && h.diagnosis.toLowerCase().includes(qStr)) ||
            h.attentionPoints.toLowerCase().includes(qStr) ||
            (h.note && h.note.toLowerCase().includes(qStr));
   }).sort((a, b) => {
-    if (sortHandovers === 'bed') return a.bed.localeCompare(b.bed, 'zh-TW', { numeric: true });
+    if (sortHandovers === 'bed') return parseBed(a.bed) - parseBed(b.bed);
     if (sortHandovers === 'user') {
       const ai = userHandoversOrder.indexOf(a.id);
       const bi = userHandoversOrder.indexOf(b.id);
@@ -1363,56 +1384,56 @@ export default function App() {
                   />
                 </div>
 
-                {/* Bed context: patient note (left) + orders checklist (right) */}
+                {/* Merged: patient note (left) + orders at bed (right, with add) */}
                 {qpBed.trim() && (() => {
                   const bed = qpBed.trim().toUpperCase();
                   const patientForBed = newPatients.find(p => p.bed.trim().toUpperCase() === bed);
                   const bedOrders = generalOrders.filter(o => o.bed.trim().toUpperCase() === bed);
-                  if (!patientForBed && bedOrders.length === 0) return null;
                   return (
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-px bg-slate-200/60" />
-                        <span className="text-[10px] text-slate-400 font-semibold shrink-0">此床記錄</span>
-                        <div className="flex-1 h-px bg-slate-200/60" />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-400 font-medium">備註</span>
+                        {patientForBed ? (
+                          <textarea
+                            value={patientForBed.note}
+                            onChange={e => updatePatient(patientForBed.id, { note: e.target.value })}
+                            rows={3}
+                            placeholder="備註..."
+                            className="w-full text-xs text-slate-600 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-medium resize-none"
+                          />
+                        ) : (
+                          <p className="text-xs text-slate-300 italic px-1">—</p>
+                        )}
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-400 font-medium">醫囑</span>
                         <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-slate-400 font-medium">備註</span>
-                          {patientForBed ? (
-                            <textarea
-                              value={patientForBed.note}
-                              onChange={e => updatePatient(patientForBed.id, { note: e.target.value })}
-                              rows={3}
-                              placeholder="病患備註"
-                              className="w-full text-xs text-slate-600 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-medium resize-none"
-                            />
-                          ) : (
-                            <p className="text-xs text-slate-300 italic px-1">—</p>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-slate-400 font-medium">醫囑</span>
-                          {bedOrders.length > 0 ? (
-                            <div className="flex flex-col gap-1">
-                              {bedOrders.map(o => (
-                                <div key={o.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs ${
-                                  o.isCompleted ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-amber-50/50 border-amber-100'
-                                }`}>
-                                  <span className={`flex items-center justify-center rounded border shrink-0 ${
-                                    o.isCompleted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
-                                  } w-[14px] h-[14px]`}>
-                                    {o.isCompleted && <Check size={9} className="stroke-[3]" />}
-                                  </span>
-                                  <span className={`font-semibold leading-snug flex-1 ${
-                                    o.isCompleted ? 'text-slate-400 line-through' : 'text-amber-900'
-                                  }`}>{o.orderTask}</span>
-                                </div>
-                              ))}
+                          {bedOrders.map(o => (
+                            <div key={o.id} className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg border ${o.isCompleted ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-amber-50/50 border-amber-100'}`}>
+                              <button type="button" onClick={() => updateOrder(o.id, { isCompleted: !o.isCompleted })} className={`flex items-center justify-center rounded border shrink-0 w-[14px] h-[14px] ${o.isCompleted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'}`}>
+                                {o.isCompleted && <Check size={8} className="stroke-[3]" />}
+                              </button>
+                              <span className={`flex-1 leading-snug ${o.isCompleted ? 'line-through text-slate-400' : 'text-amber-900'}`}>{o.orderTask}</span>
                             </div>
-                          ) : (
-                            <p className="text-xs text-slate-300 italic px-1">—</p>
-                          )}
+                          ))}
+                          <div className="flex gap-1 mt-0.5">
+                            <input
+                              type="text"
+                              value={inlineOrderText}
+                              onChange={e => setInlineOrderText(e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter' && inlineOrderText.trim()) { e.preventDefault(); addOrder({ id: `order-${Date.now()}`, bed, name: '', diagnosis: qpDiagnosis.trim(), orderTask: inlineOrderText.trim(), note: '', isCompleted: false, priority: 'normal', createdAt: new Date().toISOString() }); setInlineOrderText(''); }}}
+                              placeholder="新增醫囑..."
+                              className="flex-1 min-w-0 text-xs px-2 py-1 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-300"
+                            />
+                            <button
+                              type="button"
+                              disabled={!inlineOrderText.trim()}
+                              onClick={() => { if (!inlineOrderText.trim()) return; addOrder({ id: `order-${Date.now()}`, bed, name: '', diagnosis: qpDiagnosis.trim(), orderTask: inlineOrderText.trim(), note: '', isCompleted: false, priority: 'normal', createdAt: new Date().toISOString() }); setInlineOrderText(''); }}
+                              className="flex items-center justify-center w-6 h-6 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white rounded-lg transition-colors shrink-0"
+                            >
+                              <Plus size={11} className="stroke-[3]" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1578,77 +1599,54 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Sub-row for Note Input */}
-                      <div className="flex flex-col gap-1.5 w-full">
-                        <textarea
-                          ref={pNoteRef}
-                          rows={2}
-                          value={pNote}
-                          onChange={(e) => setPNote(e.target.value)}
-                          onKeyDown={(e) => handleTextAreaKeyDown(e, () => {
-                            handleAddPatientSubmit({ preventDefault: () => {} } as React.FormEvent);
-                          })}
-                          placeholder="內容"
-                          className="w-full text-sm text-slate-800 p-4 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-4 focus:ring-indigo-100 placeholder-slate-400 font-medium resize-none"
-                          title="備註"
-                        />
-                      </div>
-
-                      {/* Bed context: patient note (left) + orders checklist (right) */}
-                      {pBed.trim() && (() => {
-                        const bed = pBed.trim().toUpperCase();
-                        const patientForBed = newPatients.find(p => p.bed.trim().toUpperCase() === bed && p.id !== editingPatientId);
-                        const bedOrders = generalOrders.filter(o => o.bed.trim().toUpperCase() === bed);
-                        if (!patientForBed && bedOrders.length === 0) return null;
-                        return (
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-px bg-slate-200/60" />
-                              <span className="text-[10px] text-slate-400 font-semibold shrink-0">此床記錄</span>
-                              <div className="flex-1 h-px bg-slate-200/60" />
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="flex flex-col gap-1">
-                                <span className="text-[10px] text-slate-400 font-medium">備註</span>
-                                {patientForBed ? (
-                                  <textarea
-                                    value={patientForBed.note}
-                                    onChange={e => updatePatient(patientForBed.id, { note: e.target.value })}
-                                    rows={3}
-                                    placeholder="病患備註"
-                                    className="w-full text-xs text-slate-600 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-medium resize-none"
-                                  />
-                                ) : (
-                                  <p className="text-xs text-slate-300 italic px-1">—</p>
-                                )}
+                      {/* Merged: note (left, always editable) + orders (right, with add) */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-slate-400 font-medium">備註</span>
+                          <textarea
+                            ref={pNoteRef}
+                            rows={4}
+                            value={pNote}
+                            onChange={(e) => setPNote(e.target.value)}
+                            onKeyDown={(e) => handleTextAreaKeyDown(e, () => {
+                              handleAddPatientSubmit({ preventDefault: () => {} } as React.FormEvent);
+                            })}
+                            placeholder="備註..."
+                            className="w-full text-xs text-slate-600 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-medium resize-none"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-slate-400 font-medium">醫囑</span>
+                          <div className="flex flex-col gap-1">
+                            {pBed.trim() && generalOrders.filter(o => o.bed.trim().toUpperCase() === pBed.trim().toUpperCase()).map(o => (
+                              <div key={o.id} className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg border ${o.isCompleted ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-amber-50/50 border-amber-100'}`}>
+                                <button type="button" onClick={() => updateOrder(o.id, { isCompleted: !o.isCompleted })} className={`flex items-center justify-center rounded border shrink-0 w-[14px] h-[14px] ${o.isCompleted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'}`}>
+                                  {o.isCompleted && <Check size={8} className="stroke-[3]" />}
+                                </button>
+                                <span className={`flex-1 leading-snug ${o.isCompleted ? 'line-through text-slate-400' : 'text-amber-900'}`}>{o.orderTask}</span>
                               </div>
-                              <div className="flex flex-col gap-1">
-                                <span className="text-[10px] text-slate-400 font-medium">醫囑</span>
-                                {bedOrders.length > 0 ? (
-                                  <div className="flex flex-col gap-1">
-                                    {bedOrders.map(o => (
-                                      <div key={o.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs ${
-                                        o.isCompleted ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-amber-50/50 border-amber-100'
-                                      }`}>
-                                        <span className={`flex items-center justify-center rounded border shrink-0 ${
-                                          o.isCompleted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
-                                        } w-[14px] h-[14px]`}>
-                                          {o.isCompleted && <Check size={9} className="stroke-[3]" />}
-                                        </span>
-                                        <span className={`font-semibold leading-snug flex-1 ${
-                                          o.isCompleted ? 'text-slate-400 line-through' : 'text-amber-900'
-                                        }`}>{o.orderTask}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p className="text-xs text-slate-300 italic px-1">—</p>
-                                )}
-                              </div>
+                            ))}
+                            <div className="flex gap-1 mt-0.5">
+                              <input
+                                type="text"
+                                value={inlineOrderText}
+                                onChange={e => setInlineOrderText(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter' && inlineOrderText.trim() && pBed.trim()) { e.preventDefault(); addOrder({ id: `order-${Date.now()}`, bed: pBed.trim().toUpperCase(), name: '', diagnosis: pDiagnosis.trim(), orderTask: inlineOrderText.trim(), note: '', isCompleted: false, priority: 'normal', createdAt: new Date().toISOString() }); setInlineOrderText(''); }}}
+                                placeholder="新增醫囑..."
+                                className="flex-1 min-w-0 text-xs px-2 py-1 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-300"
+                              />
+                              <button
+                                type="button"
+                                disabled={!pBed.trim() || !inlineOrderText.trim()}
+                                onClick={() => { if (!inlineOrderText.trim() || !pBed.trim()) return; addOrder({ id: `order-${Date.now()}`, bed: pBed.trim().toUpperCase(), name: '', diagnosis: pDiagnosis.trim(), orderTask: inlineOrderText.trim(), note: '', isCompleted: false, priority: 'normal', createdAt: new Date().toISOString() }); setInlineOrderText(''); }}
+                                className="flex items-center justify-center w-6 h-6 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white rounded-lg transition-colors shrink-0"
+                              >
+                                <Plus size={11} className="stroke-[3]" />
+                              </button>
                             </div>
                           </div>
-                        );
-                      })()}
+                        </div>
+                      </div>
 
                       {pError && (
                         <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-200/60 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100 animate-pulse">
@@ -1739,7 +1737,7 @@ export default function App() {
                               className="shrink-0 p-1.5 -m-1.5 cursor-pointer"
                             >
                               <span className="font-mono text-sm font-bold px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100/30 rounded-md hover:bg-indigo-100 transition-colors dark:bg-indigo-200/70 dark:text-indigo-850 dark:border-indigo-300/40">
-                                {p.bed}
+                                {renderBed(p.bed)}
                               </span>
                             </div>
                             <span
@@ -1778,16 +1776,17 @@ export default function App() {
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, orderDone: !item.orderDone } : item)); }}
                                   title="醫囑"
-                                  className={`relative overflow-hidden flex items-center justify-center rounded-full cursor-pointer border transition-all duration-300 ease-in-out shrink-0 ${
+                                  style={{ transition: 'width 300ms ease-in-out, background-color 300ms ease-in-out, border-color 300ms ease-in-out' }}
+                                  className={`relative overflow-hidden flex items-center justify-center rounded-full cursor-pointer border shrink-0 ${
                                     expandedControlPatientId === p.id
                                       ? p.orderDone ? 'w-[38px] h-5 border-transparent' : 'w-[38px] h-5 bg-rose-50 border-rose-200'
                                       : 'w-5 h-5 border-transparent'
                                   }`}
                                 >
-                                  <span className={`absolute flex items-center justify-center transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
+                                  <span className={`absolute flex items-center justify-center transition-all duration-300 ${expandedControlPatientId === p.id ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
                                     <span className={`block w-2.5 h-2.5 rounded-full ${p.orderDone ? 'bg-slate-200' : 'bg-rose-400'}`} />
                                   </span>
-                                  <span className={`absolute text-xs font-semibold whitespace-nowrap transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100' : 'opacity-0 scale-75'} ${p.orderDone ? 'text-slate-300' : 'text-rose-500'}`}>醫囑</span>
+                                  <span className={`absolute text-xs font-semibold whitespace-nowrap transition-all duration-300 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100' : 'opacity-0 scale-75'} ${p.orderDone ? 'text-slate-300' : 'text-rose-500'}`}>醫囑</span>
                                 </button>
                                 {/* 探視: circle → pill */}
                                 <button
@@ -1795,16 +1794,17 @@ export default function App() {
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, visited: !item.visited } : item)); }}
                                   title="探視"
-                                  className={`relative overflow-hidden flex items-center justify-center rounded-full cursor-pointer border transition-all duration-300 ease-in-out shrink-0 ml-1.5 ${
+                                  style={{ transition: 'width 300ms ease-in-out, background-color 300ms ease-in-out, border-color 300ms ease-in-out' }}
+                                  className={`relative overflow-hidden flex items-center justify-center rounded-full cursor-pointer border shrink-0 ml-1.5 ${
                                     expandedControlPatientId === p.id
                                       ? p.visited ? 'w-[38px] h-5 border-transparent' : 'w-[38px] h-5 bg-amber-50 border-amber-200'
                                       : 'w-5 h-5 border-transparent'
                                   }`}
                                 >
-                                  <span className={`absolute flex items-center justify-center transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
+                                  <span className={`absolute flex items-center justify-center transition-all duration-300 ${expandedControlPatientId === p.id ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
                                     <span className={`block w-2.5 h-2.5 rounded-full ${p.visited ? 'bg-slate-200' : 'bg-amber-400'}`} />
                                   </span>
-                                  <span className={`absolute text-xs font-semibold whitespace-nowrap transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100' : 'opacity-0 scale-75'} ${p.visited ? 'text-slate-300' : 'text-amber-500'}`}>探視</span>
+                                  <span className={`absolute text-xs font-semibold whitespace-nowrap transition-all duration-300 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100' : 'opacity-0 scale-75'} ${p.visited ? 'text-slate-300' : 'text-amber-500'}`}>探視</span>
                                 </button>
                                 {/* 病歷: circle → pill */}
                                 <button
@@ -1812,32 +1812,33 @@ export default function App() {
                                   type="button"
                                   onClick={(e) => { e.stopPropagation(); setNewPatients((prev) => prev.map((item) => item.id === p.id ? { ...item, chartDone: !item.chartDone } : item)); }}
                                   title="病歷"
-                                  className={`relative overflow-hidden flex items-center justify-center rounded-full cursor-pointer border transition-all duration-300 ease-in-out shrink-0 ml-1.5 ${
+                                  style={{ transition: 'width 300ms ease-in-out, background-color 300ms ease-in-out, border-color 300ms ease-in-out' }}
+                                  className={`relative overflow-hidden flex items-center justify-center rounded-full cursor-pointer border shrink-0 ml-1.5 ${
                                     expandedControlPatientId === p.id
                                       ? p.chartDone ? 'w-[38px] h-5 border-transparent' : 'w-[38px] h-5 bg-emerald-50 border-emerald-400'
                                       : 'w-5 h-5 border-transparent'
                                   }`}
                                 >
-                                  <span className={`absolute flex items-center justify-center transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
+                                  <span className={`absolute flex items-center justify-center transition-all duration-300 ${expandedControlPatientId === p.id ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
                                     <span className={`block w-2.5 h-2.5 rounded-full ${p.chartDone ? 'bg-slate-200' : 'bg-emerald-400'}`} />
                                   </span>
-                                  <span className={`absolute text-xs font-semibold whitespace-nowrap transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100' : 'opacity-0 scale-75'} ${p.chartDone ? 'text-slate-300' : 'text-emerald-600'}`}>病歷</span>
+                                  <span className={`absolute text-xs font-semibold whitespace-nowrap transition-all duration-300 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100' : 'opacity-0 scale-75'} ${p.chartDone ? 'text-slate-300' : 'text-emerald-600'}`}>病歷</span>
                                 </button>
                                 {/* Single toggle button: extends to card's right edge, vertical hit zone via card padding */}
                                 <button
                                   key="patient-dot-toggle"
-                                  onClick={(e) => { e.stopPropagation(); setExpandedControlPatientId(expandedControlPatientId === p.id ? null : p.id); }}
+                                  onClick={(e) => { e.stopPropagation(); setInlineOrderText(''); setExpandedControlPatientId(expandedControlPatientId === p.id ? null : p.id); }}
                                   className="group relative ml-1.5 -mr-3 pr-3 flex items-center justify-center rounded-r-xl transition-colors duration-150 shrink-0 self-stretch"
                                   title={expandedControlPatientId === p.id ? '收起' : '展開 Toggle'}
                                 >
                                   <span className="relative w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 group-hover:text-slate-600 group-hover:bg-slate-100 transition-colors duration-150">
                                     <MoreVertical
                                       size={13}
-                                      className={`absolute transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-0 scale-50 rotate-90' : 'opacity-100 scale-100 rotate-0'}`}
+                                      className={`absolute transition-all duration-300 ${expandedControlPatientId === p.id ? 'opacity-0 scale-50 rotate-90' : 'opacity-100 scale-100 rotate-0'}`}
                                     />
                                     <X
                                       size={12}
-                                      className={`absolute transition-all duration-200 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90'}`}
+                                      className={`absolute transition-all duration-300 ${expandedControlPatientId === p.id ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90'}`}
                                     />
                                   </span>
                                 </button>
@@ -1845,6 +1846,50 @@ export default function App() {
                             )}
                           </div>
                         </div>
+                        {expandedControlPatientId === p.id && (
+                          <div onClick={e => e.stopPropagation()} className="mt-2 pt-2 border-t border-slate-100 grid grid-cols-2 gap-2">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] text-slate-400 font-medium">備註</span>
+                              <textarea
+                                value={p.note || ''}
+                                onChange={e => updatePatient(p.id, { note: e.target.value })}
+                                rows={3}
+                                placeholder="備註..."
+                                className="w-full text-xs text-slate-600 p-2 bg-slate-50 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-slate-300"
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] text-slate-400 font-medium">醫囑</span>
+                              <div className="flex flex-col gap-1">
+                                {generalOrders.filter(o => o.bed.toUpperCase() === p.bed.toUpperCase()).map(o => (
+                                  <div key={o.id} className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg border ${o.isCompleted ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-amber-50/50 border-amber-100'}`}>
+                                    <button type="button" onClick={e => { e.stopPropagation(); updateOrder(o.id, { isCompleted: !o.isCompleted }); }} className={`flex items-center justify-center rounded border shrink-0 w-[14px] h-[14px] ${o.isCompleted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'}`}>
+                                      {o.isCompleted && <Check size={8} className="stroke-[3]" />}
+                                    </button>
+                                    <span className={`flex-1 leading-snug ${o.isCompleted ? 'line-through text-slate-400' : 'text-amber-900'}`}>{o.orderTask}</span>
+                                  </div>
+                                ))}
+                                <div className="flex gap-1 mt-0.5">
+                                  <input
+                                    type="text"
+                                    value={inlineOrderText}
+                                    onChange={e => setInlineOrderText(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter' && inlineOrderText.trim()) { e.preventDefault(); addOrder({ id: `order-${Date.now()}`, bed: p.bed, name: '', diagnosis: p.diagnosis, orderTask: inlineOrderText.trim(), note: '', isCompleted: false, priority: 'normal', createdAt: new Date().toISOString() }); setInlineOrderText(''); }}}
+                                    placeholder="新增醫囑..."
+                                    className="flex-1 min-w-0 text-xs px-2 py-1 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-300"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={e => { e.stopPropagation(); if (!inlineOrderText.trim()) return; addOrder({ id: `order-${Date.now()}`, bed: p.bed, name: '', diagnosis: p.diagnosis, orderTask: inlineOrderText.trim(), note: '', isCompleted: false, priority: 'normal', createdAt: new Date().toISOString() }); setInlineOrderText(''); }}
+                                    className="flex items-center justify-center w-6 h-6 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors shrink-0"
+                                  >
+                                    <Plus size={11} className="stroke-[3]" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   }
@@ -1882,7 +1927,7 @@ export default function App() {
                             }}
                             className="font-mono text-sm font-bold px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100/30 rounded-md hover:bg-indigo-100 transition-colors"
                           >
-                            {p.bed}
+                            {renderBed(p.bed)}
                           </span>
                         </div>
 
@@ -2115,61 +2160,50 @@ export default function App() {
                         />
                       </div>
 
-                      {/* Bed context: patient note (left) + orders checklist (right) */}
-                      {oBed.trim() && (() => {
-                        const bed = oBed.trim().toUpperCase();
-                        const patientForBed = newPatients.find(p => p.bed.trim().toUpperCase() === bed);
-                        const bedOrders = generalOrders.filter(o => o.bed.trim().toUpperCase() === bed);
-                        if (!patientForBed && bedOrders.length === 0) return null;
-                        return (
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-px bg-slate-200/60" />
-                              <span className="text-[10px] text-slate-400 font-semibold shrink-0">此床記錄</span>
-                              <div className="flex-1 h-px bg-slate-200/60" />
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="flex flex-col gap-1">
-                                <span className="text-[10px] text-slate-400 font-medium">備註</span>
-                                {patientForBed ? (
-                                  <textarea
-                                    value={patientForBed.note}
-                                    onChange={e => updatePatient(patientForBed.id, { note: e.target.value })}
-                                    rows={3}
-                                    placeholder="病患備註"
-                                    className="w-full text-xs text-slate-600 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-medium resize-none"
-                                  />
-                                ) : (
-                                  <p className="text-xs text-slate-300 italic px-1">—</p>
-                                )}
+                      {/* Merged: oNote (left) + orders at bed (right, with add) */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-slate-400 font-medium">備註</span>
+                          <textarea
+                            rows={3}
+                            value={oNote}
+                            onChange={e => setONote(e.target.value)}
+                            placeholder="備註..."
+                            className="w-full text-xs text-slate-600 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-medium resize-none"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-slate-400 font-medium">醫囑</span>
+                          <div className="flex flex-col gap-1">
+                            {oBed.trim() && generalOrders.filter(o => o.bed.trim().toUpperCase() === oBed.trim().toUpperCase()).map(o => (
+                              <div key={o.id} className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg border ${o.isCompleted ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-amber-50/50 border-amber-100'}`}>
+                                <button type="button" onClick={() => updateOrder(o.id, { isCompleted: !o.isCompleted })} className={`flex items-center justify-center rounded border shrink-0 w-[14px] h-[14px] ${o.isCompleted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'}`}>
+                                  {o.isCompleted && <Check size={8} className="stroke-[3]" />}
+                                </button>
+                                <span className={`flex-1 leading-snug ${o.isCompleted ? 'line-through text-slate-400' : 'text-amber-900'}`}>{o.orderTask}</span>
                               </div>
-                              <div className="flex flex-col gap-1">
-                                <span className="text-[10px] text-slate-400 font-medium">醫囑</span>
-                                {bedOrders.length > 0 ? (
-                                  <div className="flex flex-col gap-1">
-                                    {bedOrders.map(o => (
-                                      <div key={o.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs ${
-                                        o.isCompleted ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-amber-50/50 border-amber-100'
-                                      }`}>
-                                        <span className={`flex items-center justify-center rounded border shrink-0 ${
-                                          o.isCompleted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
-                                        } w-[14px] h-[14px]`}>
-                                          {o.isCompleted && <Check size={9} className="stroke-[3]" />}
-                                        </span>
-                                        <span className={`font-semibold leading-snug flex-1 ${
-                                          o.isCompleted ? 'text-slate-400 line-through' : 'text-amber-900'
-                                        }`}>{o.orderTask}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p className="text-xs text-slate-300 italic px-1">—</p>
-                                )}
-                              </div>
+                            ))}
+                            <div className="flex gap-1 mt-0.5">
+                              <input
+                                type="text"
+                                value={inlineOrderText}
+                                onChange={e => setInlineOrderText(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter' && inlineOrderText.trim() && oBed.trim()) { e.preventDefault(); addOrder({ id: `order-${Date.now()}`, bed: oBed.trim().toUpperCase(), name: '', diagnosis: oDiagnosis.trim(), orderTask: inlineOrderText.trim(), note: '', isCompleted: false, priority: 'normal', createdAt: new Date().toISOString() }); setInlineOrderText(''); }}}
+                                placeholder="新增醫囑..."
+                                className="flex-1 min-w-0 text-xs px-2 py-1 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-300"
+                              />
+                              <button
+                                type="button"
+                                disabled={!oBed.trim() || !inlineOrderText.trim()}
+                                onClick={() => { if (!inlineOrderText.trim() || !oBed.trim()) return; addOrder({ id: `order-${Date.now()}`, bed: oBed.trim().toUpperCase(), name: '', diagnosis: oDiagnosis.trim(), orderTask: inlineOrderText.trim(), note: '', isCompleted: false, priority: 'normal', createdAt: new Date().toISOString() }); setInlineOrderText(''); }}
+                                className="flex items-center justify-center w-6 h-6 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white rounded-lg transition-colors shrink-0"
+                              >
+                                <Plus size={11} className="stroke-[3]" />
+                              </button>
                             </div>
                           </div>
-                        );
-                      })()}
+                        </div>
+                      </div>
 
                       {/* Priority and Nurse name fields removed by request */}
 
@@ -2222,7 +2256,7 @@ export default function App() {
                         } : undefined}
                         onClick={isOrderEditMode ? undefined : () => {
                           oEditFocusFieldRef.current = null;
-                          setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name || '');
+                          setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' || '');
                           setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
                           setONote(o.note || '');
                           setOPriority(o.priority || 'normal'); setShowAddOrder(true);
@@ -2267,23 +2301,23 @@ export default function App() {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   oEditFocusFieldRef.current = 'bed';
-                                  setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name || '');
+                                  setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' || '');
                                   setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
                                   setONote(o.note || '');
                                   setOPriority(o.priority || 'normal'); setShowAddOrder(true);
                                 }}
                                 className="font-mono text-sm font-bold px-1.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-100/30 rounded-md shrink-0 hover:bg-amber-100 transition-colors dark:bg-amber-200/70 dark:text-amber-850 dark:border-amber-300/40"
                               >
-                                {o.bed}
+                                {renderBed(o.bed)}
                               </span>
-                              {o.name && o.name !== '未輸入姓名' && o.name !== '不具名' && (
-                                <span className="font-bold text-sm text-slate-850 shrink-0">{o.name}</span>
+                              {o.name && o.name !== '不具名' && (
+                                <span className="font-bold text-sm text-slate-850 shrink-0">{o.name && o.name !== '不具名'}</span>
                               )}
                               <span
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   oEditFocusFieldRef.current = 'task';
-                                  setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name || '');
+                                  setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' || '');
                                   setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
                                   setONote(o.note || '');
                                   setOPriority(o.priority || 'normal'); setShowAddOrder(true);
@@ -2317,7 +2351,7 @@ export default function App() {
                       id={`compact-order-card-${o.id}`}
                       onClick={() => {
                         oEditFocusFieldRef.current = null;
-                        setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name || '');
+                        setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' || '');
                         setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
                         setONote(o.note || '');
                         setOPriority(o.priority || 'normal'); setShowAddOrder(true);
@@ -2359,18 +2393,18 @@ export default function App() {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 oEditFocusFieldRef.current = 'bed';
-                                setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name || '');
+                                setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' || '');
                                 setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
                                 setONote(o.note || '');
                                 setOPriority(o.priority || 'normal'); setShowAddOrder(true);
                               }}
                               className="font-mono text-sm font-bold px-1.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-100/30 rounded-md hover:bg-amber-100 transition-colors dark:bg-amber-200/70 dark:text-amber-850 dark:border-amber-300/40"
                             >
-                              {o.bed}
+                              {renderBed(o.bed)}
                             </span>
-                            {o.name && o.name !== '未輸入姓名' && o.name !== '不具名' && (
+                            {o.name && o.name !== '不具名' && (
                               <span className="font-bold text-sm text-slate-800 truncate max-w-[80px]">
-                                {o.name}
+                                {o.name && o.name !== '不具名'}
                               </span>
                             )}
                           </div>
@@ -2395,7 +2429,7 @@ export default function App() {
                           onClick={(e) => {
                             e.stopPropagation();
                             oEditFocusFieldRef.current = 'task';
-                            setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name || '');
+                            setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' || '');
                             setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
                             setONote(o.note || '');
                             setOPriority(o.priority || 'normal'); setShowAddOrder(true);
@@ -2532,61 +2566,50 @@ export default function App() {
                         />
                       </div>
 
-                      {/* Bed context: patient note (left) + orders checklist (right) */}
-                      {hBed.trim() && (() => {
-                        const bed = hBed.trim().toUpperCase();
-                        const patientForBed = newPatients.find(p => p.bed.trim().toUpperCase() === bed);
-                        const bedOrders = generalOrders.filter(o => o.bed.trim().toUpperCase() === bed);
-                        if (!patientForBed && bedOrders.length === 0) return null;
-                        return (
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-px bg-slate-200/60" />
-                              <span className="text-[10px] text-slate-400 font-semibold shrink-0">此床記錄</span>
-                              <div className="flex-1 h-px bg-slate-200/60" />
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="flex flex-col gap-1">
-                                <span className="text-[10px] text-slate-400 font-medium">備註</span>
-                                {patientForBed ? (
-                                  <textarea
-                                    value={patientForBed.note}
-                                    onChange={e => updatePatient(patientForBed.id, { note: e.target.value })}
-                                    rows={3}
-                                    placeholder="病患備註"
-                                    className="w-full text-xs text-slate-600 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-medium resize-none"
-                                  />
-                                ) : (
-                                  <p className="text-xs text-slate-300 italic px-1">—</p>
-                                )}
+                      {/* Merged: hNote (left) + orders at bed (right, with add) */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-slate-400 font-medium">備註</span>
+                          <textarea
+                            rows={3}
+                            value={hNote}
+                            onChange={e => setHNote(e.target.value)}
+                            placeholder="備註..."
+                            className="w-full text-xs text-slate-600 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-medium resize-none"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-slate-400 font-medium">醫囑</span>
+                          <div className="flex flex-col gap-1">
+                            {hBed.trim() && generalOrders.filter(o => o.bed.trim().toUpperCase() === hBed.trim().toUpperCase()).map(o => (
+                              <div key={o.id} className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg border ${o.isCompleted ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-amber-50/50 border-amber-100'}`}>
+                                <button type="button" onClick={() => updateOrder(o.id, { isCompleted: !o.isCompleted })} className={`flex items-center justify-center rounded border shrink-0 w-[14px] h-[14px] ${o.isCompleted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'}`}>
+                                  {o.isCompleted && <Check size={8} className="stroke-[3]" />}
+                                </button>
+                                <span className={`flex-1 leading-snug ${o.isCompleted ? 'line-through text-slate-400' : 'text-amber-900'}`}>{o.orderTask}</span>
                               </div>
-                              <div className="flex flex-col gap-1">
-                                <span className="text-[10px] text-slate-400 font-medium">醫囑</span>
-                                {bedOrders.length > 0 ? (
-                                  <div className="flex flex-col gap-1">
-                                    {bedOrders.map(o => (
-                                      <div key={o.id} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs ${
-                                        o.isCompleted ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-amber-50/50 border-amber-100'
-                                      }`}>
-                                        <span className={`flex items-center justify-center rounded border shrink-0 ${
-                                          o.isCompleted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'
-                                        } w-[14px] h-[14px]`}>
-                                          {o.isCompleted && <Check size={9} className="stroke-[3]" />}
-                                        </span>
-                                        <span className={`font-semibold leading-snug flex-1 ${
-                                          o.isCompleted ? 'text-slate-400 line-through' : 'text-amber-900'
-                                        }`}>{o.orderTask}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p className="text-xs text-slate-300 italic px-1">—</p>
-                                )}
-                              </div>
+                            ))}
+                            <div className="flex gap-1 mt-0.5">
+                              <input
+                                type="text"
+                                value={inlineOrderText}
+                                onChange={e => setInlineOrderText(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter' && inlineOrderText.trim() && hBed.trim()) { e.preventDefault(); addOrder({ id: `order-${Date.now()}`, bed: hBed.trim().toUpperCase(), name: '', diagnosis: hDiagnosis.trim(), orderTask: inlineOrderText.trim(), note: '', isCompleted: false, priority: 'normal', createdAt: new Date().toISOString() }); setInlineOrderText(''); }}}
+                                placeholder="新增醫囑..."
+                                className="flex-1 min-w-0 text-xs px-2 py-1 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-300"
+                              />
+                              <button
+                                type="button"
+                                disabled={!hBed.trim() || !inlineOrderText.trim()}
+                                onClick={() => { if (!inlineOrderText.trim() || !hBed.trim()) return; addOrder({ id: `order-${Date.now()}`, bed: hBed.trim().toUpperCase(), name: '', diagnosis: hDiagnosis.trim(), orderTask: inlineOrderText.trim(), note: '', isCompleted: false, priority: 'normal', createdAt: new Date().toISOString() }); setInlineOrderText(''); }}
+                                className="flex items-center justify-center w-6 h-6 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white rounded-lg transition-colors shrink-0"
+                              >
+                                <Plus size={11} className="stroke-[3]" />
+                              </button>
                             </div>
                           </div>
-                        );
-                      })()}
+                        </div>
+                      </div>
 
                       {/* Status Pills Selector */}
                       <div className="flex flex-col gap-2 w-full">
@@ -2700,10 +2723,10 @@ export default function App() {
                                   critical ? 'bg-rose-100/80 text-rose-800 border-rose-200 dark:bg-rose-200/70 dark:text-rose-855 dark:border-rose-300/40' : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-300/70 dark:text-slate-850 dark:border-slate-400/40'
                                 }`}
                               >
-                                {h.bed}
+                                {renderBed(h.bed)}
                               </span>
-                              {h.name && h.name !== '未輸入姓名' && h.name !== '不具名' && (
-                                <span className="font-bold text-sm text-slate-850 shrink-0">{h.name}</span>
+                              {h.name && h.name !== '不具名' && (
+                                <span className="font-bold text-sm text-slate-850 shrink-0">{h.name && h.name !== '不具名'}</span>
                               )}
                               <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${
                                 critical ? 'bg-rose-500' : unstable ? 'bg-amber-400' : 'bg-emerald-500'
@@ -2798,11 +2821,11 @@ export default function App() {
                               critical ? 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-200/70 dark:text-rose-855 dark:border-rose-300/40' : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-300/70 dark:text-slate-850 dark:border-slate-400/40'
                             }`}
                           >
-                            {h.bed}
+                            {renderBed(h.bed)}
                           </span>
-                          {h.name && h.name !== '未輸入姓名' && h.name !== '不具名' && (
+                          {h.name && h.name !== '不具名' && (
                             <span className="font-bold text-sm text-slate-850 truncate max-w-[85px]">
-                              {h.name}
+                              {h.name && h.name !== '不具名'}
                             </span>
                           )}
                           <span className={`inline-block w-2.5 h-2.5 rounded-full shrink-0 ${

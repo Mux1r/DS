@@ -352,7 +352,7 @@ export default function Header({ state, syncStatus, onImport, isSidebarOpen, set
 
             {/* Sidebar Footer */}
             <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 text-center text-[10px] text-slate-400 font-mono shrink-0">
-              Clinical Shift v3.0.0
+              Clinical Shift v3.1.0
             </div>
           </div>
         </div>

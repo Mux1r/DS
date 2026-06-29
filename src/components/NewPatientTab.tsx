@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { NewPatient } from '../types';
+import BedBadge from './BedBadge';
 import {
   Plus,
   Trash2,
@@ -205,9 +206,7 @@ export default function NewPatientTab({
                     {/* Top Row: Bed, Name, Time, Delete */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-sm font-bold px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100/30 rounded-md">
-                          {p.bed}
-                        </span>
+                        <BedBadge bed={p.bed} className="font-mono text-sm font-bold px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100/30 rounded-md" />
                         <span className="font-bold text-sm text-slate-700">
                           {p.name}
                         </span>

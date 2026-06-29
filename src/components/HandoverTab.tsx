@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { HandoverPatient } from '../types';
+import BedBadge from './BedBadge';
 import { 
   Plus, 
   Trash2, 
@@ -277,11 +278,9 @@ export default function HandoverTab({
                     {/* Top Row: Bed, Status, Delete, Checked toggle */}
                     <div className="flex items-start justify-between gap-2 flex-wrap sm:flex-nowrap">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className={`font-mono text-sm font-bold px-2 py-0.5 rounded-md border ${
+                        <BedBadge bed={h.bed} className={`font-mono text-sm font-bold px-2 py-0.5 rounded-md border ${
                           isCritical ? 'bg-rose-50 text-rose-800 border-rose-100' : 'bg-slate-50 text-slate-700 border-slate-150'
-                        }`}>
-                          {h.bed}
-                        </span>
+                        }`} />
                         <span className="font-bold text-sm text-slate-700">
                           {h.name}
                         </span>

@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { GeneralOrder } from '../types';
+import BedBadge from './BedBadge';
 import { 
   Plus, 
   Trash2, 
@@ -251,9 +252,7 @@ export default function GeneralOrderTab({
                     <div className="flex-grow flex flex-col gap-2">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-sm font-bold px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-100/30 rounded-md">
-                            {o.bed}
-                          </span>
+                          <BedBadge bed={o.bed} className="font-mono text-sm font-bold px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-100/30 rounded-md" />
                           <span className="font-bold text-sm text-slate-700">
                             {o.name}
                           </span>
