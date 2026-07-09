@@ -171,6 +171,16 @@ export const exportJSON = (state: DutyState): string => {
   return JSON.stringify(state, null, 2);
 };
 
+// ponytail: live-formats bed number as "floor+room-bed" (e.g. 15511 -> 1551-1) while typing
+export const formatBedInput = (raw: string): string => {
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return '';
+  const floorWidth = /^[89]/.test(digits) ? 1 : 2;
+  const splitAt = floorWidth + 2;
+  const d = digits.slice(0, splitAt + 1);
+  return d.length <= splitAt ? d : `${d.slice(0, splitAt)}-${d.slice(splitAt)}`;
+};
+
 // Format dates
 export const formatTime = (isoString: string): string => {
   try {

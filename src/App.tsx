@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { DutyState, NewPatient, GeneralOrder, HandoverPatient, SyncStatus, Shift } from './types';
-import { getInitialState, saveState, formatTime } from './utils';
+import { getInitialState, saveState, formatTime, formatBedInput } from './utils';
 import { db, auth } from './firebase';
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
@@ -845,13 +845,13 @@ export default function App() {
 
   // ponytail: floor(8-21) + room(01-21=A, 50-72=B) + optional bed digit(1-3)
   const parseBed = (bed: string): number => {
-    const m = bed.trim().match(/^(8|9|1[0-9]|2[01])(\d{2})(\d?)$/);
+    const m = bed.trim().match(/^(8|9|1[0-9]|2[01])(\d{2})-?(\d?)$/);
     if (!m) return 999999;
     return parseInt(m[1]) * 1000 + parseInt(m[2]) * 10 + (m[3] ? parseInt(m[3]) : 0);
   };
 
   const renderBed = (bed: string) => {
-    const m = bed.trim().match(/^(8|9|1[0-9]|2[01])(\d{2})(\d?)$/);
+    const m = bed.trim().match(/^(8|9|1[0-9]|2[01])(\d{2})-?(\d?)$/);
     if (!m) return <>{bed}</>;
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center' }}>
@@ -1327,11 +1327,11 @@ export default function App() {
                       ref={qpBedRef}
                       required
                       type="text"
-                      pattern="\d*"
+                      pattern="[0-9-]*"
                       inputMode="numeric"
                       value={qpBed}
                       onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, '');
+                        const val = formatBedInput(e.target.value);
                         setQpBed(val);
                         setQpError('');
                         checkAndAutofillQpBed(val);
@@ -1567,11 +1567,11 @@ export default function App() {
                             ref={pBedRef}
                             required
                             type="text"
-                            pattern="\d*"
+                            pattern="[0-9-]*"
                             inputMode="numeric"
                             value={pBed}
                             onChange={(e) => {
-                              const val = e.target.value.replace(/\D/g, '');
+                              const val = formatBedInput(e.target.value);
                               setPBed(val);
                               setPError('');
                               checkAndAutofillBed(val, 'patient');
@@ -2108,11 +2108,11 @@ export default function App() {
                             ref={oBedRef}
                             required
                             type="text"
-                            pattern="\d*"
+                            pattern="[0-9-]*"
                             inputMode="numeric"
                             value={oBed}
                             onChange={(e) => {
-                              const val = e.target.value.replace(/\D/g, '');
+                              const val = formatBedInput(e.target.value);
                               setOBed(val);
                               setOError('');
                               checkAndAutofillBed(val, 'order');
@@ -2514,11 +2514,11 @@ export default function App() {
                             ref={hBedRef}
                             required
                             type="text"
-                            pattern="\d*"
+                            pattern="[0-9-]*"
                             inputMode="numeric"
                             value={hBed}
                             onChange={(e) => {
-                              const val = e.target.value.replace(/\D/g, '');
+                              const val = formatBedInput(e.target.value);
                               setHBed(val);
                               setHError('');
                               checkAndAutofillBed(val, 'handover');
