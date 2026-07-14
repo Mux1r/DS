@@ -166,7 +166,10 @@ export default function App() {
   // Firebase auth state
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const isLoadingFromFirestore = useRef(false);
+  // Content-based sync guards: compare JSON instead of timing flags to avoid
+  // snapshots clobbering local edits (checkbox flicker / lost updates)
+  const localJsonRef = useRef('');
+  const lastSyncedJsonRef = useRef<string | null>(null); // null = this shift not yet loaded
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const panelNewRef = useRef<HTMLDivElement>(null);
   const panelOrdersRef = useRef<HTMLDivElement>(null);
@@ -420,7 +423,7 @@ export default function App() {
   // 2. Real-time listener for selectedShiftId — auto-syncs across devices
   useEffect(() => {
     if (!user || !selectedShiftId) return;
-    isLoadingFromFirestore.current = true;
+    lastSyncedJsonRef.current = null; // block saves until this shift's data arrives
     setSyncStatus({ lastSynced: null, isSyncing: true, statusText: '從 Firebase 載入中...', error: false });
 
     const dateRef = doc(db, 'users', user.uid, 'dates', selectedShiftId);
@@ -428,23 +431,27 @@ export default function App() {
       // Skip snapshots caused by our own pending writes to avoid save loops
       if (snap.metadata.hasPendingWrites) return;
 
-      isLoadingFromFirestore.current = true;
-      if (snap.exists()) {
-        const data = snap.data();
-        setNewPatients(data.patients || []);
-        setGeneralOrders(data.orders || []);
-        setHandoverPatients(data.handovers || []);
-      } else {
-        setNewPatients([]);
-        setGeneralOrders([]);
-        setHandoverPatients([]);
+      const data = snap.exists() ? snap.data() : {};
+      const patients = data.patients || [];
+      const orders = data.orders || [];
+      const handovers = data.handovers || [];
+      const remoteJson = JSON.stringify({ patients, orders, handovers });
+
+      // Unsaved local edits win — the debounced save will push them shortly.
+      // Applying this snapshot would revert the user's change (flicker / lost tick).
+      const isFirstLoad = lastSyncedJsonRef.current === null;
+      if (!isFirstLoad && localJsonRef.current !== lastSyncedJsonRef.current) return;
+
+      lastSyncedJsonRef.current = remoteJson;
+      if (isFirstLoad || remoteJson !== localJsonRef.current) {
+        setNewPatients(patients);
+        setGeneralOrders(orders);
+        setHandoverPatients(handovers);
       }
       const t = new Date().toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
       setSyncStatus({ lastSynced: new Date().toLocaleTimeString(), isSyncing: false, statusText: `☁️ Firebase 雲端同步 · ${t} 已載入`, error: false });
-      setTimeout(() => { isLoadingFromFirestore.current = false; }, 200);
     }, (_err) => {
       setSyncStatus({ lastSynced: null, isSyncing: false, statusText: '⚠️ Firebase 載入失敗，請確認網路', error: true });
-      isLoadingFromFirestore.current = false;
     });
 
     return () => unsub();
@@ -477,7 +484,12 @@ export default function App() {
 
   // 4. Debounced auto-save to Firebase on any state change
   useEffect(() => {
-    if (!user || !selectedShiftId || isLoadingFromFirestore.current) return;
+    if (!user || !selectedShiftId) return;
+
+    const json = JSON.stringify({ patients: newPatients, orders: generalOrders, handovers: handoverPatients });
+    localJsonRef.current = json;
+    // Not yet loaded (don't overwrite server with empty state) or already in sync
+    if (lastSyncedJsonRef.current === null || json === lastSyncedJsonRef.current) return;
 
     setSyncStatus(prev => ({ ...prev, isSyncing: true, statusText: '同步中...' }));
 
@@ -491,6 +503,7 @@ export default function App() {
           handovers: handoverPatients,
           updatedAt: serverTimestamp(),
         });
+        lastSyncedJsonRef.current = json;
 
         const t = new Date().toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
         setSyncStatus({ lastSynced: new Date().toLocaleTimeString(), isSyncing: false, statusText: `☁️ 已同步 · ${t}`, error: false });
@@ -841,6 +854,24 @@ export default function App() {
     setShowAddHandover(false);
   };
 
+  const closePatientModal = () => { setShowAddPatient(false); setEditingPatientId(null); setPBed(''); setPDiagnosis(''); setPNote(''); setPError(''); };
+  const closeOrderModal = () => { setShowAddOrder(false); setEditingOrderId(null); setOBed(''); setOTask(''); setODiagnosis(''); setONote(''); setOPriority('normal'); setOError(''); };
+  const closeHandoverModal = () => { setShowAddHandover(false); setEditingHandoverId(null); setHBed(''); setHDiagnosis(''); setHAttn(''); setHNote(''); setHStatus('unstable'); setHError(''); };
+
+  // Esc closes whichever edit interface is currently open, most specific first
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (showAddPatient) closePatientModal();
+      else if (showAddOrder) closeOrderModal();
+      else if (showAddHandover) closeHandoverModal();
+      else if (showQuickPhoneAdd) { setShowQuickPhoneAdd(false); clearQp(); }
+      else if (isSidebarOpen) setIsSidebarOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [showAddPatient, showAddOrder, showAddHandover, showQuickPhoneAdd, isSidebarOpen]);
+
   // --- Filtering & Searching logic across columns with premium deep-matching ---
 
   // ponytail: floor(8-21) + room(01-21=A, 50-72=B) + optional bed digit(1-3)
@@ -872,9 +903,6 @@ export default function App() {
            (p.diagnosis && p.diagnosis.toLowerCase().includes(qStr)) ||
            (p.note && p.note.toLowerCase().includes(qStr));
   }).sort((a, b) => {
-    const aDone = a.orderDone && a.visited && a.chartDone;
-    const bDone = b.orderDone && b.visited && b.chartDone;
-    if (aDone !== bDone) return aDone ? 1 : -1;
     if (sortNewPatients === 'bed') return parseBed(a.bed) - parseBed(b.bed);
     if (sortNewPatients === 'user') {
       const ai = userPatientOrder.indexOf(a.id);
@@ -1557,7 +1585,7 @@ export default function App() {
                       <button type="submit" className="w-8 h-8 rounded-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white transition-colors cursor-pointer" title="確認">
                         <Check size={15} className="stroke-[3]" />
                       </button>
-                      <button type="button" onClick={() => { setShowAddPatient(false); setEditingPatientId(null); setPBed(''); setPDiagnosis(''); setPNote(''); setPError(''); }} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold" title="關閉">✕</button>
+                      <button type="button" onClick={closePatientModal} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold" title="關閉">✕</button>
                     </div>
                     <div className="p-6 md:p-8 flex flex-col gap-5 overflow-y-auto flex-grow">
                       {/* Main elements fields: Bed and Diagnosis on the same row */}
@@ -1712,7 +1740,7 @@ export default function App() {
                         className={`border rounded-xl px-3 py-1.5 transition-colors duration-150 ${isPatientEditMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${
                           dragOverPatientId === p.id ? 'border-indigo-400 bg-indigo-50/50' :
                           allDone
-                            ? 'border-emerald-100 bg-emerald-50/5 opacity-70 hover:opacity-100'
+                            ? 'border-slate-200 bg-slate-100 grayscale opacity-55 hover:opacity-100 hover:grayscale-0'
                             : 'border-slate-150/80 bg-white hover:border-slate-200 hover:shadow-3xs'
                         }`}
                       >
@@ -1908,7 +1936,7 @@ export default function App() {
                       }}
                       className={`border rounded-xl p-3.5 flex flex-col gap-3 transition-all cursor-pointer ${
                         allDone
-                          ? 'border-emerald-100 bg-emerald-50/10 opacity-70 hover:opacity-100'
+                          ? 'border-slate-200 bg-slate-100 grayscale opacity-55 hover:opacity-100 hover:grayscale-0'
                           : 'border-slate-100 bg-white hover:border-slate-200 hover:shadow-xs'
                       }`}
                     >
@@ -2098,7 +2126,7 @@ export default function App() {
                       <button type="submit" className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white transition-colors cursor-pointer" title="確認">
                         <Check size={15} className="stroke-[3]" />
                       </button>
-                      <button type="button" onClick={() => { setShowAddOrder(false); setEditingOrderId(null); setOBed(''); setOTask(''); setODiagnosis(''); setONote(''); setOPriority('normal'); setOError(''); }} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold" title="關閉">✕</button>
+                      <button type="button" onClick={closeOrderModal} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold" title="關閉">✕</button>
                     </div>
                     <div className="p-6 md:p-8 flex flex-col gap-5 overflow-y-auto flex-grow">
                       {/* Bed and Diagnosis in the same row */}
@@ -2504,7 +2532,7 @@ export default function App() {
                       <button type="submit" className="w-8 h-8 rounded-full flex items-center justify-center bg-rose-500 hover:bg-rose-600 text-white transition-colors cursor-pointer" title="確認">
                         <Check size={15} className="stroke-[3]" />
                       </button>
-                      <button type="button" onClick={() => { setShowAddHandover(false); setEditingHandoverId(null); setHBed(''); setHDiagnosis(''); setHAttn(''); setHNote(''); setHStatus('unstable'); setHError(''); }} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold" title="關閉">✕</button>
+                      <button type="button" onClick={closeHandoverModal} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold" title="關閉">✕</button>
                     </div>
                     <div className="p-6 md:p-8 flex flex-col gap-5 overflow-y-auto flex-grow">
                       {/* Bed and Diagnosis on the same row */}
