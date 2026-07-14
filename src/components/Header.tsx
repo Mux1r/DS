@@ -48,6 +48,7 @@ export default function Header({ state, syncStatus, onImport, isSidebarOpen, set
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isShiftSectionOpen, setIsShiftSectionOpen] = useState(false);
 
   // Live digital clock
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -55,6 +56,17 @@ export default function Header({ state, syncStatus, onImport, isSidebarOpen, set
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Esc closes the import modal, or the sidebar drawer itself
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (showImportModal) setShowImportModal(false);
+      else if (isSidebarOpen) setIsSidebarOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [showImportModal, isSidebarOpen, setIsSidebarOpen]);
 
   const formatLocalDate = (d: Date) => {
     const options: Intl.DateTimeFormatOptions = { 
@@ -140,7 +152,7 @@ export default function Header({ state, syncStatus, onImport, isSidebarOpen, set
             <div className="px-5 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <Settings size={15} className="text-indigo-600 animate-spin-slow" />
-                <h3 className="font-bold text-slate-800 text-sm font-sans tracking-tight">系統工作控制台</h3>
+                <h3 className="font-bold text-slate-800 text-sm font-sans tracking-tight">設定</h3>
               </div>
               <button
                 type="button"
@@ -181,14 +193,41 @@ export default function Header({ state, syncStatus, onImport, isSidebarOpen, set
                 </div>
               )}
 
+              {/* SECTION C: DISPLAY SETTINGS */}
+              <div className="space-y-2 pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 mb-2">
+                  {isDarkMode ? <Moon size={12} className="text-slate-400" /> : <Sun size={12} className="text-slate-400" />}
+                  <span>顯示設定</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={onToggleDarkMode}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs bg-slate-50 text-slate-700 hover:text-indigo-600 border border-slate-150 rounded-xl transition-all cursor-pointer group font-semibold"
+                >
+                  <span className="flex items-center gap-1.5">
+                    {isDarkMode
+                      ? <Sun size={13} className="text-amber-500" />
+                      : <Moon size={13} className="text-slate-400 group-hover:text-indigo-500" />
+                    }
+                    {isDarkMode ? '切換淺色主題' : '切換深色主題'}
+                  </span>
+                  <ChevronRight size={11} className="text-slate-300 group-hover:text-indigo-400" />
+                </button>
+              </div>
+
               {/* SECTION: SHIFT MANAGEMENT */}
               {availableShifts.length > 0 && (
                 <div className="space-y-1 pt-2 pb-2 border-b border-slate-100">
-                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsShiftSectionOpen(v => !v)}
+                    className="w-full flex items-center gap-1.5 text-[11px] font-bold text-slate-500 mb-2 cursor-pointer"
+                  >
                     <CalendarDays size={12} className="text-indigo-500" />
                     <span>值班管理</span>
-                  </div>
-                  {availableShifts.map(shift => {
+                    <ChevronRight size={11} className={`ml-auto text-slate-300 transition-transform ${isShiftSectionOpen ? 'rotate-90' : ''}`} />
+                  </button>
+                  {isShiftSectionOpen && availableShifts.map(shift => {
                     const label = shift.startDate === shift.endDate
                       ? shift.startDate.slice(5).replace('-', '/')
                       : `${shift.startDate.slice(5).replace('-', '/')} – ${shift.endDate.slice(5).replace('-', '/')}`;
@@ -324,28 +363,6 @@ export default function Header({ state, syncStatus, onImport, isSidebarOpen, set
                   )}
                 </button>
 
-              </div>
-
-              {/* SECTION C: DISPLAY SETTINGS */}
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 mb-2">
-                  {isDarkMode ? <Moon size={12} className="text-slate-400" /> : <Sun size={12} className="text-slate-400" />}
-                  <span>顯示設定</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={onToggleDarkMode}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs bg-slate-50 text-slate-700 hover:text-indigo-600 border border-slate-150 rounded-xl transition-all cursor-pointer group font-semibold"
-                >
-                  <span className="flex items-center gap-1.5">
-                    {isDarkMode
-                      ? <Sun size={13} className="text-amber-500" />
-                      : <Moon size={13} className="text-slate-400 group-hover:text-indigo-500" />
-                    }
-                    {isDarkMode ? '切換淺色主題' : '切換深色主題'}
-                  </span>
-                  <ChevronRight size={11} className="text-slate-300 group-hover:text-indigo-400" />
-                </button>
               </div>
 
             </div>
