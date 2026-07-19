@@ -855,7 +855,49 @@ export default function App() {
   };
 
   const closePatientModal = () => { setShowAddPatient(false); setEditingPatientId(null); setPBed(''); setPDiagnosis(''); setPNote(''); setPError(''); };
+
+  // Duplicate-bed guard: a bed already in the handover list can't be imported again
+  const bedInHandover = (bed: string) =>
+    !!bed.trim() && handoverPatients.some(h => h.bed.trim().toUpperCase() === bed.trim().toUpperCase());
+
+  const importPatientToHandover = () => {
+    if (!pBed.trim()) {
+      setPError('請輸入床號！');
+      return;
+    }
+    if (bedInHandover(pBed)) return;
+    addHandover({
+      id: `handover-${Date.now()}`,
+      bed: pBed.trim().toUpperCase(),
+      name: '',
+      diagnosis: pDiagnosis.trim(),
+      note: '',
+      attentionPoints: pNote.trim(),
+      status: 'unstable',
+      isHandedOver: false,
+      createdAt: new Date().toISOString()
+    });
+  };
   const closeOrderModal = () => { setShowAddOrder(false); setEditingOrderId(null); setOBed(''); setOTask(''); setODiagnosis(''); setONote(''); setOPriority('normal'); setOError(''); };
+
+  const importOrderToHandover = () => {
+    if (!oBed.trim()) {
+      setOError('請輸入床號！');
+      return;
+    }
+    if (bedInHandover(oBed)) return;
+    addHandover({
+      id: `handover-${Date.now()}`,
+      bed: oBed.trim().toUpperCase(),
+      name: '',
+      diagnosis: oDiagnosis.trim(),
+      note: oNote.trim(),
+      attentionPoints: oTask.trim(),
+      status: 'unstable',
+      isHandedOver: false,
+      createdAt: new Date().toISOString()
+    });
+  };
   const closeHandoverModal = () => { setShowAddHandover(false); setEditingHandoverId(null); setHBed(''); setHDiagnosis(''); setHAttn(''); setHNote(''); setHStatus('unstable'); setHError(''); };
 
   // Esc closes whichever edit interface is currently open, most specific first
@@ -1582,6 +1624,21 @@ export default function App() {
                 <div className="w-full max-w-2xl bg-gradient-to-b from-indigo-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-indigo-150 dark:border-slate-200/40 flex flex-col max-h-[90vh] animate-scale-up duration-200">
                   <form onSubmit={handleAddPatientSubmit} autoComplete="off" className="flex flex-col flex-grow overflow-hidden">
                     <div className="flex items-center justify-end gap-1.5 px-4 py-2 border-b border-indigo-100/50 shrink-0">
+                      <button
+                        type="button"
+                        id="btn-import-patient-to-handover"
+                        onClick={importPatientToHandover}
+                        disabled={bedInHandover(pBed)}
+                        className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all active:scale-95 shrink-0 mr-auto ${
+                          bedInHandover(pBed)
+                            ? 'bg-rose-100 text-rose-400 cursor-default'
+                            : 'bg-rose-500 hover:bg-rose-600 text-white cursor-pointer'
+                        }`}
+                        title={bedInHandover(pBed) ? '此床號已在交班清單' : '匯入到交班清單'}
+                      >
+                        {bedInHandover(pBed) ? <Check size={11} className="stroke-[3]" /> : <Plus size={11} className="stroke-[3]" />}
+                        <span>{bedInHandover(pBed) ? '已在交班' : '交班'}</span>
+                      </button>
                       <button type="submit" className="w-8 h-8 rounded-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white transition-colors cursor-pointer" title="確認">
                         <Check size={15} className="stroke-[3]" />
                       </button>
@@ -1782,6 +1839,15 @@ export default function App() {
                             >
                               {p.diagnosis}
                             </span>
+                            {!!p.note?.trim() && (
+                              <span
+                                title={p.note}
+                                onClick={(e) => { e.stopPropagation(); setInlineOrderText(''); setExpandedControlPatientId(expandedControlPatientId === p.id ? null : p.id); }}
+                                className="shrink-0 text-[#a9bac9] hover:text-[#7f97ab] cursor-pointer p-1 -m-1"
+                              >
+                                <FileText size={12} />
+                              </span>
+                            )}
                           </div>
 
                           {/* Right: morphing dot→pill buttons */}
@@ -1994,7 +2060,12 @@ export default function App() {
                           <span className="text-slate-400 text-xs font-medium pr-1">Dx:</span>
                           {p.diagnosis}
                         </p>
-
+                        {!!p.note?.trim() && (
+                          <p title={p.note} className="mt-1 text-xs text-[#a9bac9] flex items-center gap-1">
+                            <FileText size={11} className="shrink-0" />
+                            <span className="truncate">{p.note}</span>
+                          </p>
+                        )}
                       </div>
 
                       {/* The exactly 3 toggles required by checklist */}
@@ -2123,6 +2194,21 @@ export default function App() {
                 <div className="w-full max-w-2xl bg-gradient-to-b from-amber-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-amber-150 dark:border-slate-200/40 flex flex-col max-h-[92vh] animate-scale-up duration-200">
                   <form onSubmit={handleAddOrderSubmit} autoComplete="off" className="flex flex-col flex-grow overflow-hidden">
                     <div className="flex items-center justify-end gap-1.5 px-4 py-2 border-b border-amber-100/50 shrink-0">
+                      <button
+                        type="button"
+                        id="btn-import-order-to-handover"
+                        onClick={importOrderToHandover}
+                        disabled={bedInHandover(oBed)}
+                        className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all active:scale-95 shrink-0 mr-auto ${
+                          bedInHandover(oBed)
+                            ? 'bg-rose-100 text-rose-400 cursor-default'
+                            : 'bg-rose-500 hover:bg-rose-600 text-white cursor-pointer'
+                        }`}
+                        title={bedInHandover(oBed) ? '此床號已在交班清單' : '匯入到交班清單'}
+                      >
+                        {bedInHandover(oBed) ? <Check size={11} className="stroke-[3]" /> : <Plus size={11} className="stroke-[3]" />}
+                        <span>{bedInHandover(oBed) ? '已在交班' : '交班'}</span>
+                      </button>
                       <button type="submit" className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white transition-colors cursor-pointer" title="確認">
                         <Check size={15} className="stroke-[3]" />
                       </button>
@@ -2728,6 +2814,7 @@ export default function App() {
                         }}
                         className={`border rounded-xl px-2.5 py-1.5 flex items-start gap-2.5 transition-all ${isHandoverEditMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${
                           dragOverHandoverId === h.id ? 'border-rose-400 bg-rose-50/50' :
+                          h.isHandedOver ? 'border-slate-100 bg-slate-100/40 grayscale opacity-55 hover:opacity-100 hover:grayscale-0 shadow-3xs' :
                           critical
                             ? 'border-rose-200 bg-rose-50/25 shadow-3xs'
                             : 'border-slate-150 bg-white hover:border-slate-200 shadow-3xs'
@@ -2748,7 +2835,9 @@ export default function App() {
                                   setHNote(h.note || ''); setHStatus(h.status); setShowAddHandover(true);
                                 }}
                                 className={`font-mono text-sm font-bold px-1.5 py-0.5 rounded-md border shrink-0 hover:opacity-80 transition-opacity ${
-                                  critical ? 'bg-rose-100/80 text-rose-800 border-rose-200 dark:bg-rose-200/70 dark:text-rose-855 dark:border-rose-300/40' : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-300/70 dark:text-slate-850 dark:border-slate-400/40'
+                                  critical ? 'bg-rose-100/80 text-rose-800 border-rose-200 dark:bg-rose-200/70 dark:text-rose-855 dark:border-rose-300/40'
+                                    : unstable ? 'bg-amber-50 text-amber-700/90 border-amber-100 dark:bg-amber-200/40 dark:text-amber-850 dark:border-amber-300/30'
+                                    : 'bg-emerald-50 text-emerald-700/90 border-emerald-100 dark:bg-emerald-250/40 dark:text-emerald-850 dark:border-emerald-300/30'
                                 }`}
                               >
                                 {renderBed(h.bed)}
@@ -2810,6 +2899,26 @@ export default function App() {
                             </div>
                           )}
                         </div>
+                        {/* Handed-over check */}
+                        {!isHandoverEditMode && (
+                          <button
+                            id={`compact-handover-done-btn-${h.id}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setHandoverPatients((prev) =>
+                                prev.map((item) => item.id === h.id ? { ...item, isHandedOver: !item.isHandedOver } : item)
+                              );
+                            }}
+                            className={`shrink-0 mt-0.5 w-[18px] h-[18px] rounded-md border flex items-center justify-center transition-all cursor-pointer ${
+                              h.isHandedOver
+                                ? 'bg-emerald-600 border-emerald-600 text-white'
+                                : 'bg-white border-slate-300 hover:border-emerald-400'
+                            }`}
+                            title={h.isHandedOver ? '取消已交班標記' : '標記已交班'}
+                          >
+                            {h.isHandedOver && <Check size={11} className="stroke-[3]" />}
+                          </button>
+                        )}
                       </div>
                     );
                   }
@@ -2846,7 +2955,9 @@ export default function App() {
                               setHNote(h.note || ''); setHStatus(h.status); setShowAddHandover(true);
                             }}
                             className={`font-mono text-sm font-bold px-1.5 py-0.5 rounded-md border hover:opacity-80 transition-opacity ${
-                              critical ? 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-200/70 dark:text-rose-855 dark:border-rose-300/40' : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-300/70 dark:text-slate-850 dark:border-slate-400/40'
+                              critical ? 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-200/70 dark:text-rose-855 dark:border-rose-300/40'
+                                : h.status === 'unstable' ? 'bg-amber-50 text-amber-700/90 border-amber-100 dark:bg-amber-200/40 dark:text-amber-850 dark:border-amber-300/30'
+                                : 'bg-emerald-50 text-emerald-700/90 border-emerald-100 dark:bg-emerald-250/40 dark:text-emerald-850 dark:border-emerald-300/30'
                             }`}
                           >
                             {renderBed(h.bed)}

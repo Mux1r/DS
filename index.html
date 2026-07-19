@@ -16,7 +16,12 @@
 
     <!-- PWA Registration & Dynamic Icon Caching Script -->
     <script>
-      if ('serviceWorker' in navigator) {
+      const isLocalDev = ['localhost', '127.0.0.1'].includes(location.hostname) || location.hostname.startsWith('10.') || location.hostname.startsWith('192.168.');
+      if ('serviceWorker' in navigator && isLocalDev) {
+        // Dev: unregister any stale SW and clear its caches so vite always serves fresh code
+        navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+        if ('caches' in window) caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+      } else if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
             .then((reg) => {
