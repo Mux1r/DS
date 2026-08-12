@@ -78,6 +78,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
+  const [showAllShifts, setShowAllShifts] = useState(false);
   const dateDropdownRef = useRef<HTMLDivElement>(null);
 
   // Core application lists
@@ -1085,12 +1086,20 @@ export default function App() {
                 </button>
 
                 {/* Shift list dropdown */}
-                {isDateDropdownOpen && (
+                {isDateDropdownOpen && (() => {
+                  // ponytail: 只顯示本月＋上個月，其餘收在「顯示更多」後面
+                  const c = new Date();
+                  const first = new Date(c.getFullYear(), c.getMonth() - 1, 1);
+                  const cutoff = `${first.getFullYear()}-${String(first.getMonth() + 1).padStart(2, '0')}-01`;
+                  const recentShifts = availableShifts.filter(s => s.endDate >= cutoff || s.id === selectedShiftId);
+                  const visibleShifts = showAllShifts ? availableShifts : recentShifts;
+                  const hiddenCount = availableShifts.length - recentShifts.length;
+                  return (
                   <div className="absolute left-0 top-full mt-1.5 bg-white border border-slate-200/80 rounded-xl z-50 py-1.5 min-w-[180px] shadow-lg">
                     {availableShifts.length === 0 && (
                       <div className="px-3 py-2 text-xs text-slate-400">尚無值班記錄</div>
                     )}
-                    {availableShifts.map(s => {
+                    {visibleShifts.map(s => {
                       const today = getTodayDateString();
                       const isActive = today >= s.startDate && today <= s.endDate;
                       const isSelected = s.id === selectedShiftId;
@@ -1168,8 +1177,18 @@ export default function App() {
                         </div>
                       );
                     })}
+                    {hiddenCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllShifts(o => !o)}
+                        className="w-full px-3 py-1.5 mt-0.5 border-t border-slate-100 text-[11px] text-slate-400 hover:text-indigo-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                      >
+                        {showAllShifts ? '收合' : `顯示更多（${hiddenCount}）`}
+                      </button>
+                    )}
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* Add shift button — amber pulse when today not covered by any shift */}
                 {(() => {
