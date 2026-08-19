@@ -39,6 +39,16 @@ export interface HandoverPatient {
   createdAt: string;
 }
 
+// 病歷模式：跨值班保存的個人病歷筆記（不綁 shift）
+export interface ChartRecord {
+  id: string;
+  mrn: string;      // 病歷號
+  name: string;
+  tags: string[];   // 自訂標籤（檢查、疾病…）
+  note: string;     // 病歷紀錄
+  createdAt: string;
+}
+
 export interface Shift {
   id: string;        // equals startDate — used as Firebase document ID (backward-compatible with dates/ path)
   startDate: string; // "2026-06-13"

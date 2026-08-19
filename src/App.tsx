@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { DutyState, NewPatient, GeneralOrder, HandoverPatient, SyncStatus, Shift } from './types';
+import { DutyState, NewPatient, GeneralOrder, HandoverPatient, SyncStatus, Shift, ChartRecord } from './types';
 import { getInitialState, saveState, formatTime, formatBedInput } from './utils';
 import { db, auth } from './firebase';
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
@@ -14,6 +14,7 @@ import LoginScreen from './components/LoginScreen';
 // Import UI components
 import Header from './components/Header';
 import StatsBanner from './components/StatsBanner';
+import ChartsTab from './components/ChartsTab';
 
 // Icons for clinical cockpit
 import {
@@ -58,6 +59,13 @@ export default function App() {
   // Active board section selector (New Patients / Orders / Handovers)
   const [mobileTab, setMobileTab] = useState<'new' | 'orders' | 'handovers'>('new');
 
+  // Top-level mode: duty board (per shift) vs chart notes (cross-shift)
+  const [appMode, setAppMode] = useState<'duty' | 'charts'>(
+    () => (localStorage.getItem('duty_app_mode') === 'charts' ? 'charts' : 'duty')
+  );
+  useEffect(() => { localStorage.setItem('duty_app_mode', appMode); }, [appMode]);
+  const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
+
   // Side-effect to apply the dark theme class to the document node
   useEffect(() => {
     if (isDarkMode) {
@@ -85,6 +93,12 @@ export default function App() {
   const [newPatients, setNewPatients] = useState<NewPatient[]>([]);
   const [generalOrders, setGeneralOrders] = useState<GeneralOrder[]>([]);
   const [handoverPatients, setHandoverPatients] = useState<HandoverPatient[]>([]);
+
+  // Chart notes live outside shifts — one doc per user
+  const [chartRecords, setChartRecords] = useState<ChartRecord[]>([]);
+  const [chartTags, setChartTags] = useState<string[]>([]); // 標籤庫（空 = 用 ChartsTab 內建預設）
+  const chartsLocalJsonRef = useRef('');
+  const chartsSyncedJsonRef = useRef<string | null>(null); // null = not loaded yet
 
   // Toggles for inline quick-add forms in each column - now placed at the bottom!
   const [showAddPatient, setShowAddPatient] = useState(false);
@@ -457,6 +471,48 @@ export default function App() {
 
     return () => unsub();
   }, [user, selectedShiftId]);
+
+  // 2b. Chart notes listener + debounced save — same content-compare guard as the duty board.
+  // ponytail: all records in one doc; split per-record if it ever nears Firestore's 1MB limit
+  useEffect(() => {
+    if (!user) return;
+    const ref = doc(db, 'users', user.uid, 'metadata', 'charts');
+    const unsub = onSnapshot(ref, (snap) => {
+      if (snap.metadata.hasPendingWrites) return;
+      const remote = {
+        records: (snap.exists() && snap.data().records) || [],
+        tags: (snap.exists() && snap.data().tags) || [],
+      } as { records: ChartRecord[]; tags: string[] };
+      const remoteJson = JSON.stringify(remote);
+      const isFirstLoad = chartsSyncedJsonRef.current === null;
+      // Unsaved local edits win — the debounced save will push them shortly
+      if (!isFirstLoad && chartsLocalJsonRef.current !== chartsSyncedJsonRef.current) return;
+      chartsSyncedJsonRef.current = remoteJson;
+      if (isFirstLoad || remoteJson !== chartsLocalJsonRef.current) { setChartRecords(remote.records); setChartTags(remote.tags); }
+    });
+    return () => unsub();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const json = JSON.stringify({ records: chartRecords, tags: chartTags });
+    chartsLocalJsonRef.current = json;
+    if (chartsSyncedJsonRef.current === null || json === chartsSyncedJsonRef.current) return;
+
+    const t = setTimeout(async () => {
+      try {
+        await setDoc(
+          doc(db, 'users', user.uid, 'metadata', 'charts'),
+          { records: chartRecords, tags: chartTags, updatedAt: serverTimestamp() },
+          { merge: true }
+        );
+        chartsSyncedJsonRef.current = json;
+      } catch (e) {
+        console.error('Error saving chart records', e);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [user, chartRecords, chartTags]);
 
   // 3. Index bed→diagnosis mapping for autofill suggestions (diagnosis only, no cross-shift patient data)
   useEffect(() => {
@@ -1053,7 +1109,42 @@ export default function App() {
 
             {/* LEFT: wordmark + date — hidden on mobile when search is expanded */}
             <div className={`items-center gap-3 shrink-0 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}>
-              <span className="text-sm font-bold tracking-tight text-slate-800 font-sans">Duty List</span>
+              {/* Mode menu: duty board ⇄ chart notes */}
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsModeMenuOpen(o => !o)}
+                  className="flex items-center gap-1 px-1 py-1 -mx-1 text-sm font-bold tracking-tight text-slate-800 font-sans rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                  title="切換模式"
+                >
+                  {appMode === 'charts' ? '病歷紀錄' : 'Duty List'}
+                  <ChevronDown size={11} className={`text-slate-400 transition-transform duration-200 ${isModeMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isModeMenuOpen && (
+                  <>
+                    {/* ponytail: 透明背景代替 click-outside listener */}
+                    <div className="fixed inset-0 z-40" onClick={() => setIsModeMenuOpen(false)} />
+                    <div className="absolute left-0 top-full mt-1.5 bg-white border border-slate-200/80 rounded-xl z-50 py-1.5 min-w-[150px] shadow-lg">
+                      {([['duty', '值班列表', Clipboard], ['charts', '病歷紀錄', FileText]] as const).map(([m, label, Icon]) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => { setAppMode(m); setIsModeMenuOpen(false); }}
+                          className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left transition-colors cursor-pointer ${
+                            appMode === m ? 'font-semibold text-slate-900 bg-slate-50' : 'text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          <Icon size={13} className="text-slate-400 shrink-0" />
+                          <span className="flex-1">{label}</span>
+                          {appMode === m && <Check size={10} className="text-slate-400 shrink-0" />}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              {/* 病歷不綁值班日期，charts 模式整段收起來 */}
+              {appMode === 'duty' && <>
               <div className="h-4 w-px bg-slate-200 shrink-0"></div>
 
               {/* Shift selector + add button (shared ref for click-outside) */}
@@ -1255,10 +1346,11 @@ export default function App() {
                   </div>
                 )}
               </div>
+              </>}
             </div>
 
             {/* DESKTOP: phone button inline in Row 1 */}
-            {!isMobileSearchOpen && (
+            {appMode === 'duty' && !isMobileSearchOpen && (
               <div className="hidden md:flex flex-1 items-center justify-center px-1">
                 <button
                   type="button"
@@ -1357,7 +1449,7 @@ export default function App() {
           </div>
 
           {/* Row 2: MOBILE ONLY — 電話速記 full-width button */}
-          <div className="flex md:hidden">
+          <div className={`md:hidden ${appMode === 'duty' ? 'flex' : 'hidden'}`}>
             <button
               type="button"
               id="quick-phone-add-trigger-mobile"
@@ -1542,17 +1634,24 @@ export default function App() {
         )}
 
 
+        {/* 病歷模式：跨值班的病歷號 / 標籤 / 紀錄 */}
+        {appMode === 'charts' && (
+          <ChartsTab records={chartRecords} onChange={setChartRecords} tags={chartTags} onTagsChange={setChartTags} search={searchQuery} />
+        )}
+
         {/* Fused Clinically Essential Metrics & Navigation Tab Switcher */}
-        <StatsBanner 
-          state={currentDutyState} 
-          activeTab={mobileTab} 
-          onTabChange={setMobileTab} 
-        />
+        {appMode === 'duty' && (
+          <StatsBanner
+            state={currentDutyState}
+            activeTab={mobileTab}
+            onTabChange={setMobileTab}
+          />
+        )}
 
         {/* 3. One-Page Responsive Full-Screen Cockpit Panel */}
-        <div 
+        <div
           id="dashboard-columns-grid"
-          className="w-full flex flex-col gap-3.5 items-stretch"
+          className={`w-full flex-col gap-3.5 items-stretch ${appMode === 'duty' ? 'flex' : 'hidden'}`}
         >
           
           {/* ================= COLUMN 1: 新病人 Checklist ================= */}
