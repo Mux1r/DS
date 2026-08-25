@@ -113,6 +113,14 @@ export default function App() {
   const [qpPriority, setQpPriority] = useState<GeneralOrder['priority']>('normal');
   const [qpError, setQpError] = useState('');
 
+  // 上線號碼：只存這台裝置的 localStorage，不進 Firebase（每個人上線號碼本來就不同）
+  const [onlineNumber, setOnlineNumber] = useState(() => localStorage.getItem('duty_online_number') || '');
+  const updateOnlineNumber = (v: string) => {
+    const clean = v.slice(0, 20);
+    setOnlineNumber(clean);
+    localStorage.setItem('duty_online_number', clean);
+  };
+
   // Toggle for the main search & switcher dashboard panel, default collapsed!
   const [isDashboardExpanded, setIsDashboardExpanded] = useState(false);
 
@@ -1351,7 +1359,7 @@ export default function App() {
 
             {/* DESKTOP: phone button inline in Row 1 */}
             {appMode === 'duty' && !isMobileSearchOpen && (
-              <div className="hidden md:flex flex-1 items-center justify-center px-1">
+              <div className="hidden md:flex flex-1 items-center justify-center gap-2 px-1">
                 <button
                   type="button"
                   id="quick-phone-add-trigger-desktop"
@@ -1368,6 +1376,19 @@ export default function App() {
                     {showQuickPhoneAdd ? '關閉速記' : '電話速記'}
                   </span>
                 </button>
+                <label className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 focus-within:border-emerald-400 focus-within:bg-white transition-colors">
+                  <span className="text-xs text-slate-400 shrink-0">上線</span>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="off"
+                    value={onlineNumber}
+                    onChange={e => updateOnlineNumber(e.target.value)}
+                    placeholder="號碼"
+                    title="上線號碼"
+                    className="w-40 text-base font-medium tracking-wide bg-transparent focus:outline-hidden text-slate-800"
+                  />
+                </label>
               </div>
             )}
 
@@ -1449,12 +1470,12 @@ export default function App() {
           </div>
 
           {/* Row 2: MOBILE ONLY — 電話速記 full-width button */}
-          <div className={`md:hidden ${appMode === 'duty' ? 'flex' : 'hidden'}`}>
+          <div className={`md:hidden items-center gap-1.5 ${appMode === 'duty' ? 'flex' : 'hidden'}`}>
             <button
               type="button"
               id="quick-phone-add-trigger-mobile"
               onClick={() => { setShowQuickPhoneAdd(!showQuickPhoneAdd); clearQp(); }}
-              className={`flex items-stretch rounded-full overflow-hidden border transition-all cursor-pointer duration-200 w-full shadow-xs ${
+              className={`flex items-stretch rounded-full overflow-hidden border transition-all cursor-pointer duration-200 flex-1 min-w-0 shadow-xs ${
                 showQuickPhoneAdd ? 'border-rose-300/60' : 'border-emerald-400/50'
               }`}
             >
@@ -1466,6 +1487,19 @@ export default function App() {
                 {showQuickPhoneAdd ? '關閉速記' : '電話速記'}
               </span>
             </button>
+            <label className="flex items-center gap-1 shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-2 focus-within:border-emerald-400 focus-within:bg-white transition-colors">
+              <span className="text-[11px] text-slate-400 shrink-0">上線</span>
+              <input
+                type="tel"
+                inputMode="tel"
+                autoComplete="off"
+                value={onlineNumber}
+                onChange={e => updateOnlineNumber(e.target.value)}
+                placeholder="號碼"
+                title="上線號碼"
+                className="w-24 text-base font-medium tracking-wide bg-transparent focus:outline-hidden text-slate-800"
+              />
+            </label>
           </div>
         </div>      {/* 📞護理師來電：萬用快速登記面板 (全螢幕加大版) */}
         {showQuickPhoneAdd && (
