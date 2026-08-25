@@ -113,14 +113,6 @@ export default function App() {
   const [qpPriority, setQpPriority] = useState<GeneralOrder['priority']>('normal');
   const [qpError, setQpError] = useState('');
 
-  // 上線號碼：只存這台裝置的 localStorage，不進 Firebase（每個人上線號碼本來就不同）
-  const [onlineNumber, setOnlineNumber] = useState(() => localStorage.getItem('duty_online_number') || '');
-  const updateOnlineNumber = (v: string) => {
-    const clean = v.slice(0, 20);
-    setOnlineNumber(clean);
-    localStorage.setItem('duty_online_number', clean);
-  };
-
   // Toggle for the main search & switcher dashboard panel, default collapsed!
   const [isDashboardExpanded, setIsDashboardExpanded] = useState(false);
 
@@ -169,6 +161,19 @@ export default function App() {
     return localStorage.getItem('duty_selected_shift_id') || localStorage.getItem('duty_selected_date') || '';
   });
   const [availableShifts, setAvailableShifts] = useState<Shift[]>([]);
+
+  // 上線號碼：每班一組，key 帶 shiftId，切換值班就換一組。
+  // 只存這台裝置的 localStorage，不進 Firebase。
+  const onlineNumberKey = `duty_online_number_${selectedShiftId}`;
+  const [onlineNumber, setOnlineNumber] = useState('');
+  useEffect(() => {
+    setOnlineNumber(selectedShiftId ? localStorage.getItem(onlineNumberKey) || '' : '');
+  }, [onlineNumberKey, selectedShiftId]);
+  const updateOnlineNumber = (v: string) => {
+    const clean = v.slice(0, 20);
+    setOnlineNumber(clean);
+    if (selectedShiftId) localStorage.setItem(onlineNumberKey, clean);
+  };
   const [showAddShiftForm, setShowAddShiftForm] = useState(false);
   const [addShiftStart, setAddShiftStart] = useState(getTodayDateString());
   const [addShiftEnd, setAddShiftEnd] = useState(() => {
@@ -1385,6 +1390,7 @@ export default function App() {
                     value={onlineNumber}
                     onChange={e => updateOnlineNumber(e.target.value)}
                     placeholder="號碼"
+                    disabled={!selectedShiftId}
                     title="上線號碼"
                     className="w-40 text-base font-medium tracking-wide bg-transparent focus:outline-hidden text-slate-800"
                   />
@@ -1496,6 +1502,7 @@ export default function App() {
                 value={onlineNumber}
                 onChange={e => updateOnlineNumber(e.target.value)}
                 placeholder="號碼"
+                disabled={!selectedShiftId}
                 title="上線號碼"
                 className="w-24 text-base font-medium tracking-wide bg-transparent focus:outline-hidden text-slate-800"
               />
