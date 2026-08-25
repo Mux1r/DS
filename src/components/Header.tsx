@@ -149,7 +149,7 @@ export default function Header({ state, syncStatus, onImport, isSidebarOpen, set
             className="relative w-full max-w-sm bg-white border-l border-slate-200 h-full flex flex-col shadow-2xl z-10 animate-slide-in-right overflow-hidden"
           >
             {/* Header / Brand details */}
-            <div className="px-5 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
+            <div className="px-5 py-4 pt-[calc(env(safe-area-inset-top)+1rem)] border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <Settings size={15} className="text-indigo-600 animate-spin-slow" />
                 <h3 className="font-bold text-slate-800 text-sm font-sans tracking-tight">設定</h3>

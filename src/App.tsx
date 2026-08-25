@@ -1091,7 +1091,7 @@ export default function App() {
   const handleSignOut = () => signOut(auth);
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50/50 selection:bg-indigo-100" id="main-layout-root">
+    <div className="flex flex-col min-h-screen bg-slate-50/50 selection:bg-indigo-100 pt-[env(safe-area-inset-top)]" id="main-layout-root">
       {/* Universal Sync banner or static top-bar */}
       <Header
         state={currentDutyState}
@@ -1512,7 +1512,7 @@ export default function App() {
         {showQuickPhoneAdd && (
           <div 
             id="panel-quick-phone-add"
-            className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-4 px-3 md:pt-8 md:px-6"
+            className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-[calc(env(safe-area-inset-top)+1rem)] px-3 md:pt-8 md:px-6"
           >
             <div className="w-full max-w-4xl bg-gradient-to-b from-emerald-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-emerald-100 dark:border-slate-200/40 flex flex-col max-h-[92vh] animate-scale-up duration-200">
               {/* Header: dispatch buttons left, continue+close right */}
@@ -1778,7 +1778,7 @@ export default function App() {
             {showAddPatient && (
               <div 
                 id="inline-add-patient-form-modal"
-                className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-4 px-3 md:pt-8 md:px-6"
+                className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-[calc(env(safe-area-inset-top)+1rem)] px-3 md:pt-8 md:px-6"
               >
                 <div className="w-full max-w-2xl bg-gradient-to-b from-indigo-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-indigo-150 dark:border-slate-200/40 flex flex-col max-h-[90vh] animate-scale-up duration-200">
                   <form onSubmit={handleAddPatientSubmit} autoComplete="off" className="flex flex-col flex-grow overflow-hidden">
@@ -2348,7 +2348,7 @@ export default function App() {
             {showAddOrder && (
               <div 
                 id="inline-add-order-form-modal"
-                className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-4 px-3 md:pt-8 md:px-6"
+                className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-[calc(env(safe-area-inset-top)+1rem)] px-3 md:pt-8 md:px-6"
               >
                 <div className="w-full max-w-2xl bg-gradient-to-b from-amber-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-amber-150 dark:border-slate-200/40 flex flex-col max-h-[92vh] animate-scale-up duration-200">
                   <form onSubmit={handleAddOrderSubmit} autoComplete="off" className="flex flex-col flex-grow overflow-hidden">
@@ -2769,7 +2769,7 @@ export default function App() {
             {showAddHandover && (
               <div 
                 id="inline-add-handover-form-modal"
-                className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-4 px-3 md:pt-8 md:px-6"
+                className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-[calc(env(safe-area-inset-top)+1rem)] px-3 md:pt-8 md:px-6"
               >
                 <div className="w-full max-w-2xl bg-gradient-to-b from-rose-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-rose-150 dark:border-slate-200/40 flex flex-col max-h-[92vh] animate-scale-up duration-200">
                   <form onSubmit={handleAddHandoverSubmit} autoComplete="off" className="flex flex-col flex-grow overflow-hidden">
