@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { ChartRecord } from '../types';
 import { Plus, Trash2, Check, X, FileText, Tag, Pencil, Send, Eye, EyeOff, MessageSquare } from 'lucide-react';
-import { applyTagPatch, buildCaselogPrompt, buildEpaPrompt, buildOpeningLine, epaCode, hasCaselogTag, hasEpaTag, TagPatch } from '../emyway';
+import { applyTagPatch, buildCaselogPrompt, buildEpaPrompt, buildOpeningLine, currentRank, epaCode, hasCaselogTag, hasEpaTag, TagPatch } from '../emyway';
 import { formatDate } from '../utils';
 
 interface ChartsTabProps {
@@ -256,12 +256,6 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
   const unmark = (id: string, flag: 'caselogDone' | 'epaDone') =>
     onChange(records.map(r => (r.id === id ? { ...r, [flag]: false } : r)));
 
-  const askRank = () => {
-    const r = window.prompt('年資（R1~R5）', localStorage.getItem('emyway_rank') || 'R1')?.trim();
-    if (r) localStorage.setItem('emyway_rank', r);
-    return r || null;
-  };
-
   const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -274,12 +268,8 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
 
   // 每次要跟 Claude 說的開場白 —— 資料他自己從 DS 讀，這裡只交代做哪一種、哪些筆
   const copyOpening = async () => {
-    let rank: string | null = null;
-    if (isEpaTab) {
-      rank = askRank();
-      if (!rank) return;
-    }
-    if (!(await copy(buildOpeningLine(kind, rank, picking?.size ?? 0)))) return;
+    const text = buildOpeningLine(kind, isEpaTab ? currentRank() : null, picking?.size ?? 0);
+    if (!(await copy(text))) return;
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1500);
   };
@@ -299,9 +289,7 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
 
     let text: string;
     if (isEpaTab) {
-      const rank = askRank();
-      if (!rank) return;
-      text = buildEpaPrompt(picked, rank, library);
+      text = buildEpaPrompt(picked, currentRank(), library);
     } else {
       text = buildCaselogPrompt(picked, library);
     }
@@ -526,6 +514,9 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
       {picking && (
         <div className={`flex items-center gap-1.5 border rounded-xl px-3 py-2 ${accent.bar}`}>
           <span className={`text-xs font-semibold tabular-nums ${accent.barText}`}>已選 {picking.size} 筆</span>
+          {isEpaTab && (
+            <span className="text-xs text-amber-700/70 tabular-nums">年資 {currentRank()}</span>
+          )}
           <button
             type="button"
             onClick={exportTo}

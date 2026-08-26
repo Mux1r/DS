@@ -162,3 +162,11 @@ export function buildOpeningLine(
     .filter(Boolean)
     .join('\n');
 }
+
+// 年資自動算：2026 年 8 月起 R1，之後每年 8 月升一階（住院醫師年度 8/1 換）。
+// 上限 R5 —— emyway 表單只到 R5，真的升上去就不會再用這個工具了。
+// 邊界：2026-07 → R1（還沒開始也先當 R1）、2026-08 → R1、2027-07 → R1、2027-08 → R2。
+export const currentRank = (now = new Date()): string => {
+  const year = now.getFullYear() - (now.getMonth() < 7 ? 1 : 0);   // getMonth() 從 0 起算，7 = 八月
+  return 'R' + Math.min(5, Math.max(1, year - 2026 + 1));
+};
