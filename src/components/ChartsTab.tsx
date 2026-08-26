@@ -5,8 +5,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { ChartRecord } from '../types';
-import { Plus, Trash2, Check, X, FileText, Tag, Pencil, Send, Eye, EyeOff } from 'lucide-react';
-import { applyTagPatch, buildCaselogPrompt, buildEpaPrompt, epaCode, hasCaselogTag, hasEpaTag, TagPatch } from '../emyway';
+import { Plus, Trash2, Check, X, FileText, Tag, Pencil, Send, Eye, EyeOff, MessageSquare } from 'lucide-react';
+import { applyTagPatch, buildCaselogPrompt, buildEpaPrompt, buildOpeningLine, epaCode, hasCaselogTag, hasEpaTag, TagPatch } from '../emyway';
 import { formatDate } from '../utils';
 
 interface ChartsTabProps {
@@ -73,6 +73,8 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
   // 卡片右半邊 = 只看不編輯：展開完整病歷內容（左半邊仍然是進編輯表單）
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [manageTags, setManageTags] = useState(false);
+  // 開場白複製後短暫換字，比跳 alert 不擾人
+  const [copied, setCopied] = useState(false);
   // null = 一般模式；Set = 匯出勾選模式，內含被勾起來的紀錄 id
   const [picking, setPicking] = useState<Set<string> | null>(null);
   // 兩個工作視角，各自對應一種 emyway 表單
@@ -254,6 +256,34 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
   const unmark = (id: string, flag: 'caselogDone' | 'epaDone') =>
     onChange(records.map(r => (r.id === id ? { ...r, [flag]: false } : r)));
 
+  const askRank = () => {
+    const r = window.prompt('年資（R1~R5）', localStorage.getItem('emyway_rank') || 'R1')?.trim();
+    if (r) localStorage.setItem('emyway_rank', r);
+    return r || null;
+  };
+
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      window.alert('複製失敗，請確認瀏覽器允許存取剪貼簿。');
+      return false;
+    }
+  };
+
+  // 每次要跟 Claude 說的開場白 —— 資料他自己從 DS 讀，這裡只交代做哪一種、哪些筆
+  const copyOpening = async () => {
+    let rank: string | null = null;
+    if (isEpaTab) {
+      rank = askRank();
+      if (!rank) return;
+    }
+    if (!(await copy(buildOpeningLine(kind, rank, picking?.size ?? 0)))) return;
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
+  };
+
   // 實際填表在 Claude 那邊，這裡無從得知成敗 → 複製成功就先標記，標記可點掉重來
   const exportTo = async () => {
     const selected = records
@@ -269,20 +299,14 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
 
     let text: string;
     if (isEpaTab) {
-      const rank = window.prompt('年資（R1~R5）', localStorage.getItem('emyway_rank') || 'R1')?.trim();
+      const rank = askRank();
       if (!rank) return;
-      localStorage.setItem('emyway_rank', rank);
       text = buildEpaPrompt(picked, rank, library);
     } else {
       text = buildCaselogPrompt(picked, library);
     }
 
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      window.alert('複製失敗，請確認瀏覽器允許存取剪貼簿。');
-      return;
-    }
+    if (!(await copy(text))) return;
 
     const flag = isEpaTab ? 'epaDone' : 'caselogDone';
     const done = new Set(picked.map(r => r.id));
@@ -456,8 +480,16 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
         <span className="text-xs text-slate-400 tabular-nums">{visible.length} / {records.length}</span>
         <button
           type="button"
+          onClick={copyOpening}
+          title={`複製要跟 Claude 說的那句話（${isEpaTab ? 'EPA' : 'Case Log'}）`}
+          className="ml-auto flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-all active:scale-95 cursor-pointer"
+        >
+          {copied ? <><Check size={11} className="stroke-[3]" /> 已複製</> : <><MessageSquare size={11} /> 開場白</>}
+        </button>
+        <button
+          type="button"
           onClick={() => (picking ? setPicking(null) : startPicking())}
-          className={`ml-auto flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all active:scale-95 cursor-pointer ${
+          className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all active:scale-95 cursor-pointer ${
             picking ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'text-slate-500 hover:bg-slate-100'
           }`}
         >

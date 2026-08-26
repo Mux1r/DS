@@ -142,3 +142,23 @@ export function buildEpaPrompt(records: ChartRecord[], rank: string, library: st
     body(records, true),
   ]);
 }
+
+// 每次要跟 Claude 說的那句話。規則在 README，這裡只交代「哪一種表單、哪些筆、年資」。
+export function buildOpeningLine(
+  kind: 'caselog' | 'epa',
+  rank: string | null,
+  pickedCount: number
+): string {
+  const what = kind === 'epa' ? 'EPA 學習評量' : 'Case Log';
+  const tab = kind === 'epa' ? 'EPA' : 'Case Log';   // DS 上分頁鈕的字
+  return [
+    `照 ${README} 跑一輪 ${what}。`,
+    `DS 已經開在「病歷紀錄」的 ${tab} 分頁，${
+      pickedCount ? `我勾好了 ${pickedCount} 筆` : '我沒有勾選，請取這個分頁底下還沒匯出過的全部'
+    }，資料你自己用 ds_tags.js 的讀模式撈。`,
+    kind === 'epa' ? `年資 ${rank}。EPA 的「完成表單」不要按，填完停著等我確認。` : '',
+    '開工前先把筆數和病歷號念一遍給我確認。',
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
