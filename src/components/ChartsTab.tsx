@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChartRecord } from '../types';
 import { Plus, Trash2, Check, X, FileText, Tag, Pencil, Send, Eye, EyeOff } from 'lucide-react';
-import { buildCaselogPrompt, buildEpaPrompt, epaCode, hasCaselogTag, hasEpaTag } from '../emyway';
+import { applyTagPatch, buildCaselogPrompt, buildEpaPrompt, epaCode, hasCaselogTag, hasEpaTag, TagPatch } from '../emyway';
 import { formatDate } from '../utils';
 
 interface ChartsTabProps {
@@ -98,6 +98,24 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
     });
   });
   const countOf = (t: string) => tagPeople.get(t)?.size ?? 0;
+
+  // ponytail: 給 Claude 用 javascript_tool 讀寫的橋接口，搭配 OneDrive/emyway-scripts/ds_tags.js。
+  // 改標籤一律走 onChange，所以照原本的路徑同步到 Firebase，不必另外處理儲存。
+  // 只在病歷模式（本元件掛著時）存在，離開就拆掉。
+  useEffect(() => {
+    (window as any).__ds = {
+      library: () => [...library],
+      records: () => records.map(r => ({
+        id: r.id, mrn: r.mrn, name: r.name, tags: [...r.tags], note: r.note, createdAt: r.createdAt,
+      })),
+      setTags: (patch: TagPatch[]) => {
+        const { next, report } = applyTagPatch(records, library, patch);
+        if (report.updated) onChange(next);
+        return report;
+      },
+    };
+    return () => { delete (window as any).__ds; };
+  }, [records, library, onChange]);
 
   // 標籤庫全部都列出來，加上紀錄上還留著、但已從標籤庫刪掉的殘留標籤
   const allTags = Array.from(new Set([...library, ...records.flatMap(r => r.tags)]))
@@ -226,22 +244,22 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
     const selected = records
       .filter(r => picking?.has(r.id))
       .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
-    // Case Log 的項目一定要有標籤才登得了，沒有的先排除，免得被誤標成已匯出
-    const picked = isEpaTab ? selected : selected.filter(hasCaselogTag);
-    const skipped = selected.length - picked.length;
+    // 沒標籤的也照送 —— 指令包第一步會讓 Claude 依病歷內文重判標籤並寫回 DS
+    const picked = selected;
     if (!picked.length) {
-      window.alert('勾選的紀錄都沒有 Case Log 標籤（EPA 標籤不算），沒有東西可以登錄。');
+      window.alert('沒有勾選任何紀錄。');
       return;
     }
+    const untagged = selected.filter(r => !(isEpaTab ? hasEpaTag(r) : hasCaselogTag(r))).length;
 
     let text: string;
     if (isEpaTab) {
       const rank = window.prompt('年資（R1~R5）', localStorage.getItem('emyway_rank') || 'R1')?.trim();
       if (!rank) return;
       localStorage.setItem('emyway_rank', rank);
-      text = buildEpaPrompt(picked, rank);
+      text = buildEpaPrompt(picked, rank, library);
     } else {
-      text = buildCaselogPrompt(picked);
+      text = buildCaselogPrompt(picked, library);
     }
 
     try {
@@ -257,7 +275,7 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
     setPicking(null);
     window.alert(
       `已複製 ${picked.length} 筆的 ${isEpaTab ? 'EPA' : 'Case Log'} 指令包，貼給 Claude 即可。` +
-        (skipped ? `\n（另 ${skipped} 筆沒有 Case Log 標籤，已略過）` : '')
+        (untagged ? `\n（其中 ${untagged} 筆還沒標籤，Claude 會依病歷內容判斷後寫回）` : '')
     );
   };
 
@@ -331,7 +349,7 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
                     return (
                       <span
                         key={t}
-                        className={`flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full border transition-colors ${
+                        className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full border transition-colors ${
                           on ? formAccent.chipOn : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                         }`}
                       >
@@ -482,7 +500,7 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
               type="button"
               onClick={() => setTagFilter(tagFilter === t ? null : t)}
               title={`${t}：${countOf(t)} 人`}
-              className={`flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full border transition-colors cursor-pointer ${
+              className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full border transition-colors cursor-pointer ${
                 tagFilter === t
                   ? accent.chipOn
                   : countOf(t) === 0
