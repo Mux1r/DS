@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { ChartRecord } from '../types';
-import { Plus, Trash2, Check, X, FileText, Tag, Pencil, Send } from 'lucide-react';
+import { Plus, Trash2, Check, X, FileText, Tag, Pencil, Send, Eye, EyeOff } from 'lucide-react';
 import { buildCaselogPrompt, buildEpaPrompt, epaCode, hasCaselogTag, hasEpaTag } from '../emyway';
 import { formatDate } from '../utils';
 
@@ -70,6 +70,8 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
+  // 卡片右半邊 = 只看不編輯：展開完整病歷內容（左半邊仍然是進編輯表單）
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const [manageTags, setManageTags] = useState(false);
   // null = 一般模式；Set = 匯出勾選模式，內含被勾起來的紀錄 id
   const [picking, setPicking] = useState<Set<string> | null>(null);
@@ -261,117 +263,125 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
 
   const renderForm = () => (
     <div className="flex flex-col gap-2 bg-slate-50 border border-slate-200 rounded-xl p-3">
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={form.mrn}
-          onChange={e => setForm({ ...form, mrn: e.target.value })}
-          placeholder="病歷號"
-          autoComplete="off"
-          autoFocus
-          className="w-32 text-sm font-mono font-bold px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-200"
-        />
-        <input
-          type="text"
-          value={form.name}
-          onChange={e => setForm({ ...form, name: e.target.value })}
-          placeholder="姓名"
-          autoComplete="off"
-          className="flex-1 min-w-0 text-sm px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-200"
-        />
-      </div>
+      <div className="flex flex-wrap gap-2">
+        {/* 左欄：病歷號、姓名、標籤 */}
+        <div className="flex flex-col gap-2 min-w-0 flex-1 basis-64">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={form.mrn}
+              onChange={e => setForm({ ...form, mrn: e.target.value })}
+              placeholder="病歷號"
+              autoComplete="off"
+              autoFocus
+              className="w-32 text-sm font-mono font-bold px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-200"
+            />
+            <input
+              type="text"
+              value={form.name}
+              onChange={e => setForm({ ...form, name: e.target.value })}
+              placeholder="姓名"
+              autoComplete="off"
+              className="flex-1 min-w-0 text-sm px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-200"
+            />
+          </div>
 
-      {/* 標籤多選 */}
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center gap-1.5">
-          <Tag size={11} className="text-slate-400" />
-          <span className="text-[11px] font-semibold text-slate-500">標籤</span>
-          <span className="text-[11px] text-slate-400 tabular-nums">已選 {form.tags.length}</span>
-          <button
-            type="button"
-            onClick={() => setManageTags(v => !v)}
-            className={`ml-auto flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer ${
-              manageTags ? 'bg-slate-200 text-slate-700' : 'text-slate-400 hover:bg-slate-100'
-            }`}
-          >
-            <Pencil size={9} /> {manageTags ? '完成' : '管理'}
-          </button>
-        </div>
-
-        <div className="flex gap-1 p-0.5 bg-slate-100 rounded-lg">
-          {([['caselog', 'Case Log'], ['epa', 'EPA']] as const).map(([k, label]) => {
-            const n = form.tags.filter(t => !!epaCode(t) === (k === 'epa')).length;
-            return (
+          {/* 標籤多選 */}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-1.5">
+              <Tag size={11} className="text-slate-400" />
+              <span className="text-[11px] font-semibold text-slate-500">標籤</span>
+              <span className="text-[11px] text-slate-400 tabular-nums">已選 {form.tags.length}</span>
               <button
-                key={k}
                 type="button"
-                onClick={() => setFormTagKind(k)}
-                className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 text-[11px] font-bold rounded-md transition-colors cursor-pointer ${
-                  formTagKind === k ? ACCENT[k].tab : 'text-slate-500 hover:text-slate-700'
+                onClick={() => setManageTags(v => !v)}
+                className={`ml-auto flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer ${
+                  manageTags ? 'bg-slate-200 text-slate-700' : 'text-slate-400 hover:bg-slate-100'
                 }`}
               >
-                {label}
-                {n > 0 && <span className={`tabular-nums ${ACCENT[k].count}`}>{n}</span>}
+                <Pencil size={9} /> {manageTags ? '完成' : '管理'}
               </button>
-            );
-          })}
-        </div>
+            </div>
 
-        <div className="flex flex-col gap-2 max-h-52 overflow-y-auto p-2 bg-white border border-slate-200 rounded-lg">
-          {groups.map(([g, ts]) => (
-            <div key={g} className="flex flex-wrap items-center gap-1">
-              <span className="w-full text-[10px] font-semibold text-slate-400">{g}</span>
-              {ts.map(t => {
-                const on = form.tags.includes(t);
+            <div className="flex gap-1 p-0.5 bg-slate-100 rounded-lg">
+              {([['caselog', 'Case Log'], ['epa', 'EPA']] as const).map(([k, label]) => {
+                const n = form.tags.filter(t => !!epaCode(t) === (k === 'epa')).length;
                 return (
-                  <span
-                    key={t}
-                    className={`flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full border transition-colors ${
-                      on ? formAccent.chipOn : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setFormTagKind(k)}
+                    className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 text-[11px] font-bold rounded-md transition-colors cursor-pointer ${
+                      formTagKind === k ? ACCENT[k].tab : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
-                    <button type="button" onClick={() => toggleTag(t)} title={`${t}：${countOf(t)} 人`} className="flex items-center gap-1 cursor-pointer">
-                      {t}
-                      {countOf(t) > 0 && (
-                        <span className={`tabular-nums ${on ? 'text-white/70' : 'text-slate-400'}`}>{countOf(t)}</span>
-                      )}
-                    </button>
-                    {manageTags && (
-                      <>
-                        <button type="button" title="改名" onClick={() => renameTag(t)} className="opacity-60 hover:opacity-100 cursor-pointer">
-                          <Pencil size={9} />
-                        </button>
-                        <button type="button" title="刪除標籤" onClick={() => deleteTag(t)} className="opacity-60 hover:opacity-100 cursor-pointer">
-                          <X size={10} />
-                        </button>
-                      </>
-                    )}
-                  </span>
+                    {label}
+                    {n > 0 && <span className={`tabular-nums ${ACCENT[k].count}`}>{n}</span>}
+                  </button>
                 );
               })}
-              {/* 新增標籤：接在最後一組標籤後面的 + */}
-              {g === '自訂' && !isEpaForm && (
-                <button
-                  type="button"
-                  onClick={addTag}
-                  title="新增標籤"
-                  className="flex items-center justify-center w-5 h-5 rounded-full border border-dashed border-slate-300 text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors cursor-pointer"
-                >
-                  <Plus size={11} className="stroke-[3]" />
-                </button>
-              )}
             </div>
-          ))}
+
+            <div className="flex flex-col gap-2 max-h-52 overflow-y-auto p-2 bg-white border border-slate-200 rounded-lg">
+              {groups.map(([g, ts]) => (
+                <div key={g} className="flex flex-wrap items-center gap-1">
+                  <span className="w-full text-[10px] font-semibold text-slate-400">{g}</span>
+                  {ts.map(t => {
+                    const on = form.tags.includes(t);
+                    return (
+                      <span
+                        key={t}
+                        className={`flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full border transition-colors ${
+                          on ? formAccent.chipOn : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <button type="button" onClick={() => toggleTag(t)} title={`${t}：${countOf(t)} 人`} className="flex items-center gap-1 cursor-pointer">
+                          {t}
+                          {countOf(t) > 0 && (
+                            <span className={`tabular-nums ${on ? 'text-white/70' : 'text-slate-400'}`}>{countOf(t)}</span>
+                          )}
+                        </button>
+                        {manageTags && (
+                          <>
+                            <button type="button" title="改名" onClick={() => renameTag(t)} className="opacity-60 hover:opacity-100 cursor-pointer">
+                              <Pencil size={9} />
+                            </button>
+                            <button type="button" title="刪除標籤" onClick={() => deleteTag(t)} className="opacity-60 hover:opacity-100 cursor-pointer">
+                              <X size={10} />
+                            </button>
+                          </>
+                        )}
+                      </span>
+                    );
+                  })}
+                  {/* 新增標籤：接在最後一組標籤後面的 + */}
+                  {g === '自訂' && !isEpaForm && (
+                    <button
+                      type="button"
+                      onClick={addTag}
+                      title="新增標籤"
+                      className="flex items-center justify-center w-5 h-5 rounded-full border border-dashed border-slate-300 text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors cursor-pointer"
+                    >
+                      <Plus size={11} className="stroke-[3]" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+        {/* 右欄：病歷內容，撐到跟左欄一樣高 */}
+        <div className="flex flex-col min-w-0 flex-1 basis-64">
+          <textarea
+            value={form.note}
+            onChange={e => setForm({ ...form, note: e.target.value })}
+            rows={5}
+            placeholder="病歷紀錄…"
+            className="w-full flex-1 min-h-40 text-sm px-2.5 py-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-200 resize-none leading-relaxed"
+          />
         </div>
       </div>
-
-      <textarea
-        value={form.note}
-        onChange={e => setForm({ ...form, note: e.target.value })}
-        rows={5}
-        placeholder="病歷紀錄…"
-        className="w-full text-sm px-2.5 py-2 bg-white border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-200 resize-y leading-relaxed"
-      />
 
       <div className="flex items-center justify-between">
         {editingId && editingId !== 'new' ? (
@@ -500,8 +510,16 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
           ) : (
             <div
               key={r.id}
-              onClick={() => (picking ? togglePick(r.id) : openEdit(r))}
-              className={`flex gap-2 p-2.5 border rounded-xl transition-colors cursor-pointer ${
+              onClick={e => {
+                // 正在選取文字（想複製病歷內容）時放開滑鼠也會觸發 click，這裡不當成點擊
+                if (window.getSelection()?.toString()) return;
+                if (picking) { togglePick(r.id); return; }
+                const box = e.currentTarget.getBoundingClientRect();
+                // 沒有內容可看的（note 是空的）整張卡都當左半邊處理，免得點了沒反應
+                if (r.note && e.clientX - box.left > box.width / 2) setPreviewId(previewId === r.id ? null : r.id);
+                else openEdit(r);
+              }}
+              className={`flex flex-wrap gap-2 p-2.5 border rounded-xl transition-colors cursor-pointer ${
                 picking?.has(r.id)
                   ? accent.card
                   : `bg-slate-50/60 border-slate-150 ${accent.hover}`
@@ -516,7 +534,7 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
                   {picking.has(r.id) && <Check size={11} className="stroke-[3]" />}
                 </span>
               )}
-              <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+              <div className="flex flex-col gap-1.5 min-w-0 flex-1 basis-64">
                 <div className="flex items-center gap-2 flex-wrap">
                   {r.mrn && (
                     <span className="font-mono text-sm font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg select-all">
@@ -555,15 +573,29 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
                           </button>
                         )
                     )}
+                    {/* 預覽開關：右半邊點擊之外的另一個入口，鍵盤也按得到 */}
+                    {r.note && (
+                      <button
+                        type="button"
+                        title={previewId === r.id ? '收合病歷內容' : '預覽病歷內容'}
+                        onClick={e => { e.stopPropagation(); setPreviewId(previewId === r.id ? null : r.id); }}
+                        className="flex items-center text-slate-300 hover:text-slate-500 transition-colors cursor-pointer"
+                      >
+                        {previewId === r.id ? <EyeOff size={12} /> : <Eye size={12} />}
+                      </button>
+                    )}
                     <span className="text-[10px] text-slate-400 tabular-nums">
                       {formatDate(r.createdAt)}
                     </span>
                   </span>
                 </div>
-                {r.note && (
-                  <p className="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed line-clamp-6">{r.note}</p>
-                )}
               </div>
+              {/* 病歷內容：預設完全不顯示，點開才在右邊攤開；太長的用捲軸，免得把卡片撐爆 */}
+              {previewId === r.id && r.note && (
+                <div className="min-w-0 flex-1 basis-64 max-h-56 overflow-y-auto border-l border-slate-200 pl-2.5">
+                  <p className="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed">{r.note}</p>
+                </div>
+              )}
             </div>
           )
         )
