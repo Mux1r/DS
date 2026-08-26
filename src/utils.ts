@@ -181,6 +181,13 @@ export const formatBedInput = (raw: string): string => {
   return d.length <= splitAt ? d : `${d.slice(0, splitAt)}-${d.slice(splitAt)}`;
 };
 
+// createdAt 存的是 UTC ISO，直接切前 10 碼會讓半夜建立的紀錄少一天 → 取本地日期
+// ('sv-SE' 的日期格式剛好就是 YYYY-MM-DD)
+export const formatDate = (isoString: string): string => {
+  const d = new Date(isoString);
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString('sv-SE');
+};
+
 // Format dates
 export const formatTime = (isoString: string): string => {
   try {

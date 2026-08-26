@@ -47,6 +47,8 @@ export interface ChartRecord {
   tags: string[];   // 自訂標籤（檢查、疾病…）
   note: string;     // 病歷紀錄
   createdAt: string;
+  caselogDone?: boolean; // 已匯出到 emyway Case Log
+  epaDone?: boolean;     // 已匯出到 emyway EPA 學習評量
 }
 
 export interface Shift {
