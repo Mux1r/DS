@@ -105,17 +105,32 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
   useEffect(() => {
     (window as any).__ds = {
       library: () => [...library],
+      mode: () => kind,
+      // 沒進勾選模式時回空陣列，腳本那邊會退回「這個 tab 還沒匯出過的全部」
+      selected: () => (picking ? [...picking] : []),
       records: () => records.map(r => ({
         id: r.id, mrn: r.mrn, name: r.name, tags: [...r.tags], note: r.note, createdAt: r.createdAt,
+        caselogDone: !!r.caselogDone, epaDone: !!r.epaDone,
       })),
       setTags: (patch: TagPatch[]) => {
         const { next, report } = applyTagPatch(records, library, patch);
         if (report.updated) onChange(next);
         return report;
       },
+      // 填完 emyway 之後補上已匯出徽章 —— 不走複製按鈕的話沒別人會標
+      markDone: (ids: string[], which: 'caselog' | 'epa', done = true) => {
+        if (which !== 'caselog' && which !== 'epa') throw new Error("which 必須是 'caselog' 或 'epa'");
+        const flag = which === 'epa' ? 'epaDone' : 'caselogDone';
+        const want = new Set(ids ?? []);
+        const known = new Set(records.map(r => r.id));
+        const unknownIds = [...want].filter(id => !known.has(id));
+        const updated = records.filter(r => want.has(r.id)).length;
+        if (updated) onChange(records.map(r => (want.has(r.id) ? { ...r, [flag]: done } : r)));
+        return { updated, unknownIds };
+      },
     };
     return () => { delete (window as any).__ds; };
-  }, [records, library, onChange]);
+  }, [records, library, kind, picking, onChange]);
 
   // 標籤庫全部都列出來，加上紀錄上還留著、但已從標籤庫刪掉的殘留標籤
   const allTags = Array.from(new Set([...library, ...records.flatMap(r => r.tags)]))
