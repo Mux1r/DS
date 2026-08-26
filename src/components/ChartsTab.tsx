@@ -67,8 +67,23 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
     })
     .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
 
-  const openNew = () => { setForm(EMPTY); setEditingId('new'); };
+  // 表單裡有沒有還沒存的東西：新增時看有沒有填過字，編輯時跟原紀錄比對
+  const formDirty = () => {
+    if (editingId === null) return false;
+    const mrn = form.mrn.trim(), name = form.name.trim(), note = form.note.trim();
+    if (editingId === 'new') return !!(mrn || name || note || form.tags.length);
+    const r = records.find(x => x.id === editingId);
+    if (!r) return false;
+    return mrn !== r.mrn.trim() || name !== r.name.trim() || note !== r.note.trim()
+      || form.tags.length !== r.tags.length || form.tags.some(t => !r.tags.includes(t));
+  };
+  // 誤觸「新增」或點到別筆紀錄時，先確認要不要丟掉編輯中的內容
+  const confirmDiscard = () =>
+    !formDirty() || window.confirm('目前編輯中的內容還沒儲存，離開就會不見。確定要放棄嗎？');
+
+  const openNew = () => { if (!confirmDiscard()) return; setForm(EMPTY); setEditingId('new'); };
   const openEdit = (r: ChartRecord) => {
+    if (r.id !== editingId && !confirmDiscard()) return;
     setForm({ mrn: r.mrn, name: r.name, tags: [...r.tags], note: r.note });
     setEditingId(r.id);
   };
@@ -225,7 +240,7 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
         <div className="flex items-center gap-1.5">
           <button
             type="button"
-            onClick={() => setEditingId(null)}
+            onClick={() => { if (confirmDiscard()) setEditingId(null); }}
             className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
           >
             <X size={12} /> 取消
