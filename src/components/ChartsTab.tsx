@@ -48,7 +48,8 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
   });
   const countOf = (t: string) => tagPeople.get(t)?.size ?? 0;
 
-  const usedTags = Array.from(new Set(records.flatMap(r => r.tags)))
+  // 標籤庫全部都列出來，加上紀錄上還留著、但已從標籤庫刪掉的殘留標籤
+  const allTags = Array.from(new Set([...library, ...records.flatMap(r => r.tags)]))
     .sort((a, b) => countOf(b) - countOf(a) || a.localeCompare(b));
   // 分類顯示：預設群組（只留還在標籤庫裡的）＋ 自訂（永遠顯示，尾端放 + 鈕）
   const groups: [string, string[]][] = [
@@ -258,11 +259,11 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
         </button>
       </div>
 
-      {/* 標籤篩選（只列已被用到的，附各標籤人數，多的排前面） */}
-      {usedTags.length > 0 && (
+      {/* 標籤篩選（全部標籤都列，附各標籤人數，多的排前面，沒人的淡化）*/}
+      {allTags.length > 0 && (
         <div className="flex items-center gap-1 flex-wrap">
           <Tag size={11} className="text-slate-400 shrink-0" />
-          {usedTags.map(t => (
+          {allTags.map(t => (
             <button
               key={t}
               type="button"
@@ -271,7 +272,9 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
               className={`flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full border transition-colors cursor-pointer ${
                 tagFilter === t
                   ? 'bg-indigo-600 text-white border-indigo-600'
-                  : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                  : countOf(t) === 0
+                    ? 'bg-white text-slate-400 border-slate-150 hover:bg-slate-50'
+                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
               }`}
             >
               {t}
