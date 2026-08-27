@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { ChartRecord } from '../types';
 import { Plus, Trash2, Check, X, FileText, Tag, Pencil, Send, Eye, EyeOff, MessageSquare } from 'lucide-react';
-import { applyTagPatch, buildCaselogPrompt, buildEpaPrompt, buildOpeningLine, currentRank, epaCode, hasCaselogTag, hasEpaTag, TagPatch } from '../emyway';
+import { applyTagPatch, buildCaselogPrompt, buildEpaPrompt, buildNewRecords, buildOpeningLine, currentRank, epaCode, hasCaselogTag, hasEpaTag, NewRecord, TagPatch } from '../emyway';
 import { formatDate } from '../utils';
 
 interface ChartsTabProps {
@@ -117,6 +117,12 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
       setTags: (patch: TagPatch[]) => {
         const { next, report } = applyTagPatch(records, library, patch);
         if (report.updated) onChange(next);
+        return report;
+      },
+      // 把 emyway 上已經填過的紀錄補進來（只新增不覆蓋）
+      addRecords: (list: NewRecord[]) => {
+        const { next, report } = buildNewRecords(records, library, list);
+        if (report.added.length) onChange(next);
         return report;
       },
       // 填完 emyway 之後補上已匯出徽章 —— 不走複製按鈕的話沒別人會標

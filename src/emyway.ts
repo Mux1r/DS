@@ -170,3 +170,75 @@ export const currentRank = (now = new Date()): string => {
   const year = now.getFullYear() - (now.getMonth() < 7 ? 1 : 0);   // getMonth() 從 0 起算，7 = 八月
   return 'R' + Math.min(5, Math.max(1, year - 2026 + 1));
 };
+
+// ---- 從 emyway 匯回 DS ----
+
+export interface NewRecord {
+  mrn?: string;
+  name?: string;
+  tags?: string[];
+  note?: string;
+  createdAt?: string;
+  caselogDone?: boolean;
+  epaDone?: boolean;
+}
+
+export interface AddReport {
+  added: { mrn: string; name: string; tags: string[] }[];
+  skipped: { mrn: string; why: string }[];
+  unknownTags: string[];
+}
+
+/**
+ * 把 emyway 上已經填過的紀錄補進 DS。只新增、不覆蓋 ——
+ * 病歷號已經存在的一律跳過並回報，免得蓋掉手打的病歷內文。
+ * 同一個病人有多筆 emyway 紀錄時，呼叫端要自己先合併成一筆再送進來。
+ */
+export function buildNewRecords(
+  records: ChartRecord[],
+  library: string[],
+  list: NewRecord[]
+): { next: ChartRecord[]; report: AddReport } {
+  if (!Array.isArray(list)) throw new Error('list 必須是陣列');
+
+  const seen = new Set(records.map(r => r.mrn.trim()).filter(Boolean));
+  const report: AddReport = { added: [], skipped: [], unknownTags: [] };
+  const fresh: ChartRecord[] = [];
+
+  list.forEach((x, i) => {
+    const mrn = String(x?.mrn ?? '').trim();
+    const name = String(x?.name ?? '').trim();
+    const tags = Array.from(new Set(x?.tags ?? []));
+    const bad = tags.filter(t => !library.includes(t));
+
+    if (!mrn && !name) {
+      report.skipped.push({ mrn: `(第 ${i + 1} 筆)`, why: '沒有病歷號也沒有姓名' });
+      return;
+    }
+    if (mrn && seen.has(mrn)) {
+      report.skipped.push({ mrn, why: 'DS 已經有這個病歷號，沒有覆蓋' });
+      return;
+    }
+    if (bad.length) {
+      report.unknownTags.push(...bad);
+      report.skipped.push({ mrn: mrn || name, why: `標籤不在標籤庫：${bad.join('、')}` });
+      return;
+    }
+
+    if (mrn) seen.add(mrn);
+    fresh.push({
+      id: `chart-${Date.now()}-${i}`,
+      mrn,
+      name,
+      tags,
+      note: String(x?.note ?? ''),
+      createdAt: x?.createdAt ? new Date(x.createdAt).toISOString() : new Date().toISOString(),
+      caselogDone: !!x?.caselogDone,
+      epaDone: !!x?.epaDone,
+    });
+    report.added.push({ mrn, name, tags });
+  });
+
+  report.unknownTags = Array.from(new Set(report.unknownTags));
+  return { next: fresh.length ? [...fresh, ...records] : records, report };
+}
