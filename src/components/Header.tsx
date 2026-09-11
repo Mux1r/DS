@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { DutyState, SyncStatus, Shift } from '../types';
 import { generateHandoverText, exportJSON } from '../utils';
+import { version } from '@/package.json';
 import {
   ClipboardCopy,
   Download,
@@ -369,7 +370,7 @@ export default function Header({ state, syncStatus, onImport, isSidebarOpen, set
 
             {/* Sidebar Footer */}
             <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 text-center text-[10px] text-slate-400 font-mono shrink-0">
-              Clinical Shift v3.2.0
+              Clinical Shift v{version}
             </div>
           </div>
         </div>
