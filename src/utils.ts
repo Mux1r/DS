@@ -172,13 +172,49 @@ export const exportJSON = (state: DutyState): string => {
 };
 
 // ponytail: live-formats bed number as "floor+room-bed" (e.g. 15511 -> 1551-1) while typing
+// 含棟別字母時房號位數看棟別：I 棟是 ICU 單位碼 1 碼（9I1-5、9I2-12），A 棟房號 2 碼（9A11-2）
 export const formatBedInput = (raw: string): string => {
-  const digits = raw.replace(/\D/g, '');
+  const s = raw.toUpperCase().replace(/[^0-9A-Z-]/g, '');
+  if (/[A-Z]/.test(s)) {
+    const m = s.replace(/-/g, '').match(/^(\d{1,2})([A-Z])(\d*)$/);
+    if (!m) return s.slice(0, 8);
+    const [, floor, wing, rest] = m;
+    const roomWidth = wing === 'I' ? 1 : wing === 'A' ? 2 : 0;
+    if (!roomWidth) return s.slice(0, 8); // 沒見過的棟別，'-' 自己打
+    const d = rest.slice(0, roomWidth + 2);
+    return floor + wing + (d.length <= roomWidth ? d : `${d.slice(0, roomWidth)}-${d.slice(roomWidth)}`);
+  }
+  const digits = s.replace(/\D/g, '');
   if (!digits) return '';
   const floorWidth = /^[89]/.test(digits) ? 1 : 2;
   const splitAt = floorWidth + 2;
   const d = digits.slice(0, splitAt + 1);
   return d.length <= splitAt ? d : `${d.slice(0, splitAt)}-${d.slice(splitAt)}`;
+};
+
+// 兩種寫法：純數字 912-3（9樓12房3床）、含棟別 9I1-5 / 9A11-2（9樓 I 棟 ICU、A 棟）
+// 含棟別的一律要有 '-'，否則 9I212 無從判斷是 2-12 還是 21-2
+export const parseBed = (bed: string) => {
+  const m = bed.trim().toUpperCase().match(/^(8|9|1\d|2[01])(?:([A-Z])(\d{1,2})-(\d{1,2})|(\d{2})-?(\d?))$/);
+  if (!m) return null;
+  return m[2]
+    ? { floor: m[1], wing: m[2], room: m[3], seat: m[4] }
+    : { floor: m[1], wing: '', room: m[5], seat: m[6] };
+};
+
+// 棟別排序：ICU（I 棟）排在一般病房前面，純數字床號（無棟別）介於兩者之間
+const wingRank = (wing: string) => (wing === 'I' ? '0' : wing || '1');
+
+// 排序鍵：樓層(2) + 棟別(1) + 房(2) + 床(2)，認不得的排最後
+const bedSortKey = (bed: string): string => {
+  const p = parseBed(bed);
+  if (!p) return 'ZZZZZZZ';
+  return p.floor.padStart(2, '0') + wingRank(p.wing) + p.room.padStart(2, '0') + p.seat.padStart(2, '0');
+};
+
+export const compareBed = (a: string, b: string): number => {
+  const ka = bedSortKey(a), kb = bedSortKey(b);
+  return ka < kb ? -1 : ka > kb ? 1 : 0;
 };
 
 // createdAt 存的是 UTC ISO，直接切前 10 碼會讓半夜建立的紀錄少一天 → 取本地日期

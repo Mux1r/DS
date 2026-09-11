@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { DutyState, NewPatient, GeneralOrder, HandoverPatient, SyncStatus, Shift, ChartRecord } from './types';
-import { getInitialState, saveState, formatTime, formatBedInput } from './utils';
+import { getInitialState, saveState, formatTime, formatBedInput, parseBed, compareBed } from './utils';
 import { db, auth } from './firebase';
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
@@ -986,21 +986,14 @@ export default function App() {
 
   // --- Filtering & Searching logic across columns with premium deep-matching ---
 
-  // ponytail: floor(8-21) + room(01-21=A, 50-72=B) + optional bed digit(1-3)
-  const parseBed = (bed: string): number => {
-    const m = bed.trim().match(/^(8|9|1[0-9]|2[01])(\d{2})-?(\d?)$/);
-    if (!m) return 999999;
-    return parseInt(m[1]) * 1000 + parseInt(m[2]) * 10 + (m[3] ? parseInt(m[3]) : 0);
-  };
-
   const renderBed = (bed: string) => {
-    const m = bed.trim().match(/^(8|9|1[0-9]|2[01])(\d{2})-?(\d?)$/);
-    if (!m) return <>{bed}</>;
+    const b = parseBed(bed);
+    if (!b) return <>{bed}</>;
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-        <span>{m[1]}</span>
-        <span>{m[2]}</span>
-        {m[3] && <span style={{ fontWeight: 400 }}>-{m[3]}</span>}
+        <span>{b.floor}{b.wing}</span>
+        <span>{b.room}</span>
+        {b.seat && <span style={{ fontWeight: 400 }}>-{b.seat}</span>}
       </span>
     );
   };
@@ -1015,7 +1008,7 @@ export default function App() {
            (p.diagnosis && p.diagnosis.toLowerCase().includes(qStr)) ||
            (p.note && p.note.toLowerCase().includes(qStr));
   }).sort((a, b) => {
-    if (sortNewPatients === 'bed') return parseBed(a.bed) - parseBed(b.bed);
+    if (sortNewPatients === 'bed') return compareBed(a.bed, b.bed);
     if (sortNewPatients === 'user') {
       const ai = userPatientOrder.indexOf(a.id);
       const bi = userPatientOrder.indexOf(b.id);
@@ -1037,7 +1030,7 @@ export default function App() {
            (o.note && o.note.toLowerCase().includes(qStr));
   }).sort((a, b) => {
     if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
-    if (sortOrders === 'bed') return parseBed(a.bed) - parseBed(b.bed);
+    if (sortOrders === 'bed') return compareBed(a.bed, b.bed);
     if (sortOrders === 'user') {
       const ai = userOrdersOrder.indexOf(a.id);
       const bi = userOrdersOrder.indexOf(b.id);
@@ -1058,7 +1051,7 @@ export default function App() {
            h.attentionPoints.toLowerCase().includes(qStr) ||
            (h.note && h.note.toLowerCase().includes(qStr));
   }).sort((a, b) => {
-    if (sortHandovers === 'bed') return parseBed(a.bed) - parseBed(b.bed);
+    if (sortHandovers === 'bed') return compareBed(a.bed, b.bed);
     if (sortHandovers === 'user') {
       const ai = userHandoversOrder.indexOf(a.id);
       const bi = userHandoversOrder.indexOf(b.id);
@@ -1549,8 +1542,8 @@ export default function App() {
                       ref={qpBedRef}
                       required
                       type="text"
-                      pattern="[0-9-]*"
-                      inputMode="numeric"
+                      pattern="[0-9A-Za-z-]*"
+                      inputMode="text"
                       value={qpBed}
                       onChange={(e) => {
                         const val = formatBedInput(e.target.value);
@@ -1811,8 +1804,8 @@ export default function App() {
                             ref={pBedRef}
                             required
                             type="text"
-                            pattern="[0-9-]*"
-                            inputMode="numeric"
+                            pattern="[0-9A-Za-z-]*"
+                            inputMode="text"
                             value={pBed}
                             onChange={(e) => {
                               const val = formatBedInput(e.target.value);
@@ -2381,8 +2374,8 @@ export default function App() {
                             ref={oBedRef}
                             required
                             type="text"
-                            pattern="[0-9-]*"
-                            inputMode="numeric"
+                            pattern="[0-9A-Za-z-]*"
+                            inputMode="text"
                             value={oBed}
                             onChange={(e) => {
                               const val = formatBedInput(e.target.value);
@@ -2787,8 +2780,8 @@ export default function App() {
                             ref={hBedRef}
                             required
                             type="text"
-                            pattern="[0-9-]*"
-                            inputMode="numeric"
+                            pattern="[0-9A-Za-z-]*"
+                            inputMode="text"
                             value={hBed}
                             onChange={(e) => {
                               const val = formatBedInput(e.target.value);
