@@ -36,6 +36,7 @@ export interface HandoverPatient {
   attentionPoints: string; // 關注點 / 注意事項 (e.g. 監測 BP, 觀察發燒..)
   status: 'stable' | 'unstable' | 'critical'; // 狀況
   isHandedOver: boolean; // 是否已確實交班
+  isConsult?: boolean;   // 會診病人（舊資料沒有這欄 = 不是）
   createdAt: string;
 }
 

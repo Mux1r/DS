@@ -225,6 +225,7 @@ export default function App() {
   const [hAttn, setHAttn] = useState('');
   const [hNote, setHNote] = useState('');
   const [hStatus, setHStatus] = useState<HandoverPatient['status']>('unstable');
+  const [hConsult, setHConsult] = useState(false);
   const [hError, setHError] = useState('');
   
   // --- Refs & Keyboard Navigation for Forms ---
@@ -894,6 +895,7 @@ export default function App() {
         diagnosis: hDiagnosis.trim(),
         attentionPoints: hAttn.trim(),
         status: hStatus,
+        isConsult: hConsult,
         note: hNote.trim()
       });
       setEditingHandoverId(null);
@@ -907,6 +909,7 @@ export default function App() {
         note: hNote.trim(),
         attentionPoints: hAttn.trim(),
         status: hStatus,
+        isConsult: hConsult,
         isHandedOver: false,
         createdAt: new Date().toISOString()
       };
@@ -920,6 +923,7 @@ export default function App() {
     setHAttn('');
     setHNote('');
     setHStatus('unstable');
+    setHConsult(false);
     setHError('');
     setShowAddHandover(false);
   };
@@ -968,7 +972,7 @@ export default function App() {
       createdAt: new Date().toISOString()
     });
   };
-  const closeHandoverModal = () => { setShowAddHandover(false); setEditingHandoverId(null); setHBed(''); setHDiagnosis(''); setHAttn(''); setHNote(''); setHStatus('unstable'); setHError(''); };
+  const closeHandoverModal = () => { setShowAddHandover(false); setEditingHandoverId(null); setHBed(''); setHDiagnosis(''); setHAttn(''); setHNote(''); setHStatus('unstable'); setHConsult(false); setHError(''); };
 
   // Esc closes whichever edit interface is currently open, most specific first
   useEffect(() => {
@@ -2775,7 +2779,7 @@ export default function App() {
                     <div className="p-6 md:p-8 flex flex-col gap-5 overflow-y-auto flex-grow">
                       {/* Bed and Diagnosis on the same row */}
                       <div className="flex items-center gap-3 w-full">
-                        <div className="flex-1 max-w-[80px] flex items-center bg-rose-50/50 px-2.5 py-1.5 rounded-xl border border-rose-150">
+                        <div className="flex-1 max-w-[120px] flex items-center bg-rose-50/50 px-2.5 py-1.5 rounded-xl border border-rose-150">
                           <input
                             ref={hBedRef}
                             required
@@ -2905,6 +2909,19 @@ export default function App() {
                               </button>
                             );
                           })}
+                          <div className="w-px h-5 bg-slate-300 shrink-0" />
+                          <button
+                            type="button"
+                            aria-pressed={hConsult}
+                            onClick={() => setHConsult(c => !c)}
+                            className={`flex-1 md:flex-initial text-xs py-2 px-4 rounded-lg transition-all cursor-pointer border ${
+                              hConsult
+                                ? 'bg-violet-600 text-white shadow-sm border-violet-500 font-bold'
+                                : 'border-transparent bg-transparent text-slate-600 hover:text-slate-900 font-medium hover:bg-white/60'
+                            }`}
+                          >
+                            會診
+                          </button>
                         </div>
                       </div>
 
@@ -2962,7 +2979,7 @@ export default function App() {
                           hEditFocusFieldRef.current = null;
                           setEditingHandoverId(h.id); setHBed(h.bed);
                           setHDiagnosis(h.diagnosis || ''); setHAttn(h.attentionPoints);
-                          setHNote(h.note || ''); setHStatus(h.status); setShowAddHandover(true);
+                          setHNote(h.note || ''); setHStatus(h.status); setHConsult(!!h.isConsult); setShowAddHandover(true);
                         }}
                         className={`border rounded-xl px-2.5 py-1.5 flex items-start gap-2.5 transition-all ${isHandoverEditMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${
                           dragOverHandoverId === h.id ? 'border-rose-400 bg-rose-50/50' :
@@ -2984,7 +3001,7 @@ export default function App() {
                                   hEditFocusFieldRef.current = 'bed';
                                   setEditingHandoverId(h.id); setHBed(h.bed);
                                   setHDiagnosis(h.diagnosis || ''); setHAttn(h.attentionPoints);
-                                  setHNote(h.note || ''); setHStatus(h.status); setShowAddHandover(true);
+                                  setHNote(h.note || ''); setHStatus(h.status); setHConsult(!!h.isConsult); setShowAddHandover(true);
                                 }}
                                 className={`font-mono text-sm font-bold px-1.5 py-0.5 rounded-md border shrink-0 hover:opacity-80 transition-opacity ${
                                   critical ? 'bg-rose-100/80 text-rose-800 border-rose-200 dark:bg-rose-200/70 dark:text-rose-855 dark:border-rose-300/40'
@@ -2994,6 +3011,7 @@ export default function App() {
                               >
                                 {renderBed(h.bed)}
                               </span>
+                              {h.isConsult && <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-violet-100 text-violet-700 border border-violet-200 shrink-0" title="會診">會</span>}
                               {h.name && h.name !== '不具名' && (
                                 <span className="font-bold text-sm text-slate-850 shrink-0">{h.name && h.name !== '不具名'}</span>
                               )}
@@ -3007,7 +3025,7 @@ export default function App() {
                                     hEditFocusFieldRef.current = 'diagnosis';
                                     setEditingHandoverId(h.id); setHBed(h.bed);
                                     setHDiagnosis(h.diagnosis || ''); setHAttn(h.attentionPoints);
-                                    setHNote(h.note || ''); setHStatus(h.status); setShowAddHandover(true);
+                                    setHNote(h.note || ''); setHStatus(h.status); setHConsult(!!h.isConsult); setShowAddHandover(true);
                                   }}
                                   className="text-sm font-semibold leading-relaxed truncate text-slate-900 hover:opacity-70 transition-opacity"
                                 >
@@ -3038,7 +3056,7 @@ export default function App() {
                                     hEditFocusFieldRef.current = 'attn';
                                     setEditingHandoverId(h.id); setHBed(h.bed);
                                     setHDiagnosis(h.diagnosis || ''); setHAttn(h.attentionPoints);
-                                    setHNote(h.note || ''); setHStatus(h.status); setShowAddHandover(true);
+                                    setHNote(h.note || ''); setHStatus(h.status); setHConsult(!!h.isConsult); setShowAddHandover(true);
                                   }}
                                   className="truncate hover:opacity-70 transition-opacity"
                                 >
@@ -3091,7 +3109,7 @@ export default function App() {
                         hEditFocusFieldRef.current = null;
                         setEditingHandoverId(h.id); setHBed(h.bed);
                         setHDiagnosis(h.diagnosis || ''); setHAttn(h.attentionPoints);
-                        setHNote(h.note || ''); setHStatus(h.status); setShowAddHandover(true);
+                        setHNote(h.note || ''); setHStatus(h.status); setHConsult(!!h.isConsult); setShowAddHandover(true);
                       }}
                       className={`border rounded-xl p-3.5 flex flex-col gap-2.5 transition-all cursor-pointer ${borderStyle}`}
                     >
@@ -3104,7 +3122,7 @@ export default function App() {
                               hEditFocusFieldRef.current = 'bed';
                               setEditingHandoverId(h.id); setHBed(h.bed);
                               setHDiagnosis(h.diagnosis || ''); setHAttn(h.attentionPoints);
-                              setHNote(h.note || ''); setHStatus(h.status); setShowAddHandover(true);
+                              setHNote(h.note || ''); setHStatus(h.status); setHConsult(!!h.isConsult); setShowAddHandover(true);
                             }}
                             className={`font-mono text-sm font-bold px-1.5 py-0.5 rounded-md border hover:opacity-80 transition-opacity ${
                               critical ? 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-200/70 dark:text-rose-855 dark:border-rose-300/40'
@@ -3114,6 +3132,7 @@ export default function App() {
                           >
                             {renderBed(h.bed)}
                           </span>
+                          {h.isConsult && <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-violet-100 text-violet-700 border border-violet-200 shrink-0" title="會診">會</span>}
                           {h.name && h.name !== '不具名' && (
                             <span className="font-bold text-sm text-slate-850 truncate max-w-[85px]">
                               {h.name && h.name !== '不具名'}
@@ -3148,7 +3167,7 @@ export default function App() {
                             hEditFocusFieldRef.current = 'attn';
                             setEditingHandoverId(h.id); setHBed(h.bed);
                             setHDiagnosis(h.diagnosis || ''); setHAttn(h.attentionPoints);
-                            setHNote(h.note || ''); setHStatus(h.status); setShowAddHandover(true);
+                            setHNote(h.note || ''); setHStatus(h.status); setHConsult(!!h.isConsult); setShowAddHandover(true);
                           }}
                           className={`p-2.5 rounded-lg border hover:opacity-80 transition-opacity ${
                             critical

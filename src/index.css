@@ -84,6 +84,13 @@
   --color-slate-850: #33332d;
   --color-slate-900: #22221b;
   --color-slate-950: #161611;
+
+  /* 6. Lavender Gray (originally Violet) — 會診標記專用，只定義有用到的色階 */
+  --color-violet-100: #eceaf1;
+  --color-violet-200: #d8d3e2;
+  --color-violet-500: #8d84a3;
+  --color-violet-600: #756c8b;
+  --color-violet-700: #5c546f;
 }
 
 /* Custom classes for cozy, calm medical UI styling */
@@ -192,6 +199,13 @@ input, textarea, select, button {
   --color-slate-850: #eaeade;
   --color-slate-900: #f4f4e8;
   --color-slate-950: #fafaf5;
+
+  /* 6. Lavender Gray (originally Violet) */
+  --color-violet-100: #302d38;
+  --color-violet-200: #45404f;
+  --color-violet-500: #9a91ae;
+  --color-violet-600: #b4acc6;
+  --color-violet-700: #cdc6dd;
 }
 
 /* Ensure the background flips perfectly for everything using standard bg-white */

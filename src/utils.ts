@@ -188,6 +188,8 @@ export const formatBedInput = (raw: string): string => {
   if (!digits) return '';
   const floorWidth = /^[89]/.test(digits) ? 1 : 2;
   const splitAt = floorWidth + 2;
+  // 床號純數字最多 4～5 碼，病歷號最短 6 碼 → 超過床號長度就當病歷號（急診會診），原樣保留不加 '-'
+  if (digits.length > splitAt + 1) return digits;
   const d = digits.slice(0, splitAt + 1);
   return d.length <= splitAt ? d : `${d.slice(0, splitAt)}-${d.slice(splitAt)}`;
 };
