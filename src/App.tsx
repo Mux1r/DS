@@ -243,6 +243,7 @@ export default function App() {
   const hEditFocusFieldRef = useRef<'bed' | 'attn' | null>('bed');
   const hDiagnosisRef = useRef<HTMLInputElement>(null);
   const hAttnRef = useRef<HTMLTextAreaElement>(null);
+  const hNoteRef = useRef<HTMLTextAreaElement>(null);
 
   const qpBedRef = useRef<HTMLInputElement>(null);
   const qpDiagnosisRef = useRef<HTMLInputElement>(null);
@@ -343,6 +344,11 @@ export default function App() {
   }, [showQuickPhoneAdd]);
 
   // Jump to the next field when pressing Space or Enter in a Bed field
+  // 注音等輸入法「組字中」若改掉欄位值，組字結束時會把最後一個字再補送一次（21555 → 215555），
+  // 所以組字中照原樣顯示，等 onCompositionEnd 再排版
+  const bedInputValue = (e: React.ChangeEvent<HTMLInputElement>) =>
+    (e.nativeEvent as InputEvent).isComposing ? e.target.value : formatBedInput(e.target.value);
+
   const handleKeyJump = (
     e: React.KeyboardEvent<HTMLInputElement>,
     nextRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>
@@ -737,9 +743,10 @@ export default function App() {
     clearQp();
   };
 
-  const dispatchToHandover = () => {
+  // 會診：內容放備註（會診卡片不用「內容」欄）
+  const dispatchToHandover = (isConsult = false) => {
     if (!qpBed.trim()) {
-      setQpError('請輸入床號！');
+      setQpError('請輸入床號或病歷號！');
       return;
     }
     const newH: HandoverPatient = {
@@ -747,9 +754,10 @@ export default function App() {
       bed: qpBed.trim().toUpperCase(),
       name: '',
       diagnosis: qpDiagnosis.trim(),
-      note: '',
-      attentionPoints: qpContent.trim(),
+      note: isConsult ? qpContent.trim() : '',
+      attentionPoints: isConsult ? '' : qpContent.trim(),
       status: 'unstable',
+      isConsult,
       isHandedOver: false,
       createdAt: new Date().toISOString()
     };
@@ -880,7 +888,7 @@ export default function App() {
       setHError('請輸入床號！');
       return;
     }
-    if (!hAttn.trim()) {
+    if (!hConsult && !hAttn.trim()) {
       setHError('請輸入特別關注指引！');
       return;
     }
@@ -1521,8 +1529,11 @@ export default function App() {
                   <button type="button" onClick={dispatchToOrder} className="flex items-center gap-1 px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition-all active:scale-95 cursor-pointer">
                     <Plus size={11} className="stroke-[3]" /><span>醫囑</span>
                   </button>
-                  <button type="button" onClick={dispatchToHandover} className="flex items-center gap-1 px-2.5 py-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-lg transition-all active:scale-95 cursor-pointer">
+                  <button type="button" onClick={() => dispatchToHandover()} className="flex items-center gap-1 px-2.5 py-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-lg transition-all active:scale-95 cursor-pointer">
                     <Plus size={11} className="stroke-[3]" /><span>交班</span>
+                  </button>
+                  <button type="button" onClick={() => dispatchToHandover(true)} className="flex items-center gap-1 px-2.5 py-1.5 bg-violet-500 hover:bg-violet-600 text-white text-xs font-bold rounded-lg transition-all active:scale-95 cursor-pointer">
+                    <Plus size={11} className="stroke-[3]" /><span>會診</span>
                   </button>
                 </div>
                 <div className="flex items-center gap-1">
@@ -1541,7 +1552,7 @@ export default function App() {
               <div className="p-6 md:p-8 flex flex-col gap-5 overflow-y-auto flex-grow">
                 {/* Row 1: Bed Input, Diagnosis Input in the same line */}
                 <div className="flex items-center gap-3 w-full">
-                  <div className="flex-1 max-w-[80px] flex items-center bg-emerald-50/50 px-2.5 py-1.5 rounded-xl border border-emerald-150">
+                  <div className="flex-1 max-w-[120px] flex items-center bg-emerald-50/50 px-2.5 py-1.5 rounded-xl border border-emerald-150">
                     <input
                       ref={qpBedRef}
                       required
@@ -1550,12 +1561,13 @@ export default function App() {
                       inputMode="text"
                       value={qpBed}
                       onChange={(e) => {
-                        const val = formatBedInput(e.target.value);
+                        const val = bedInputValue(e);
                         setQpBed(val);
                         setQpError('');
                         checkAndAutofillQpBed(val);
                       }}
                       onKeyDown={(e) => handleKeyJump(e, qpDiagnosisRef)}
+                      onCompositionEnd={(e) => { const val = formatBedInput(e.currentTarget.value); setQpBed(val); checkAndAutofillQpBed(val); }}
                       placeholder="床號 *"
                       className="w-full text-center font-mono text-sm font-bold bg-transparent text-emerald-850 focus:outline-hidden"
                       title="床號 (必填)"
@@ -1812,12 +1824,13 @@ export default function App() {
                             inputMode="text"
                             value={pBed}
                             onChange={(e) => {
-                              const val = formatBedInput(e.target.value);
+                              const val = bedInputValue(e);
                               setPBed(val);
                               setPError('');
                               checkAndAutofillBed(val, 'patient');
                             }}
                             onKeyDown={(e) => handleKeyJump(e, pDiagnosisRef)}
+                            onCompositionEnd={(e) => { const val = formatBedInput(e.currentTarget.value); setPBed(val); checkAndAutofillBed(val, 'patient'); }}
                             placeholder="床號 *"
                             className="w-full text-center font-mono text-sm font-bold bg-transparent text-indigo-850 focus:outline-hidden"
                             autoComplete="off"
@@ -2382,12 +2395,13 @@ export default function App() {
                             inputMode="text"
                             value={oBed}
                             onChange={(e) => {
-                              const val = formatBedInput(e.target.value);
+                              const val = bedInputValue(e);
                               setOBed(val);
                               setOError('');
                               checkAndAutofillBed(val, 'order');
                             }}
                             onKeyDown={(e) => handleKeyJump(e, oDiagnosisRef)}
+                            onCompositionEnd={(e) => { const val = formatBedInput(e.currentTarget.value); setOBed(val); checkAndAutofillBed(val, 'order'); }}
                             placeholder="床號 *"
                             className="w-full text-center font-mono text-sm font-bold bg-transparent text-amber-850 focus:outline-hidden animate-pulse-once"
                             autoComplete="off"
@@ -2788,12 +2802,13 @@ export default function App() {
                             inputMode="text"
                             value={hBed}
                             onChange={(e) => {
-                              const val = formatBedInput(e.target.value);
+                              const val = bedInputValue(e);
                               setHBed(val);
                               setHError('');
                               checkAndAutofillBed(val, 'handover');
                             }}
                             onKeyDown={(e) => handleKeyJump(e, hDiagnosisRef)}
+                            onCompositionEnd={(e) => { const val = formatBedInput(e.currentTarget.value); setHBed(val); checkAndAutofillBed(val, 'handover'); }}
                             placeholder="床號 *"
                             className="w-full text-center font-mono text-sm font-bold bg-transparent text-rose-850 focus:outline-hidden"
                             autoComplete="off"
@@ -2807,7 +2822,7 @@ export default function App() {
                             type="text"
                             value={hDiagnosis}
                             onChange={(e) => setHDiagnosis(e.target.value)}
-                            onKeyDown={(e) => handleKeyJump(e, hAttnRef)}
+                            onKeyDown={(e) => handleKeyJump(e, hConsult && !hAttn ? hNoteRef : hAttnRef)}
                             placeholder="主要診斷 / 病因"
                             className="w-full text-sm bg-transparent text-slate-800 focus:outline-hidden"
                             autoComplete="off"
@@ -2816,8 +2831,8 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Detail Content (內容 hAttn) */}
-                      <div className="flex flex-col gap-1.5 w-full">
+                      {/* Detail Content (內容 hAttn) — 會診用備註當內容，不顯示；舊資料已有內容就照常顯示免得看不到 */}
+                      {(!hConsult || hAttn) && <div className="flex flex-col gap-1.5 w-full">
                         <textarea
                           ref={hAttnRef}
                           required
@@ -2834,17 +2849,18 @@ export default function App() {
                           className="w-full text-sm text-slate-800 p-4 bg-white border border-slate-200 rounded-xl focus:outline-hidden focus:ring-4 focus:ring-rose-100 placeholder-slate-400 font-bold resize-none"
                           title="特定關注交代重點"
                         />
-                      </div>
+                      </div>}
 
                       {/* Merged: hNote (left) + orders at bed (right, with add) */}
                       <div className="grid grid-cols-2 gap-2">
                         <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-slate-400 font-medium">備註</span>
+                          <span className="text-[10px] text-slate-400 font-medium">{hConsult ? '會診內容' : '備註'}</span>
                           <textarea
+                            ref={hNoteRef}
                             rows={3}
                             value={hNote}
                             onChange={e => setHNote(e.target.value)}
-                            placeholder="備註..."
+                            placeholder={hConsult ? '會診內容...' : '備註...'}
                             className="w-full text-xs text-slate-600 p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-200 font-medium resize-none"
                           />
                         </div>
@@ -2884,7 +2900,7 @@ export default function App() {
                       {/* Status Pills Selector */}
                       <div className="flex flex-col gap-2 w-full">
                         <label className="text-xs font-black text-slate-700">臨床安全分級</label>
-                        <div className="flex items-center gap-2 bg-slate-100/60 p-1.5 rounded-xl self-start w-full md:w-auto">
+                        <div className="flex items-center gap-1 md:gap-2 bg-slate-100/60 p-1 md:p-1.5 rounded-xl self-start w-full md:w-auto">
                           {(['stable', 'unstable', 'critical'] as const).map((stat) => {
                             const labels = { stable: '穩定', unstable: '變動', critical: '危急' };
                             const dotColors = { stable: 'bg-emerald-500', unstable: 'bg-amber-400', critical: 'bg-rose-500' };
@@ -2898,7 +2914,7 @@ export default function App() {
                                 key={stat}
                                 type="button"
                                 onClick={() => setHStatus(stat)}
-                                className={`flex-1 md:flex-initial flex items-center justify-center gap-1.5 text-xs py-2 px-4 rounded-lg transition-all cursor-pointer border ${
+                                className={`flex-1 md:flex-initial flex items-center justify-center gap-1 md:gap-1.5 whitespace-nowrap text-xs py-2 px-2 md:px-4 rounded-lg transition-all cursor-pointer border ${
                                   hStatus === stat
                                     ? activeColors[stat]
                                     : 'border-transparent bg-transparent text-slate-600 hover:text-slate-900 font-medium hover:bg-white/60'
@@ -2914,7 +2930,7 @@ export default function App() {
                             type="button"
                             aria-pressed={hConsult}
                             onClick={() => setHConsult(c => !c)}
-                            className={`flex-1 md:flex-initial text-xs py-2 px-4 rounded-lg transition-all cursor-pointer border ${
+                            className={`flex-1 md:flex-initial whitespace-nowrap text-xs py-2 px-2 md:px-4 rounded-lg transition-all cursor-pointer border ${
                               hConsult
                                 ? 'bg-violet-600 text-white shadow-sm border-violet-500 font-bold'
                                 : 'border-transparent bg-transparent text-slate-600 hover:text-slate-900 font-medium hover:bg-white/60'
@@ -3161,7 +3177,7 @@ export default function App() {
                       {/* Main Content */}
                       <div className="text-xs text-slate-650 space-y-1.5 leading-snug pl-0.5">
                         {/* Direct Clinical Guide (Critical call-to-action) */}
-                        <div
+                        {h.attentionPoints && <div
                           onClick={(e) => {
                             e.stopPropagation();
                             hEditFocusFieldRef.current = 'attn';
@@ -3182,7 +3198,7 @@ export default function App() {
                           <p className="text-sm leading-relaxed select-all font-semibold">
                             {h.attentionPoints}
                           </p>
-                        </div>
+                        </div>}
 
                         {h.diagnosis && h.diagnosis !== '無' && (
                           <p className="truncate text-xs text-slate-500">

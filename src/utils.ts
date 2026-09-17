@@ -171,6 +171,11 @@ export const exportJSON = (state: DutyState): string => {
   return JSON.stringify(state, null, 2);
 };
 
+const FLOOR = '(9|1\\d|2[01])';                       // 9～21 樓
+const ROOM = '(0[1-9]|1\\d|2[0-2]|5[1-9]|6\\d|7[0-2])'; // A 側 01～22、B 側 51～72
+const BED_DIGITS = new RegExp(`^${FLOOR}${ROOM}(\\d)$`);
+const noBWing = (floor: string, room: string) => floor === '21' && room >= '51'; // 21 樓只有 A 側
+
 // ponytail: live-formats bed number as "floor+room-bed" (e.g. 15511 -> 1551-1) while typing
 // 含棟別字母時房號位數看棟別：I 棟是 ICU 單位碼 1 碼（9I1-5、9I2-12），A 棟房號 2 碼（9A11-2）
 export const formatBedInput = (raw: string): string => {
@@ -186,19 +191,17 @@ export const formatBedInput = (raw: string): string => {
   }
   const digits = s.replace(/\D/g, '');
   if (!digits) return '';
-  const floorWidth = /^[89]/.test(digits) ? 1 : 2;
-  const splitAt = floorWidth + 2;
-  // 床號純數字最多 4～5 碼，病歷號最短 6 碼 → 超過床號長度就當病歷號（急診會診），原樣保留不加 '-'
-  if (digits.length > splitAt + 1) return digits;
-  const d = digits.slice(0, splitAt + 1);
-  return d.length <= splitAt ? d : `${d.slice(0, splitAt)}-${d.slice(splitAt)}`;
+  // 樓層 9～21、房號 A 側 01～22 / B 側 51～72、床 1 碼；湊成完整床號才加 '-'，
+  // 其他（26 開頭、多打一碼…）一律當病歷號原樣保留（急診會診沒有床號）
+  const m = digits.match(BED_DIGITS);
+  return m && !noBWing(m[1], m[2]) ? `${m[1]}${m[2]}-${m[3]}` : digits;
 };
 
 // 兩種寫法：純數字 912-3（9樓12房3床）、含棟別 9I1-5 / 9A11-2（9樓 I 棟 ICU、A 棟）
 // 含棟別的一律要有 '-'，否則 9I212 無從判斷是 2-12 還是 21-2
 export const parseBed = (bed: string) => {
-  const m = bed.trim().toUpperCase().match(/^(8|9|1\d|2[01])(?:([A-Z])(\d{1,2})-(\d{1,2})|(\d{2})-?(\d?))$/);
-  if (!m) return null;
+  const m = bed.trim().toUpperCase().match(new RegExp(`^${FLOOR}(?:([A-Z])(\\d{1,2})-(\\d{1,2})|${ROOM}-?(\\d?))$`));
+  if (!m || (m[5] && noBWing(m[1], m[5]))) return null;
   return m[2]
     ? { floor: m[1], wing: m[2], room: m[3], seat: m[4] }
     : { floor: m[1], wing: '', room: m[5], seat: m[6] };
