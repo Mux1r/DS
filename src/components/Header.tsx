@@ -17,6 +17,7 @@ import {
   Trash2,
   X,
   Settings,
+  RotateCw,
   ChevronRight,
   ClipboardCheck,
   Pencil,
@@ -211,6 +212,17 @@ export default function Header({ state, syncStatus, onImport, isSidebarOpen, set
                       : <Moon size={13} className="text-slate-400 group-hover:text-indigo-500" />
                     }
                     {isDarkMode ? '切換淺色主題' : '切換深色主題'}
+                  </span>
+                  <ChevronRight size={11} className="text-slate-300 group-hover:text-indigo-400" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs bg-slate-50 text-slate-700 hover:text-indigo-600 border border-slate-150 rounded-xl transition-all cursor-pointer group font-semibold"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <RotateCw size={13} className="text-slate-400 group-hover:text-indigo-500" />
+                    重新整理
                   </span>
                   <ChevronRight size={11} className="text-slate-300 group-hover:text-indigo-400" />
                 </button>
