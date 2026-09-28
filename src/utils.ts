@@ -175,15 +175,18 @@ const FLOOR = '(9|1\\d|2[01])';                       // 9～21 樓
 const ROOM = '(0[1-9]|1\\d|2[0-2]|5[1-9]|6\\d|7[0-2])'; // A 側 01～22、B 側 51～72
 const BED_DIGITS = new RegExp(`^${FLOOR}${ROOM}(\\d)$`);
 const noBWing = (floor: string, room: string) => floor === '21' && room >= '51'; // 21 樓只有 A 側
+const ICU_5F = /^5I-(0[1-9]|1\d|2[0-2])$/;           // 5 樓只有 ICU：5I-01～5I-22，沒有房號
 
 // ponytail: live-formats bed number as "floor+room-bed" (e.g. 15511 -> 1551-1) while typing
 // 含棟別字母時房號位數看棟別：I 棟是 ICU 單位碼 1 碼（9I1-5、9I2-12），A 棟房號 2 碼（9A11-2）
+// 5 樓只有 I 棟、沒有單位碼，床號 2 碼（5I-01）
 export const formatBedInput = (raw: string): string => {
   const s = raw.toUpperCase().replace(/[^0-9A-Z-]/g, '');
   if (/[A-Z]/.test(s)) {
     const m = s.replace(/-/g, '').match(/^(\d{1,2})([A-Z])(\d*)$/);
     if (!m) return s.slice(0, 8);
     const [, floor, wing, rest] = m;
+    if (floor === '5') return wing === 'I' ? `5I${rest ? `-${rest.slice(0, 2)}` : ''}` : s.slice(0, 8);
     const roomWidth = wing === 'I' ? 1 : wing === 'A' ? 2 : 0;
     if (!roomWidth) return s.slice(0, 8); // 沒見過的棟別，'-' 自己打
     const d = rest.slice(0, roomWidth + 2);
@@ -198,8 +201,10 @@ export const formatBedInput = (raw: string): string => {
 };
 
 // 兩種寫法：純數字 912-3（9樓12房3床）、含棟別 9I1-5 / 9A11-2（9樓 I 棟 ICU、A 棟）
-// 含棟別的一律要有 '-'，否則 9I212 無從判斷是 2-12 還是 21-2
+// 含棟別的一律要有 '-'，否則 9I212 無從判斷是 2-12 還是 21-2；5 樓另計，只有 5I-01～5I-22
 export const parseBed = (bed: string) => {
+  const icu5 = bed.trim().toUpperCase().match(ICU_5F);
+  if (icu5) return { floor: '5', wing: 'I', room: '', seat: icu5[1] };
   const m = bed.trim().toUpperCase().match(new RegExp(`^${FLOOR}(?:([A-Z])(\\d{1,2})-(\\d{1,2})|${ROOM}-?(\\d?))$`));
   if (!m || (m[5] && noBWing(m[1], m[5]))) return null;
   return m[2]
