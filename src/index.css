@@ -125,8 +125,8 @@ input, textarea, select, button {
   --color-indigo-150: #344350;
   --color-indigo-200: #405260;
   --color-indigo-300: #526778;
-  --color-indigo-400: #668196;
-  --color-indigo-500: #7d9cb5;
+  --color-indigo-400: #86a7c2;
+  --color-indigo-500: #9bb9d1;
   --color-indigo-600: #96b8d2;
   --color-indigo-700: #b2d1ee;
   --color-indigo-800: #cce3fb;
@@ -140,8 +140,8 @@ input, textarea, select, button {
   --color-amber-150: #463c30;
   --color-amber-200: #544837;
   --color-amber-300: #685742;
-  --color-amber-400: #826c52;
-  --color-amber-500: #9d8261;
+  --color-amber-400: #b39a78;
+  --color-amber-500: #c7ad89;
   --color-amber-600: #ba9c77;
   --color-amber-700: #d4b58d;
   --color-amber-800: #ebcda4;
@@ -157,8 +157,8 @@ input, textarea, select, button {
   --color-rose-200: #5b3e40;
   --color-rose-250: #6d494c;
   --color-rose-300: #85585c;
-  --color-rose-400: #a06970;
-  --color-rose-500: #ba7f85;
+  --color-rose-400: #c48d93;
+  --color-rose-500: #d3a0a6;
   --color-rose-550: #ce9499;
   --color-rose-600: #dfadb2;
   --color-rose-700: #eec4c8;
@@ -174,8 +174,8 @@ input, textarea, select, button {
   --color-emerald-150: #354538;
   --color-emerald-250: #455847;
   --color-emerald-300: #546d59;
-  --color-emerald-400: #678770;
-  --color-emerald-500: #7ea289;
+  --color-emerald-400: #8fb59c;
+  --color-emerald-500: #a2c6ae;
   --color-emerald-600: #96bea1;
   --color-emerald-700: #b0d6ba;
   --color-emerald-800: #ccebd4;
@@ -191,10 +191,10 @@ input, textarea, select, button {
   --color-slate-200: #44443d;
   --color-slate-300: #585850;
   --color-slate-305: #636359;
-  --color-slate-400: #78786e;
-  --color-slate-500: #929289;
-  --color-slate-600: #adadA2;
-  --color-slate-700: #c8c8b8;
+  --color-slate-400: #9c9c91;
+  --color-slate-500: #b0b0a5;
+  --color-slate-600: #bcbcb0;
+  --color-slate-700: #d0d0c2;
   --color-slate-800: #dbdbcd;
   --color-slate-850: #eaeade;
   --color-slate-900: #f4f4e8;
@@ -210,7 +210,7 @@ input, textarea, select, button {
 
 /* Ensure the background flips perfectly for everything using standard bg-white */
 .dark body {
-  background-color: #363630;
+  background-color: #232320; /* darker than cards (#2c2c27) so cards read as raised surfaces */
   color: #eaeade;
 }
 
