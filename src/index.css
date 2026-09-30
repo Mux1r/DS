@@ -289,7 +289,7 @@ input, textarea, select, button {
 }
 
 .dark ::placeholder {
-  color: #6d6d62 !important;
+  color: #9c9c91 !important;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
