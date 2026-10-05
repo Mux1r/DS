@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 @import "tailwindcss";
+/* dark: 跟著 App 的主題開關（<html class="dark">），不是跟系統的深色設定 */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --font-sans: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
@@ -272,6 +274,14 @@ input, textarea, select, button {
 }
 .dark button.bg-emerald-600 *, .dark div.bg-emerald-600 *,
 .dark button.bg-emerald-500 *, .dark div.bg-emerald-500 * {
+  color: #11110d !important;
+  stroke: #11110d !important;
+}
+
+.dark button.bg-violet-500, .dark div.bg-violet-500 {
+  color: #11110d !important;
+}
+.dark button.bg-violet-500 *, .dark div.bg-violet-500 * {
   color: #11110d !important;
   stroke: #11110d !important;
 }

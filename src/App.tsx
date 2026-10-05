@@ -49,6 +49,10 @@ import {
   EyeOff
 } from 'lucide-react';
 
+// 本機開發專用預覽：網址加 ?preview 跳過登入、塞假資料。user 維持 null，所有 Firebase 讀寫本來就會跳過。
+// import.meta.env.DEV 在正式 build 是 false，這段跟著被移除，線上版開不出來。
+const PREVIEW = import.meta.env.DEV && new URLSearchParams(location.search).has('preview');
+
 export default function App() {
   // Dark mode state with automatic persistent storage
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
@@ -277,6 +281,30 @@ export default function App() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isPatientEditMode, isOrderEditMode, isHandoverEditMode]);
+
+  // 預覽模式的假資料（只活在這個分頁，重新整理就回到這份）
+  useEffect(() => {
+    if (!PREVIEW) return;
+    const today = getTodayDateString();
+    const now = new Date().toISOString();
+    setAvailableShifts([{ id: today, startDate: today, endDate: today }]);
+    setSelectedShiftId(today);
+    setNewPatients([
+      { id: 'pv-p1', bed: '1205-1', name: '', diagnosis: 'CAP', note: '血培養已送', orderDone: true, visited: true, chartDone: false, createdAt: now },
+      { id: 'pv-p2', bed: '1312', name: '', diagnosis: 'UTI', note: '', orderDone: true, visited: false, chartDone: false, createdAt: now },
+      { id: 'pv-p3', bed: '1508-2', name: '', diagnosis: 'Cellulitis, L leg', note: '', orderDone: false, visited: false, chartDone: false, createdAt: now },
+    ]);
+    setGeneralOrders([
+      { id: 'pv-o1', bed: '1101', name: '', diagnosis: 'CHF', orderTask: 'K 3.1 補鉀', note: '', isCompleted: false, priority: 'high', createdAt: now },
+      { id: 'pv-o2', bed: '1205-1', name: '', diagnosis: 'CAP', orderTask: '發燒 38.6 給 acetaminophen', note: '', isCompleted: true, priority: 'normal', createdAt: now },
+    ]);
+    setHandoverPatients([
+      { id: 'pv-h1', bed: '1703', name: '', diagnosis: 'GI bleeding', note: '追 Hb', attentionPoints: '', status: 'critical', isHandedOver: false, createdAt: now },
+      { id: 'pv-h2', bed: '1101', name: '', diagnosis: 'CHF', note: '追 K', attentionPoints: '', status: 'unstable', isHandedOver: false, createdAt: now },
+      { id: 'pv-h3', bed: '1416', name: '', diagnosis: 'DM foot', note: '會診整外', attentionPoints: '', status: 'stable', isHandedOver: false, isConsult: true, createdAt: now },
+    ]);
+    setSyncStatus({ lastSynced: null, isSyncing: false, statusText: '🧪 預覽模式：假資料，不會存檔', error: false });
+  }, []);
 
   // Firebase auth listener
   useEffect(() => {
@@ -1073,7 +1101,7 @@ export default function App() {
     handoverPatients,
   };
 
-  if (authLoading) {
+  if (authLoading && !PREVIEW) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-slate-400 text-sm">連線中...</div>
@@ -1081,7 +1109,7 @@ export default function App() {
     );
   }
 
-  if (!user) {
+  if (!user && !PREVIEW) {
     return <LoginScreen />;
   }
 
@@ -1113,7 +1141,7 @@ export default function App() {
       {/* Main Container */}
       <main className="flex-grow max-w-7xl w-full mx-auto px-2 py-2.5 md:px-3 md:py-3.5" id="dashboard-content-main">
         {/* Compact, tightly-spaced control ribbon replacing bulky header */}
-        <div className="flex flex-col gap-2.5 pb-2.5 mb-3 px-0.5 text-xs border-b border-slate-200/40" id="inline-sys-controls">
+        <div className="flex flex-col gap-2.5 mb-3 px-0.5 text-xs" id="inline-sys-controls">
           {/* Row 1: single top bar (mobile + desktop) */}
           <div className="flex flex-row items-center gap-2 bg-white border border-slate-200/50 py-2 px-3 md:px-4 rounded-xl shadow-sm w-full select-none">
 
@@ -1366,19 +1394,18 @@ export default function App() {
                   type="button"
                   id="quick-phone-add-trigger-desktop"
                   onClick={() => { setShowQuickPhoneAdd(!showQuickPhoneAdd); clearQp(); }}
-                  className={`flex items-stretch rounded-full overflow-hidden border transition-all cursor-pointer duration-200 shadow-xs ${
-                    showQuickPhoneAdd ? 'border-rose-300/60' : 'border-emerald-400/50'
-                  }`}
-                >
-                  <span className={`flex items-center justify-center px-3 py-1.5 shrink-0 ${showQuickPhoneAdd ? 'bg-rose-600' : 'bg-emerald-600'}`}>
-                    <PhoneCall size={13} className="text-white" />
-                  </span>
-                  <span className={`w-px shrink-0 ${showQuickPhoneAdd ? 'bg-rose-300/50' : 'bg-emerald-400/40'}`} />
-                  <span className={`flex items-center justify-center px-5 py-1.5 text-sm font-medium ${showQuickPhoneAdd ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-800'}`}>
-                    {showQuickPhoneAdd ? '關閉速記' : '電話速記'}
-                  </span>
-                </button>
-                <label className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 focus-within:border-emerald-400 focus-within:bg-white transition-colors">
+                  className={`group relative flex items-center justify-center gap-2.5 rounded-full overflow-hidden py-1.5 px-5 text-white transition-all duration-200 cursor-pointer hover:brightness-110 ${
+                showQuickPhoneAdd
+                  ? 'bg-[#86555c]'
+                  : 'bg-[#5f7f6d]'
+              }`}
+            >
+              <PhoneCall size={14} className="relative shrink-0 text-white transition-transform duration-200 group-hover:-rotate-12" />
+              <span className="relative text-sm font-medium tracking-[0.2em]">
+                {showQuickPhoneAdd ? '關閉速記' : '電話速記'}
+              </span>
+            </button>
+                <label className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 focus-within:border-emerald-400 transition-colors">
                   <span className="text-xs text-slate-400 shrink-0">上線</span>
                   <input
                     type="tel"
@@ -1423,7 +1450,7 @@ export default function App() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="搜尋"
-                  className="w-28 text-sm pl-8 pr-6 py-1.5 border border-slate-200 focus:border-indigo-400 rounded-lg bg-slate-50 focus:bg-white focus:outline-hidden transition-all"
+                  className="w-28 text-sm pl-8 pr-6 py-1.5 border border-slate-200 focus:border-indigo-400 rounded-full bg-slate-50 focus:outline-hidden transition-all"
                 />
                 {searchQuery && (
                   <button onClick={() => setSearchQuery('')} className="absolute right-2 text-[10px] text-slate-400 hover:text-slate-600 top-1/2 -translate-y-1/2 cursor-pointer">✕</button>
@@ -1468,19 +1495,18 @@ export default function App() {
               type="button"
               id="quick-phone-add-trigger-mobile"
               onClick={() => { setShowQuickPhoneAdd(!showQuickPhoneAdd); clearQp(); }}
-              className={`flex items-stretch rounded-full overflow-hidden border transition-all cursor-pointer duration-200 flex-1 min-w-0 shadow-xs ${
-                showQuickPhoneAdd ? 'border-rose-300/60' : 'border-emerald-400/50'
+              className={`group relative flex items-center justify-center gap-2.5 rounded-full overflow-hidden py-2 px-4 text-white transition-all duration-200 cursor-pointer hover:brightness-110 flex-1 min-w-0 ${
+                showQuickPhoneAdd
+                  ? 'bg-[#86555c]'
+                  : 'bg-[#5f7f6d]'
               }`}
             >
-              <span className={`flex items-center justify-center px-3 py-2 shrink-0 ${showQuickPhoneAdd ? 'bg-rose-600' : 'bg-emerald-600'}`}>
-                <PhoneCall size={13} className="text-white" />
-              </span>
-              <span className={`w-px shrink-0 ${showQuickPhoneAdd ? 'bg-rose-300/50' : 'bg-emerald-400/40'}`} />
-              <span className={`flex items-center justify-center flex-1 py-2 text-sm font-medium ${showQuickPhoneAdd ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-800'}`}>
+              <PhoneCall size={14} className="relative shrink-0 text-white transition-transform duration-200 group-hover:-rotate-12" />
+              <span className="relative text-sm font-medium tracking-[0.2em]">
                 {showQuickPhoneAdd ? '關閉速記' : '電話速記'}
               </span>
             </button>
-            <label className="flex items-center gap-1 shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-2 focus-within:border-emerald-400 focus-within:bg-white transition-colors">
+            <label className="flex items-center gap-1 shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-2 focus-within:border-emerald-400 transition-colors">
               <span className="text-[11px] text-slate-400 shrink-0">上線</span>
               <input
                 type="tel"
@@ -1654,7 +1680,7 @@ export default function App() {
                 })()}
 
                 {qpError && (
-                  <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-200/60 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100">
+                  <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-150 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100">
                     <AlertCircle size={14} />
                     {qpError}
                   </p>
@@ -1694,14 +1720,14 @@ export default function App() {
               mobileTab !== 'new' ? 'hidden' : 'flex'
             }`}
           >
-            {/* Top compact button row — pr-12 keeps items clear of the floating + button */}
-            <div className="flex items-center gap-2 pr-12" id="panel-new-patients-top-action">
+            {/* Top compact button row — pr-24 keeps items clear of the 新增 button */}
+            <div className="flex items-center gap-2 pr-24" id="panel-new-patients-top-action">
               {/* Group 1: sort */}
               <div className="flex items-center gap-0.5">
                 <button
                   type="button"
                   onClick={() => setSortNewPatients('bed')}
-                  className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortNewPatients === 'bed' ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-200/60' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortNewPatients === 'bed' ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-150' : 'text-slate-400 hover:text-slate-600'}`}
                   title="依床號排序"
                 >
                   <Hash size={12} strokeWidth={2.5} />
@@ -1709,7 +1735,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setSortNewPatients('user')}
-                  className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortNewPatients === 'user' ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-200/60' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortNewPatients === 'user' ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-150' : 'text-slate-400 hover:text-slate-600'}`}
                   title="依自訂順序排序"
                 >
                   <UserIcon size={12} strokeWidth={2.5} />
@@ -1717,7 +1743,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setSortNewPatients('time')}
-                  className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortNewPatients === 'time' ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-200/60' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortNewPatients === 'time' ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-150' : 'text-slate-400 hover:text-slate-600'}`}
                   title="依時間排序"
                 >
                   <Clock size={12} strokeWidth={2.5} />
@@ -1729,7 +1755,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setHideCompletedPatients(h => !h)}
-                className={`flex items-center gap-1 h-6 px-1 rounded transition-all shrink-0 ${hideCompletedPatients ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-200/60' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`flex items-center gap-1 h-6 px-1 rounded transition-all shrink-0 ${hideCompletedPatients ? 'text-indigo-500 bg-indigo-50 dark:bg-indigo-150' : 'text-slate-400 hover:text-slate-600'}`}
                 title={hideCompletedPatients ? '顯示所有病患' : '隱藏已完成病患'}
               >
                 {hideCompletedPatients
@@ -1746,7 +1772,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setIsPatientEditMode(m => !m)}
-                className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isPatientEditMode ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-200/60' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isPatientEditMode ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-150' : 'text-slate-400 hover:text-slate-600'}`}
                 title={isPatientEditMode ? '結束編輯' : '編輯排序與刪除'}
               >
                 <Pencil size={12} strokeWidth={2.5} />
@@ -1759,10 +1785,10 @@ export default function App() {
               onClick={() => {
                 setShowAddPatient(!showAddPatient);
               }}
-              className="absolute -top-4 right-4 z-20 w-10 h-10 rounded-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white shadow-[0_4px_14px_rgba(79,70,229,0.35)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.5)] transition-all cursor-pointer border-2 border-white hover:scale-110 active:scale-95 duration-200"
+              className="absolute top-2 right-3 z-20 h-8 px-3 rounded-full flex items-center justify-center gap-1 text-xs font-bold bg-[#496277] dark:bg-[#526778] text-white transition-all cursor-pointer hover:brightness-110 active:scale-95"
               title="新增新病人"
             >
-              <Plus size={18} className="stroke-[3.5]" />
+              <Plus size={14} className="stroke-[3]" /><span>新增</span>
             </button>
 
             {/* Inline Add Patient Form at the top (全螢幕加大版) */}
@@ -1885,7 +1911,7 @@ export default function App() {
                       </div>
 
                       {pError && (
-                        <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-200/60 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100 animate-pulse">
+                        <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-150 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100 animate-pulse">
                           <AlertCircle size={14} />
                           {pError}
                         </p>
@@ -1946,7 +1972,7 @@ export default function App() {
                           setShowAddPatient(true);
                         }}
                         className={`border rounded-xl px-3 py-1.5 transition-colors duration-150 ${isPatientEditMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${
-                          dragOverPatientId === p.id ? 'border-indigo-400 bg-indigo-50/50' :
+                          dragOverPatientId === p.id ? 'border-indigo-400 bg-indigo-50/50 dark:bg-indigo-50' :
                           allDone
                             ? 'border-slate-200 bg-slate-100 grayscale opacity-55 hover:opacity-100 hover:grayscale-0'
                             : 'border-slate-150/80 bg-white hover:border-slate-200 hover:shadow-3xs'
@@ -1972,7 +1998,7 @@ export default function App() {
                               }}
                               className="shrink-0 p-1.5 -m-1.5 cursor-pointer"
                             >
-                              <span className="font-mono text-sm font-bold px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100/30 rounded-md hover:bg-indigo-100 transition-colors dark:bg-indigo-200/70 dark:text-indigo-850 dark:border-indigo-300/40">
+                              <span className="font-mono text-sm font-bold px-1.5 py-0.5 bg-indigo-150 text-indigo-700 border border-indigo-100/30 rounded-md hover:bg-indigo-100 transition-colors dark:bg-indigo-150 dark:text-indigo-950 dark:border-indigo-300/40">
                                 {renderBed(p.bed)}
                               </span>
                             </div>
@@ -2170,7 +2196,7 @@ export default function App() {
                               setPNote(p.note || '');
                               setShowAddPatient(true);
                             }}
-                            className="font-mono text-sm font-bold px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100/30 rounded-md hover:bg-indigo-100 transition-colors"
+                            className="font-mono text-sm font-bold px-2 py-0.5 bg-indigo-150 text-indigo-700 border border-indigo-100/30 rounded-md hover:bg-indigo-100 transition-colors dark:bg-indigo-150 dark:text-indigo-950 dark:border-indigo-300/40"
                           >
                             {renderBed(p.bed)}
                           </span>
@@ -2306,19 +2332,19 @@ export default function App() {
             }`}
           >
             {/* Top compact button row */}
-            <div className="flex items-center gap-2 pr-12" id="panel-general-orders-top-action">
+            <div className="flex items-center gap-2 pr-24" id="panel-general-orders-top-action">
               <div className="flex items-center gap-0.5">
-                <button type="button" onClick={() => setSortOrders('bed')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortOrders === 'bed' ? 'text-amber-500 bg-amber-50 dark:bg-amber-200/60' : 'text-slate-400 hover:text-slate-600'}`} title="依床號排序"><Hash size={12} strokeWidth={2.5} /></button>
-                <button type="button" onClick={() => setSortOrders('user')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortOrders === 'user' ? 'text-amber-500 bg-amber-50 dark:bg-amber-200/60' : 'text-slate-400 hover:text-slate-600'}`} title="依自訂順序排序"><UserIcon size={12} strokeWidth={2.5} /></button>
-                <button type="button" onClick={() => setSortOrders('time')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortOrders === 'time' ? 'text-amber-500 bg-amber-50 dark:bg-amber-200/60' : 'text-slate-400 hover:text-slate-600'}`} title="依時間排序"><Clock size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortOrders('bed')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortOrders === 'bed' ? 'text-amber-500 bg-amber-50 dark:bg-amber-150' : 'text-slate-400 hover:text-slate-600'}`} title="依床號排序"><Hash size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortOrders('user')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortOrders === 'user' ? 'text-amber-500 bg-amber-50 dark:bg-amber-150' : 'text-slate-400 hover:text-slate-600'}`} title="依自訂順序排序"><UserIcon size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortOrders('time')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortOrders === 'time' ? 'text-amber-500 bg-amber-50 dark:bg-amber-150' : 'text-slate-400 hover:text-slate-600'}`} title="依時間排序"><Clock size={12} strokeWidth={2.5} /></button>
               </div>
               <div className="w-px h-3.5 bg-slate-200 shrink-0" />
-              <button type="button" onClick={() => setHideCompletedOrders(h => !h)} className={`flex items-center gap-1 h-6 px-1 rounded transition-all shrink-0 ${hideCompletedOrders ? 'text-amber-500 bg-amber-50 dark:bg-amber-200/60' : 'text-slate-400 hover:text-slate-600'}`} title={hideCompletedOrders ? '顯示所有醫囑' : '隱藏已完成醫囑'}>
+              <button type="button" onClick={() => setHideCompletedOrders(h => !h)} className={`flex items-center gap-1 h-6 px-1 rounded transition-all shrink-0 ${hideCompletedOrders ? 'text-amber-500 bg-amber-50 dark:bg-amber-150' : 'text-slate-400 hover:text-slate-600'}`} title={hideCompletedOrders ? '顯示所有醫囑' : '隱藏已完成醫囑'}>
                 {hideCompletedOrders ? <EyeOff size={12} strokeWidth={2.5} /> : <Eye size={12} strokeWidth={2.5} />}
                 <span className="text-[11px] font-semibold tabular-nums leading-none">{generalOrders.filter(o => o.isCompleted).length}</span>
               </button>
               <div className="w-px h-3.5 bg-slate-200 shrink-0" />
-              <button type="button" onClick={() => setIsOrderEditMode(m => !m)} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isOrderEditMode ? 'text-amber-600 bg-amber-50 dark:bg-amber-200/60' : 'text-slate-400 hover:text-slate-600'}`} title={isOrderEditMode ? '結束編輯' : '編輯排序與刪除'}>
+              <button type="button" onClick={() => setIsOrderEditMode(m => !m)} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isOrderEditMode ? 'text-amber-600 bg-amber-50 dark:bg-amber-150' : 'text-slate-400 hover:text-slate-600'}`} title={isOrderEditMode ? '結束編輯' : '編輯排序與刪除'}>
                 <Pencil size={12} strokeWidth={2.5} />
               </button>
             </div>
@@ -2330,10 +2356,10 @@ export default function App() {
               onClick={() => {
                 setShowAddOrder(!showAddOrder);
               }}
-              className="absolute -top-4 right-4 z-20 w-10 h-10 rounded-full flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white shadow-[0_4px_14px_rgba(245,158,11,0.35)] hover:shadow-[0_6px_20px_rgba(245,158,11,0.5)] transition-all cursor-pointer border-2 border-white hover:scale-110 active:scale-95 duration-200"
+              className="absolute top-2 right-3 z-20 h-8 px-3 rounded-full flex items-center justify-center gap-1 text-xs font-bold bg-[#796853] dark:bg-[#685742] text-white transition-all cursor-pointer hover:brightness-110 active:scale-95"
               title="新增醫囑"
             >
-              <Plus size={18} className="stroke-[3.5]" />
+              <Plus size={14} className="stroke-[3]" /><span>新增</span>
             </button>
 
             {/* Inline Add Order Form at the top (全螢幕加大版) */}
@@ -2474,7 +2500,7 @@ export default function App() {
                       {/* Priority and Nurse name fields removed by request */}
 
                       {oError && (
-                        <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-200/60 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100 animate-pulse">
+                        <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-150 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100 animate-pulse">
                           <AlertCircle size={14} />
                           {oError}
                         </p>
@@ -2528,9 +2554,9 @@ export default function App() {
                           setOPriority(o.priority || 'normal'); setShowAddOrder(true);
                         }}
                         className={`border rounded-xl px-2.5 py-1.5 flex items-center gap-2 transition-all ${isOrderEditMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${
-                          dragOverOrderId === o.id ? 'border-amber-400 bg-amber-50/50' :
+                          dragOverOrderId === o.id ? 'border-amber-400 bg-amber-50/50 dark:bg-amber-50' :
                           o.isCompleted
-                            ? 'border-slate-100 bg-slate-100/30 opacity-60'
+                            ? 'border-slate-100 bg-slate-100/30 dark:bg-slate-50 opacity-60'
                             : 'border-slate-150/80 bg-white hover:border-slate-200 shadow-3xs'
                         }`}
                       >
@@ -2572,7 +2598,7 @@ export default function App() {
                                   setONote(o.note || '');
                                   setOPriority(o.priority || 'normal'); setShowAddOrder(true);
                                 }}
-                                className="font-mono text-sm font-bold px-1.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-100/30 rounded-md shrink-0 hover:bg-amber-100 transition-colors dark:bg-amber-200/70 dark:text-amber-850 dark:border-amber-300/40"
+                                className="font-mono text-sm font-bold px-1.5 py-0.5 bg-amber-150 text-amber-800 border border-amber-100/30 rounded-md shrink-0 hover:bg-amber-100 transition-colors dark:bg-amber-150 dark:text-amber-950 dark:border-amber-300/40"
                               >
                                 {renderBed(o.bed)}
                               </span>
@@ -2624,7 +2650,7 @@ export default function App() {
                       }}
                       className={`border rounded-xl p-3.5 flex items-center gap-2.5 transition-all cursor-pointer ${
                         o.isCompleted
-                          ? 'border-slate-100 bg-slate-100/50 opacity-60'
+                          ? 'border-slate-100 bg-slate-100/50 dark:bg-slate-50 opacity-60'
                           : 'border-slate-200/80 bg-white hover:border-slate-300 shadow-xs'
                       }`}
                     >
@@ -2664,7 +2690,7 @@ export default function App() {
                                 setONote(o.note || '');
                                 setOPriority(o.priority || 'normal'); setShowAddOrder(true);
                               }}
-                              className="font-mono text-sm font-bold px-1.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-100/30 rounded-md hover:bg-amber-100 transition-colors dark:bg-amber-200/70 dark:text-amber-850 dark:border-amber-300/40"
+                              className="font-mono text-sm font-bold px-1.5 py-0.5 bg-amber-150 text-amber-800 border border-amber-100/30 rounded-md hover:bg-amber-100 transition-colors dark:bg-amber-150 dark:text-amber-950 dark:border-amber-300/40"
                             >
                               {renderBed(o.bed)}
                             </span>
@@ -2730,19 +2756,19 @@ export default function App() {
             }`}
           >
             {/* Top compact button row */}
-            <div className="flex items-center gap-2 pr-12" id="panel-handovers-top-action">
+            <div className="flex items-center gap-2 pr-24" id="panel-handovers-top-action">
               <div className="flex items-center gap-0.5">
-                <button type="button" onClick={() => setSortHandovers('bed')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortHandovers === 'bed' ? 'text-rose-500 bg-rose-50 dark:bg-rose-200/60' : 'text-slate-400 hover:text-slate-600'}`} title="依床號排序"><Hash size={12} strokeWidth={2.5} /></button>
-                <button type="button" onClick={() => setSortHandovers('user')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortHandovers === 'user' ? 'text-rose-500 bg-rose-50 dark:bg-rose-200/60' : 'text-slate-400 hover:text-slate-600'}`} title="依自訂順序排序"><UserIcon size={12} strokeWidth={2.5} /></button>
-                <button type="button" onClick={() => setSortHandovers('time')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortHandovers === 'time' ? 'text-rose-500 bg-rose-50 dark:bg-rose-200/60' : 'text-slate-400 hover:text-slate-600'}`} title="依時間排序"><Clock size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortHandovers('bed')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortHandovers === 'bed' ? 'text-rose-500 bg-rose-50 dark:bg-rose-150' : 'text-slate-400 hover:text-slate-600'}`} title="依床號排序"><Hash size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortHandovers('user')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortHandovers === 'user' ? 'text-rose-500 bg-rose-50 dark:bg-rose-150' : 'text-slate-400 hover:text-slate-600'}`} title="依自訂順序排序"><UserIcon size={12} strokeWidth={2.5} /></button>
+                <button type="button" onClick={() => setSortHandovers('time')} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${sortHandovers === 'time' ? 'text-rose-500 bg-rose-50 dark:bg-rose-150' : 'text-slate-400 hover:text-slate-600'}`} title="依時間排序"><Clock size={12} strokeWidth={2.5} /></button>
               </div>
               <div className="w-px h-3.5 bg-slate-200 shrink-0" />
-              <button type="button" onClick={() => setHideHandledHandovers(h => !h)} className={`flex items-center gap-1 h-6 px-1 rounded transition-all shrink-0 ${hideHandledHandovers ? 'text-rose-500 bg-rose-50 dark:bg-rose-200/60' : 'text-slate-400 hover:text-slate-600'}`} title={hideHandledHandovers ? '顯示所有交班' : '隱藏已交班'}>
+              <button type="button" onClick={() => setHideHandledHandovers(h => !h)} className={`flex items-center gap-1 h-6 px-1 rounded transition-all shrink-0 ${hideHandledHandovers ? 'text-rose-500 bg-rose-50 dark:bg-rose-150' : 'text-slate-400 hover:text-slate-600'}`} title={hideHandledHandovers ? '顯示所有交班' : '隱藏已交班'}>
                 {hideHandledHandovers ? <EyeOff size={12} strokeWidth={2.5} /> : <Eye size={12} strokeWidth={2.5} />}
                 <span className="text-[11px] font-semibold tabular-nums leading-none">{handoverPatients.filter(h => h.isHandedOver).length}</span>
               </button>
               <div className="w-px h-3.5 bg-slate-200 shrink-0" />
-              <button type="button" onClick={() => setIsHandoverEditMode(m => !m)} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isHandoverEditMode ? 'text-rose-600 bg-rose-50 dark:bg-rose-200/60' : 'text-slate-400 hover:text-slate-600'}`} title={isHandoverEditMode ? '結束編輯' : '編輯排序與刪除'}>
+              <button type="button" onClick={() => setIsHandoverEditMode(m => !m)} className={`flex items-center justify-center w-6 h-6 rounded transition-all shrink-0 ${isHandoverEditMode ? 'text-rose-600 bg-rose-50 dark:bg-rose-150' : 'text-slate-400 hover:text-slate-600'}`} title={isHandoverEditMode ? '結束編輯' : '編輯排序與刪除'}>
                 <Pencil size={12} strokeWidth={2.5} />
               </button>
             </div>
@@ -2753,10 +2779,10 @@ export default function App() {
               onClick={() => {
                 setShowAddHandover(!showAddHandover);
               }}
-              className="absolute -top-4 right-4 z-20 w-10 h-10 rounded-full flex items-center justify-center bg-rose-500 hover:bg-rose-600 text-white shadow-[0_4px_14px_rgba(244,63,94,0.35)] hover:shadow-[0_6px_20px_rgba(244,63,94,0.5)] transition-all cursor-pointer border-2 border-white hover:scale-110 active:scale-95 duration-200"
+              className="absolute top-2 right-3 z-20 h-8 px-3 rounded-full flex items-center justify-center gap-1 text-xs font-bold bg-[#86555c] dark:bg-[#6d494c] text-white transition-all cursor-pointer hover:brightness-110 active:scale-95"
               title="新增交班"
             >
-              <Plus size={18} className="stroke-[3.5]" />
+              <Plus size={14} className="stroke-[3]" /><span>新增</span>
             </button>
 
             {showAddHandover && (
@@ -2907,7 +2933,7 @@ export default function App() {
                       </div>
 
                       {hError && (
-                        <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-200/60 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100 animate-pulse">
+                        <p className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-150 px-3 py-2 rounded-lg flex items-center gap-1.5 border border-rose-100 animate-pulse">
                           <AlertCircle size={14} />
                           {hError}
                         </p>
@@ -2963,10 +2989,11 @@ export default function App() {
                           setHNote([h.attentionPoints, h.note].filter(Boolean).join('\n')); setHStatus(h.status); setHConsult(!!h.isConsult); setShowAddHandover(true);
                         }}
                         className={`border rounded-xl px-2.5 py-1.5 flex items-start gap-2.5 transition-all ${isHandoverEditMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${
-                          dragOverHandoverId === h.id ? 'border-rose-400 bg-rose-50/50' :
-                          h.isHandedOver ? 'border-slate-100 bg-slate-100/40 grayscale opacity-55 hover:opacity-100 hover:grayscale-0 shadow-3xs' :
+                          dragOverHandoverId === h.id ? 'border-rose-400 bg-rose-50/50 dark:bg-rose-50' :
+                          h.isHandedOver ? 'border-slate-100 bg-slate-100/40 dark:bg-slate-50 grayscale opacity-55 hover:opacity-100 hover:grayscale-0 shadow-3xs' :
+                          h.isConsult ? 'border-violet-500 bg-violet-100/40 dark:bg-violet-100 shadow-3xs' :
                           critical
-                            ? 'border-rose-200 bg-rose-50/25 shadow-3xs'
+                            ? 'border-rose-200 bg-rose-50/25 dark:bg-rose-50 shadow-3xs'
                             : 'border-slate-150 bg-white hover:border-slate-200 shadow-3xs'
                         }`}
                       >
@@ -2985,20 +3012,16 @@ export default function App() {
                                   setHNote([h.attentionPoints, h.note].filter(Boolean).join('\n')); setHStatus(h.status); setHConsult(!!h.isConsult); setShowAddHandover(true);
                                 }}
                                 className={`font-mono text-sm font-bold px-1.5 py-0.5 rounded-md border shrink-0 hover:opacity-80 transition-opacity ${
-                                  critical ? 'bg-rose-100/80 text-rose-800 border-rose-200 dark:bg-rose-200/70 dark:text-rose-855 dark:border-rose-300/40'
-                                    : unstable ? 'bg-amber-50 text-amber-700/90 border-amber-100 dark:bg-amber-200/40 dark:text-amber-850 dark:border-amber-300/30'
-                                    : 'bg-emerald-50 text-emerald-700/90 border-emerald-100 dark:bg-emerald-250/40 dark:text-emerald-850 dark:border-emerald-300/30'
+                                  critical ? 'bg-rose-150 text-rose-800 border-rose-200 dark:bg-rose-150 dark:text-rose-950 dark:border-rose-300/40'
+                                    : unstable ? 'bg-amber-150 text-amber-700/90 border-amber-100 dark:bg-amber-150 dark:text-amber-950 dark:border-amber-300/30'
+                                    : 'bg-emerald-150 text-emerald-700/90 border-emerald-100 dark:bg-emerald-150 dark:text-emerald-950 dark:border-emerald-300/30'
                                 }`}
                               >
                                 {renderBed(h.bed)}
                               </span>
-                              {h.isConsult && <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-violet-100 text-violet-700 border border-violet-200 shrink-0" title="會診">會</span>}
                               {h.name && h.name !== '不具名' && (
                                 <span className="font-bold text-sm text-slate-850 shrink-0">{h.name && h.name !== '不具名'}</span>
                               )}
-                              <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${
-                                critical ? 'bg-rose-500' : unstable ? 'bg-amber-400' : 'bg-emerald-500'
-                              }`} />
                               {h.diagnosis && h.diagnosis !== '無' && (
                                 <span
                                   onClick={(e) => {
@@ -3045,7 +3068,7 @@ export default function App() {
                                 </span>
                               )}
                               {h.note && (
-                                <span className="truncate italic text-slate-400">註: {h.note}</span>
+                                <span className="truncate text-slate-600">{h.note}</span>
                               )}
                             </div>
                           )}
@@ -3076,9 +3099,11 @@ export default function App() {
 
                   let borderStyle = 'border-slate-200/80 bg-white hover:border-slate-300 shadow-xs';
                   if (h.isHandedOver) {
-                    borderStyle = 'border-slate-100 bg-slate-100/40 opacity-60';
+                    borderStyle = 'border-slate-100 bg-slate-100/40 dark:bg-slate-50 opacity-60';
+                  } else if (h.isConsult) {
+                    borderStyle = 'border-violet-500 bg-violet-100/40 dark:bg-violet-100 shadow-xs';
                   } else if (critical) {
-                    borderStyle = 'border-rose-200 bg-rose-50/5 hover:bg-rose-50/10 shadow-rose-50/30 shadow-2xs';
+                    borderStyle = 'border-rose-200 bg-rose-50/5 hover:bg-rose-50/10 dark:bg-rose-50 dark:hover:bg-rose-50 shadow-rose-50/30 shadow-2xs';
                   }
 
 
@@ -3106,14 +3131,13 @@ export default function App() {
                               setHNote([h.attentionPoints, h.note].filter(Boolean).join('\n')); setHStatus(h.status); setHConsult(!!h.isConsult); setShowAddHandover(true);
                             }}
                             className={`font-mono text-sm font-bold px-1.5 py-0.5 rounded-md border hover:opacity-80 transition-opacity ${
-                              critical ? 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-200/70 dark:text-rose-855 dark:border-rose-300/40'
-                                : h.status === 'unstable' ? 'bg-amber-50 text-amber-700/90 border-amber-100 dark:bg-amber-200/40 dark:text-amber-850 dark:border-amber-300/30'
-                                : 'bg-emerald-50 text-emerald-700/90 border-emerald-100 dark:bg-emerald-250/40 dark:text-emerald-850 dark:border-emerald-300/30'
+                              critical ? 'bg-rose-150 text-rose-800 border-rose-200 dark:bg-rose-150 dark:text-rose-950 dark:border-rose-300/40'
+                                : h.status === 'unstable' ? 'bg-amber-150 text-amber-700/90 border-amber-100 dark:bg-amber-150 dark:text-amber-950 dark:border-amber-300/30'
+                                : 'bg-emerald-150 text-emerald-700/90 border-emerald-100 dark:bg-emerald-150 dark:text-emerald-950 dark:border-emerald-300/30'
                             }`}
                           >
                             {renderBed(h.bed)}
                           </span>
-                          {h.isConsult && <span className="text-[10px] font-bold px-1 py-0.5 rounded bg-violet-100 text-violet-700 border border-violet-200 shrink-0" title="會診">會</span>}
                           {h.name && h.name !== '不具名' && (
                             <span className="font-bold text-sm text-slate-850 truncate max-w-[85px]">
                               {h.name && h.name !== '不具名'}
@@ -3172,8 +3196,8 @@ export default function App() {
                         )}
 
                         {h.note && (
-                          <p className="text-xs italic bg-slate-100/30 p-1.5 rounded border-l border-slate-200 text-slate-550">
-                            備註：{h.note}
+                          <p className="text-xs text-slate-600 whitespace-pre-wrap">
+                            {h.note}
                           </p>
                         )}
                       </div>

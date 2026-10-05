@@ -141,7 +141,7 @@ export default function Header({ state, syncStatus, onImport, isSidebarOpen, set
           {/* Backdrop Overlay */}
           <div 
             id="sidebar-overlay-bg"
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity duration-300"
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-300"
             onClick={() => setIsSidebarOpen(false)}
           />
 
@@ -390,7 +390,7 @@ export default function Header({ state, syncStatus, onImport, isSidebarOpen, set
 
       {/* Backup Import Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-55 animate-fade-in" id="import-modal-overlay">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-55 animate-fade-in" id="import-modal-overlay">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100" id="import-modal-container">
             <div className="bg-slate-50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
               <h3 className="font-semibold text-slate-800 text-sm flex items-center gap-2">

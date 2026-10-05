@@ -21,7 +21,7 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
 
   return (
     <div 
-      className="bg-slate-100/80 border border-slate-200/50 p-1 rounded-xl w-full flex flex-row gap-1 mb-3.5 shadow-3xs dark:bg-slate-200/50 dark:border-slate-300/40"
+      className="bg-slate-100/80 border border-slate-200/50 p-1 rounded-xl w-full flex flex-row gap-1 mb-3.5 shadow-3xs dark:bg-slate-100 dark:border-slate-300/40"
       id="stats-tab-banner-container"
     >
       {/* Tab 1: New Patients */}
@@ -31,8 +31,8 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
         onClick={() => onTabChange('new')}
         className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 md:px-3 rounded-lg border border-transparent transition-all text-xs md:text-[13px] font-bold cursor-pointer select-none ${
           activeTab === 'new'
-            ? 'bg-indigo-600 text-white shadow-xs'
-            : 'text-slate-600 hover:text-indigo-600 hover:bg-white/60'
+            ? 'bg-[#496277] dark:bg-[#526778] text-white'
+            : 'text-slate-600 hover:text-indigo-600 hover:bg-white/60 dark:hover:bg-slate-150'
         }`}
       >
         <Users size={13} className="stroke-[2.5] shrink-0" />
@@ -41,7 +41,7 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
         <span className={`px-1 py-0.5 rounded-md font-extrabold text-[10px] font-mono leading-none shrink-0 ${
           activeTab === 'new'
             ? 'bg-white/20 text-white'
-            : 'bg-indigo-50 text-indigo-700 border border-indigo-100/30 dark:bg-indigo-200/60 dark:text-indigo-850 dark:border-indigo-300/30'
+            : 'bg-indigo-150 text-indigo-700 border border-indigo-100/30 dark:bg-indigo-150 dark:text-indigo-950 dark:border-indigo-300/30'
         }`}>
           {pendingWorkNew}
         </span>
@@ -54,8 +54,8 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
         onClick={() => onTabChange('orders')}
         className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 md:px-3 rounded-lg border border-transparent transition-all text-xs md:text-[13px] font-bold cursor-pointer select-none ${
           activeTab === 'orders'
-            ? 'bg-amber-500 text-white shadow-xs dark:bg-amber-600'
-            : 'text-slate-600 hover:text-amber-600 hover:bg-white/60 dark:hover:bg-slate-200/40'
+            ? 'bg-[#796853] dark:bg-[#685742] text-white'
+            : 'text-slate-600 hover:text-amber-600 hover:bg-white/60 dark:hover:bg-slate-150'
         }`}
       >
         <ListTodo size={13} className="stroke-[2.5] shrink-0" />
@@ -64,7 +64,7 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
         <span className={`px-1 py-0.5 rounded-md font-extrabold text-[10px] font-mono leading-none shrink-0 ${
           activeTab === 'orders'
             ? 'bg-white/25 text-white'
-            : 'bg-amber-50 text-amber-700 border border-amber-100/30 dark:bg-amber-200/60 dark:text-amber-850 dark:border-amber-300/30'
+            : 'bg-amber-150 text-amber-700 border border-amber-100/30 dark:bg-amber-150 dark:text-amber-950 dark:border-amber-300/30'
         }`}>
           {pendingOrdersCount}
         </span>
@@ -77,8 +77,8 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
         onClick={() => onTabChange('handovers')}
         className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 md:px-3 rounded-lg border border-transparent transition-all text-xs md:text-[13px] font-bold cursor-pointer select-none ${
           activeTab === 'handovers'
-            ? 'bg-rose-600 text-white shadow-xs'
-            : 'text-slate-600 hover:text-rose-600 hover:bg-white/60'
+            ? 'bg-[#86555c] dark:bg-[#6d494c] text-white'
+            : 'text-slate-600 hover:text-rose-600 hover:bg-white/60 dark:hover:bg-slate-150'
         }`}
       >
         <Clipboard size={13} className="stroke-[2.5] shrink-0" />
@@ -87,7 +87,7 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
         <span className={`px-1 py-0.5 rounded-md font-extrabold text-[10px] font-mono leading-none shrink-0 ${
           activeTab === 'handovers'
             ? 'bg-white/20 text-white'
-            : 'bg-rose-50 text-rose-700 border border-rose-100/30 dark:bg-rose-200/60 dark:text-rose-855 dark:border-rose-300/30'
+            : 'bg-rose-150 text-rose-700 border border-rose-100/30 dark:bg-rose-150 dark:text-rose-950 dark:border-rose-300/30'
         }`}>
           {pendingHandoversCount}
         </span>
