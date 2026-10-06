@@ -30,6 +30,7 @@ import {
   Clock,
   PhoneCall,
   Sliders,
+  Settings,
   ShieldAlert,
   AlertCircle,
   Sparkles,
@@ -807,13 +808,6 @@ export default function App() {
   };
 
   // --- Handlers for high-level operations ---
-  const handleImport = (newState: DutyState) => {
-    setNewPatients(newState.newPatients || []);
-    setGeneralOrders(newState.generalOrders || []);
-    setHandoverPatients(newState.handoverPatients || []);
-    // Debounced save effect will sync to Firebase automatically
-  };
-
   const handleClear = () => {
     setNewPatients([]);
     setGeneralOrders([]);
@@ -1127,7 +1121,6 @@ export default function App() {
       <Header
         state={currentDutyState}
         syncStatus={syncStatus}
-        onImport={handleImport}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         isDarkMode={isDarkMode}
@@ -1158,6 +1151,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setIsModeMenuOpen(o => !o)}
+                  data-tour="mode"
                   className="flex items-center gap-1 px-1 py-1 -mx-1 text-sm font-bold tracking-tight text-slate-800 font-sans rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
                   title="切換模式"
                 >
@@ -1197,6 +1191,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => { setIsDateDropdownOpen(o => !o); setShowAddShiftForm(false); }}
+                  data-tour="shift"
                   className={`flex items-center gap-1 text-sm font-semibold px-2 py-1 rounded-lg transition-all cursor-pointer ${
                     isDateDropdownOpen ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
@@ -1399,6 +1394,7 @@ export default function App() {
                 <button
                   type="button"
                   id="quick-phone-add-trigger-desktop"
+                  data-tour="phone"
                   onClick={() => { setShowQuickPhoneAdd(!showQuickPhoneAdd); clearQp(); }}
                   className={`group relative flex items-center justify-center gap-2.5 rounded-full overflow-hidden py-1.5 px-5 text-white transition-all duration-200 cursor-pointer hover:brightness-110 ${
                 showQuickPhoneAdd
@@ -1422,6 +1418,7 @@ export default function App() {
                     placeholder="號碼"
                     disabled={!selectedShiftId}
                     title="上線號碼"
+                    data-tour="online"
                     className="w-40 text-base font-medium tracking-wide bg-transparent focus:outline-hidden text-slate-800"
                   />
                 </label>
@@ -1488,8 +1485,9 @@ export default function App() {
                 onClick={() => setIsSidebarOpen(true)}
                 className={`w-8 h-8 items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all cursor-pointer shrink-0 ${isMobileSearchOpen ? 'hidden md:flex' : 'flex'}`}
                 title="主控台"
+                data-tour="settings"
               >
-                <Sliders size={14} />
+                <Settings size={15} />
               </button>
 
             </div>
@@ -1500,6 +1498,7 @@ export default function App() {
             <button
               type="button"
               id="quick-phone-add-trigger-mobile"
+              data-tour="phone"
               onClick={() => { setShowQuickPhoneAdd(!showQuickPhoneAdd); clearQp(); }}
               className={`group relative flex items-center justify-center gap-2.5 rounded-full overflow-hidden py-2 px-4 text-white transition-all duration-200 cursor-pointer hover:brightness-110 flex-1 min-w-0 ${
                 showQuickPhoneAdd
@@ -1523,6 +1522,7 @@ export default function App() {
                 placeholder="號碼"
                 disabled={!selectedShiftId}
                 title="上線號碼"
+                data-tour="online"
                 className="w-24 text-base font-medium tracking-wide bg-transparent focus:outline-hidden text-slate-800"
               />
             </label>
@@ -1788,6 +1788,7 @@ export default function App() {
             <button
               type="button"
               id="btn-add-patient-top"
+              data-tour="add"
               onClick={() => {
                 setShowAddPatient(!showAddPatient);
               }}
@@ -2359,6 +2360,7 @@ export default function App() {
             <button
               type="button"
               id="btn-add-order-top"
+              data-tour="add"
               onClick={() => {
                 setShowAddOrder(!showAddOrder);
               }}
@@ -2782,6 +2784,7 @@ export default function App() {
             <button
               type="button"
               id="btn-add-handover-top"
+              data-tour="add"
               onClick={() => {
                 setShowAddHandover(!showAddHandover);
               }}
@@ -2900,7 +2903,6 @@ export default function App() {
                         <div className="flex items-center gap-1 md:gap-2 bg-slate-100/60 p-1 md:p-1.5 rounded-xl self-start w-full md:w-auto">
                           {(['stable', 'unstable', 'critical'] as const).map((stat) => {
                             const labels = { stable: '穩定', unstable: '變動', critical: '危急' };
-                            const dotColors = { stable: 'bg-emerald-500', unstable: 'bg-amber-400', critical: 'bg-rose-500' };
                             const activeColors = {
                               stable: 'bg-emerald-600 text-white shadow-sm border-emerald-500 focus:ring-emerald-350 font-bold',
                               unstable: 'bg-amber-500 text-white shadow-sm border-amber-400 focus:ring-amber-300 font-bold',
@@ -2914,10 +2916,9 @@ export default function App() {
                                 className={`flex-1 md:flex-initial flex items-center justify-center gap-1 md:gap-1.5 whitespace-nowrap text-xs py-2 px-2 md:px-4 rounded-lg transition-all cursor-pointer border ${
                                   hStatus === stat
                                     ? activeColors[stat]
-                                    : 'border-transparent bg-transparent text-slate-600 hover:text-slate-900 font-medium hover:bg-white/60'
+                                    : 'border-transparent bg-transparent text-slate-600 hover:text-slate-900 font-medium hover:bg-white/60 dark:hover:bg-slate-150'
                                 }`}
                               >
-                                <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${dotColors[stat]}`} />
                                 {labels[stat]}
                               </button>
                             );

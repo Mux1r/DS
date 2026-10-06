@@ -21,17 +21,26 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
 
   return (
     <div 
-      className="bg-slate-100/80 border border-slate-200/50 p-1 rounded-xl w-full flex flex-row gap-1 mb-3.5 shadow-3xs dark:bg-slate-100 dark:border-slate-300/40"
+      className="relative bg-slate-100/80 border border-slate-200/50 p-1 rounded-xl w-full flex flex-row gap-1 mb-3.5 shadow-3xs dark:bg-slate-100 dark:border-slate-300/40"
       id="stats-tab-banner-container"
+      data-tour="tabs"
     >
+      {/* 滑動色塊：寬度＝三等分（扣掉 p-1 與 gap-1），位移一格＝自身寬度＋gap；顏色跟著分頁換 */}
+      <span
+        aria-hidden
+        className={`absolute top-1 bottom-1 left-1 w-[calc((100%-1rem)/3)] rounded-lg transition-[transform,background-color] duration-[260ms] ease-[cubic-bezier(0.3,0.9,0.3,1)] ${
+          activeTab === 'new' ? 'bg-[#60788c] dark:bg-[#526677]' : activeTab === 'orders' ? 'bg-[#82735f] dark:bg-[#6a5b47]' : 'bg-[#99696e] dark:bg-[#724a4c]'
+        }`}
+        style={{ transform: `translateX(calc(${['new', 'orders', 'handovers'].indexOf(activeTab)} * (100% + 0.25rem)))` }}
+      />
       {/* Tab 1: New Patients */}
       <button
         type="button"
         id="tab-btn-new-patients"
         onClick={() => onTabChange('new')}
-        className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 md:px-3 rounded-lg border border-transparent transition-all text-xs md:text-[13px] font-bold cursor-pointer select-none ${
+        className={`relative flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 md:px-3 rounded-lg border border-transparent transition-all text-xs md:text-[13px] font-bold cursor-pointer select-none ${
           activeTab === 'new'
-            ? 'bg-[#60788c] dark:bg-[#526677] text-white'
+            ? 'text-white'
             : 'text-slate-600 hover:text-indigo-600 hover:bg-white/60 dark:hover:bg-slate-150'
         }`}
       >
@@ -52,9 +61,9 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
         type="button"
         id="tab-btn-general-orders"
         onClick={() => onTabChange('orders')}
-        className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 md:px-3 rounded-lg border border-transparent transition-all text-xs md:text-[13px] font-bold cursor-pointer select-none ${
+        className={`relative flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 md:px-3 rounded-lg border border-transparent transition-all text-xs md:text-[13px] font-bold cursor-pointer select-none ${
           activeTab === 'orders'
-            ? 'bg-[#82735f] dark:bg-[#6a5b47] text-white'
+            ? 'text-white'
             : 'text-slate-600 hover:text-amber-600 hover:bg-white/60 dark:hover:bg-slate-150'
         }`}
       >
@@ -75,9 +84,9 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
         type="button"
         id="tab-btn-handovers"
         onClick={() => onTabChange('handovers')}
-        className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 md:px-3 rounded-lg border border-transparent transition-all text-xs md:text-[13px] font-bold cursor-pointer select-none ${
+        className={`relative flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 md:px-3 rounded-lg border border-transparent transition-all text-xs md:text-[13px] font-bold cursor-pointer select-none ${
           activeTab === 'handovers'
-            ? 'bg-[#99696e] dark:bg-[#724a4c] text-white'
+            ? 'text-white'
             : 'text-slate-600 hover:text-rose-600 hover:bg-white/60 dark:hover:bg-slate-150'
         }`}
       >

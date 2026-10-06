@@ -6,30 +6,26 @@
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { DutyState, SyncStatus, Shift } from '../types';
-import { generateHandoverText, exportJSON } from '../utils';
+import { generateHandoverText } from '../utils';
+import Tour, { TourStep } from './Tour';
+import Feedback from './Feedback';
+import ShiftManager from './ShiftManager';
 import { version } from '@/package.json';
 import {
   ClipboardCopy,
-  Download,
-  Upload,
   Check,
-  AlertCircle,
-  Trash2,
   X,
-  Settings,
   RotateCw,
-  ChevronRight,
-  ClipboardCheck,
-  Pencil,
   CalendarDays,
   Sun,
-  Moon
+  Moon,
+  HelpCircle,
+  MessageSquareWarning,
 } from 'lucide-react';
 
 interface HeaderProps {
   state: DutyState;
   syncStatus: SyncStatus;
-  onImport: (newState: DutyState) => void;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
   isDarkMode: boolean;
@@ -43,16 +39,25 @@ interface HeaderProps {
   onDeleteShift?: (id: string) => void;
 }
 
-const TILE = 'flex flex-col items-start justify-between gap-3 p-3.5 min-h-[88px] rounded-2xl bg-slate-50 border border-slate-150 hover:border-slate-300 transition-all cursor-pointer active:scale-[0.98] text-left';
-const TILE_ICON = 'w-8 h-8 rounded-xl flex items-center justify-center shrink-0';
+// 設定頁照 HMSS 控制中心：半透明毛玻璃卡片。不用 bg-white，深色模式會被 index.css 強制改成實色
+const GLASS = 'bg-white/60 dark:bg-white/5 border border-white/80 dark:border-white/10 backdrop-blur-sm';
+const GLASS_HOVER = 'hover:bg-white/80 dark:hover:bg-white/10';
 
-export default function Header({ state, syncStatus, onImport, isSidebarOpen, setIsSidebarOpen, isDarkMode, onToggleDarkMode, user, onSignOut, availableShifts = [], selectedShiftId = '', onSelectShift, onEditShift, onDeleteShift }: HeaderProps) {
+// 使用教學的步驟（target 對應畫面元素的 data-tour）
+const TOUR_STEPS: TourStep[] = [
+  { target: 'mode', title: '切換模式', body: '「Duty List」是值班清單；切到「病歷紀錄」可以記跨值班的病歷筆記，匯出到 emyway。' },
+  { target: 'shift', title: '值班區間', body: '這裡是目前的值班。今天還沒有值班時旁邊會出現閃爍的「＋」，按下去新增。資料按值班分開存。' },
+  { target: 'phone', title: '電話速記', body: '護理師來電時按這裡，打床號和內容，再選要歸到新病人、醫囑、交班或會診。' },
+  { target: 'online', title: '上線號碼', body: '記下這班的上線號碼，只存在這台裝置上。' },
+  { target: 'tabs', title: '三個功能', body: '新病人、醫囑、交班。數字是還沒完成的項目數。' },
+  { target: 'add', title: '新增', body: '在目前的分頁新增一筆。點卡片可以編輯內容。' },
+  { target: 'settings', title: '設定', body: '主題、交班簡報、值班管理、這個教學和意見回報都在這裡。' },
+];
+
+export default function Header({ state, syncStatus, isSidebarOpen, setIsSidebarOpen, isDarkMode, onToggleDarkMode, user, onSignOut, availableShifts = [], selectedShiftId = '', onSelectShift, onEditShift, onDeleteShift }: HeaderProps) {
   const [copiedHandover, setCopiedHandover] = useState(false);
-  const [copiedRaw, setCopiedRaw] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [importText, setImportText] = useState('');
-  const [importError, setImportError] = useState('');
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isTourOpen, setIsTourOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isShiftSectionOpen, setIsShiftSectionOpen] = useState(false);
 
   // Live digital clock
@@ -62,16 +67,17 @@ export default function Header({ state, syncStatus, onImport, isSidebarOpen, set
     return () => clearInterval(timer);
   }, []);
 
-  // Esc closes the import modal, or the sidebar drawer itself
+  // Esc 關掉最上層：先回報視窗，再設定頁（教學自己處理 Esc）
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      if (showImportModal) setShowImportModal(false);
-      else if (isSidebarOpen) setIsSidebarOpen(false);
+      if (isFeedbackOpen) setIsFeedbackOpen(false);
+      else if (isShiftSectionOpen) setIsShiftSectionOpen(false);
+      else if (isSidebarOpen && !isTourOpen) setIsSidebarOpen(false);
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [showImportModal, isSidebarOpen, setIsSidebarOpen]);
+  }, [isFeedbackOpen, isShiftSectionOpen, isSidebarOpen, isTourOpen, setIsSidebarOpen]);
 
   const formatLocalDate = (d: Date) => {
     const options: Intl.DateTimeFormatOptions = { 
@@ -94,315 +100,168 @@ export default function Header({ state, syncStatus, onImport, isSidebarOpen, set
     setTimeout(() => setCopiedHandover(false), 2000);
   };
 
-  const handleCopyRaw = () => {
-    const jsonStr = exportJSON(state);
-    navigator.clipboard.writeText(jsonStr);
-    setCopiedRaw(true);
-    setTimeout(() => setCopiedRaw(false), 2000);
-  };
-
-  const triggerDownload = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(exportJSON(state));
-    const downloadAnchor = document.createElement('a');
-    const dateStr = new Date().toISOString().substring(0, 10);
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `DutyShift_Backup_${dateStr}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-  };
-
-  const handleImportSubmit = () => {
-    try {
-      const parsed = JSON.parse(importText);
-      if (typeof parsed === 'object' && parsed !== null) {
-        if ('newPatients' in parsed || 'generalOrders' in parsed || 'handoverPatients' in parsed) {
-          onImport({
-            newPatients: parsed.newPatients || [],
-            generalOrders: parsed.generalOrders || [],
-            handoverPatients: parsed.handoverPatients || [],
-          });
-          setShowImportModal(false);
-          setImportText('');
-          setImportError('');
-          setIsSidebarOpen(false); // Clean drawer on success
-        } else {
-          setImportError('格式不正確：缺少關鍵病人清單欄位。');
-        }
-      } else {
-        setImportError('格式不正確：請輸入有效的 JSON 對象。');
-      }
-    } catch (e) {
-      setImportError('JSON 語法解析失敗，請確認貼上內容是否完整。');
-    }
-  };
-
   return (
     <>
       {isSidebarOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end" id="sidebar-drawer-portal">
-          {/* Backdrop Overlay */}
-          <div 
-            id="sidebar-overlay-bg"
-            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-300"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-
-          {/* Sliding Panel */}
-          <div 
-            id="sidebar-drawer-container"
-            className="relative w-full max-w-sm bg-white border-l border-slate-200 h-full flex flex-col shadow-2xl z-10 animate-slide-in-right overflow-hidden"
-          >
-            {/* Header / Brand details */}
-            <div className="px-5 py-4 pt-[calc(env(safe-area-inset-top)+1rem)] border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <Settings size={15} className="text-indigo-600 animate-spin-slow" />
-                <h3 className="font-bold text-slate-800 text-sm font-sans tracking-tight">設定</h3>
-              </div>
+        <div
+          id="sidebar-drawer-portal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="settings-title"
+          className="fixed inset-0 z-50 flex flex-col bg-[#f5f5f2]/30 dark:bg-[#232320]/30 backdrop-blur-md pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] animate-fade-in"
+        >
+          <div className="shrink-0 border-b border-slate-200/70 dark:border-white/10">
+            <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
+              <h2 id="settings-title" className="text-base font-bold text-slate-800">設定</h2>
               <button
                 type="button"
                 id="close-sidebar-btn"
                 onClick={() => setIsSidebarOpen(false)}
-                className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1.5 rounded-lg transition-all cursor-pointer"
-                title="關閉選單"
+                aria-label="關閉設定"
+                className="p-2 rounded-full text-slate-500 hover:bg-slate-200/60 dark:hover:bg-white/10 cursor-pointer"
               >
-                <X size={15} />
+                <X size={18} />
               </button>
             </div>
+          </div>
 
-            {/* Sidebar Body */}
-            <div className="flex-grow overflow-y-auto px-5 py-6 space-y-4 scrollbar-thin">
-
-              {/* USER INFO SECTION */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            {/* 字級寫在 span 上：index.css 對 button 設了 font-size: inherit */}
+            <div className="max-w-md mx-auto px-4 py-6 space-y-5">
+              {/* 帳號：一條橫的 */}
               {user && (
-                <div className="flex items-center justify-between gap-2 pb-4 border-b border-slate-100">
-                  <div className="flex items-center gap-2 min-w-0">
-                    {user.photoURL ? (
-                      <img src={user.photoURL} referrerPolicy="no-referrer" alt="" className="w-7 h-7 rounded-full shrink-0 border border-slate-200" />
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                        <span className="text-xs font-bold text-indigo-600">{(user.displayName || user.email || 'U')[0].toUpperCase()}</span>
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-slate-800 truncate">{user.displayName || '使用者'}</p>
-                      <p className="text-[10px] text-slate-400 truncate">{user.email}</p>
-                    </div>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl ${GLASS}`}>
+                  {user.photoURL ? (
+                    <img src={user.photoURL} referrerPolicy="no-referrer" alt="" className="w-10 h-10 rounded-full shrink-0" />
+                  ) : (
+                    <span className="w-10 h-10 rounded-full bg-indigo-150 flex items-center justify-center shrink-0 text-sm font-bold text-indigo-700">
+                      {(user.displayName || user.email || 'U')[0].toUpperCase()}
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-slate-800 truncate">{user.displayName || user.email}</p>
+                    <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${syncStatus.error ? 'bg-rose-500' : syncStatus.isSyncing ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
+                      {syncStatus.error ? '同步失敗，請檢查網路' : syncStatus.isSyncing ? '同步中…' : '值班資料已存到雲端'}
+                    </p>
                   </div>
-                  <button
-                    onClick={onSignOut}
-                    className="text-[10px] font-semibold text-slate-400 hover:text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-lg transition-all cursor-pointer shrink-0 border border-transparent hover:border-rose-100"
-                  >
-                    登出
+                  <button type="button" onClick={onSignOut} className="shrink-0 cursor-pointer">
+                    <span className="text-xs font-bold text-rose-500 hover:underline">登出</span>
                   </button>
                 </div>
               )}
 
-              {/* 功能磚：兩格小、一格寬交錯排列。字級寫在 span 上（index.css 對 button 設了 font-size: inherit） */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <button type="button" onClick={onToggleDarkMode} className={TILE}>
-                  <span className={`${TILE_ICON} bg-amber-150 text-amber-700`}>
-                    {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-                  </span>
-                  <span className="text-xs font-semibold text-slate-700">{isDarkMode ? '淺色主題' : '深色主題'}</span>
+              {/* 值班管理、交班簡報：兩張並排 */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  data-tour="shift-manage"
+                  onClick={() => setIsShiftSectionOpen(true)}
+                  aria-haspopup="dialog"
+                  className={`p-4 rounded-2xl text-left cursor-pointer active:scale-[0.98] ${GLASS} ${GLASS_HOVER}`}
+                >
+                  <CalendarDays size={16} className="text-indigo-600" />
+                  <span className="block text-sm font-bold mt-3 text-slate-800">值班管理</span>
+                  <span className="block text-[11px] mt-1 text-slate-500">切換、修改、刪除</span>
                 </button>
-                <button type="button" onClick={() => window.location.reload()} className={TILE}>
-                  <span className={`${TILE_ICON} bg-slate-150 text-slate-600`}>
-                    <RotateCw size={16} />
-                  </span>
-                  <span className="text-xs font-semibold text-slate-700">重新整理</span>
-                </button>
-
                 <button
                   type="button"
                   id="copy-handover-text-btn"
                   onClick={handleCopyHandover}
-                  className={`col-span-2 flex items-center gap-3 p-3.5 rounded-2xl text-white transition-all cursor-pointer active:scale-[0.98] ${
-                    copiedHandover ? 'bg-[#5f7f6d]' : 'bg-[#60788c] dark:bg-[#526677] hover:brightness-110'
-                  }`}
+                  className={`p-4 rounded-2xl text-left cursor-pointer active:scale-[0.98] ${GLASS} ${GLASS_HOVER}`}
                 >
-                  <span className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/20 shrink-0">
-                    {copiedHandover ? <Check size={17} className="stroke-[3]" /> : <ClipboardCopy size={17} />}
-                  </span>
-                  <span className="flex flex-col items-start text-left">
-                    <span className="text-sm font-bold">{copiedHandover ? '已複製交班簡報' : '複製交班簡報'}</span>
-                    <span className="text-[10px] opacity-75">LINE 格式</span>
-                  </span>
-                </button>
-
-                <button type="button" id="download-backup-btn" onClick={triggerDownload} className={TILE}>
-                  <span className={`${TILE_ICON} bg-emerald-150 text-emerald-700`}>
-                    <Download size={16} />
-                  </span>
-                  <span className="text-xs font-semibold text-slate-700">下載備份</span>
-                </button>
-                <button
-                  type="button"
-                  id="upload-backup-btn"
-                  onClick={() => { setImportError(''); setShowImportModal(true); }}
-                  className={TILE}
-                >
-                  <span className={`${TILE_ICON} bg-rose-150 text-rose-700`}>
-                    <Upload size={16} />
-                  </span>
-                  <span className="text-xs font-semibold text-slate-700">匯入資料</span>
-                </button>
-
-                <button
-                  type="button"
-                  id="copy-raw-json-btn"
-                  onClick={handleCopyRaw}
-                  className="col-span-2 flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-150 hover:border-slate-300 transition-all cursor-pointer active:scale-[0.98]"
-                >
-                  <span className={`${TILE_ICON} bg-violet-100 text-violet-700`}>
-                    <ClipboardCheck size={16} />
-                  </span>
-                  <span className="text-xs font-semibold text-slate-700">複製原始 JSON</span>
-                  {copiedRaw && <span className="ml-auto text-[10.5px] text-emerald-600 font-bold">已複製!</span>}
+                  {copiedHandover ? <Check size={16} className="text-emerald-600 stroke-[3]" /> : <ClipboardCopy size={16} className="text-rose-600" />}
+                  <span className="block text-sm font-bold mt-3 text-slate-800">{copiedHandover ? '已複製' : '複製交班簡報'}</span>
+                  <span className="block text-[11px] mt-1 text-slate-500">LINE 格式</span>
                 </button>
               </div>
 
-              {/* SECTION: SHIFT MANAGEMENT */}
-              {availableShifts.length > 0 && (
-                <div className="space-y-1 pt-3 border-t border-slate-100 text-[11px]">
+              {/* 外觀、重新整理：一組分隔列表 */}
+              <div className={`rounded-2xl divide-y divide-slate-200/70 dark:divide-white/10 ${GLASS}`}>
+                <div className="flex items-center justify-between gap-3 px-4 py-3">
+                  <span className="text-sm font-bold text-slate-800">外觀</span>
+                  {/* 滑動式主題切換（同 HMSS） */}
+                  <div className="relative w-28 h-10 p-1 rounded-xl flex items-center gap-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                    <span
+                      aria-hidden
+                      className="absolute top-1 bottom-1 left-1 w-[calc(50%-6px)] rounded-lg bg-[#fafaf9] dark:bg-[#3a3a34] border border-slate-200 dark:border-white/10 shadow-sm transition-transform duration-[260ms] ease-[cubic-bezier(0.3,0.9,0.3,1)]"
+                      style={{ transform: isDarkMode ? 'translateX(calc(100% + 4px))' : 'none' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => isDarkMode && onToggleDarkMode()}
+                      aria-label="淺色"
+                      aria-pressed={!isDarkMode}
+                      className={`relative flex-1 h-full flex items-center justify-center cursor-pointer ${!isDarkMode ? 'text-amber-500' : 'text-slate-400'}`}
+                    >
+                      <Sun size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => !isDarkMode && onToggleDarkMode()}
+                      aria-label="深色"
+                      aria-pressed={isDarkMode}
+                      className={`relative flex-1 h-full flex items-center justify-center cursor-pointer ${isDarkMode ? 'text-indigo-500' : 'text-slate-400'}`}
+                    >
+                      <Moon size={16} />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-800">重新整理</p>
+                    <p className="text-[11px] text-slate-500 truncate">畫面怪怪的或想抓最新版本時用</p>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setIsShiftSectionOpen(v => !v)}
-                    className="w-full flex items-center gap-1.5 text-[11px] font-bold text-slate-500 mb-2 cursor-pointer"
+                    onClick={() => window.location.reload()}
+                    className="flex items-center gap-1.5 px-3 h-8 rounded-full shrink-0 bg-emerald-500/10 text-emerald-700 cursor-pointer hover:bg-emerald-500/20"
                   >
-                    <CalendarDays size={12} className="text-indigo-500" />
-                    <span>值班管理</span>
-                    <ChevronRight size={11} className={`ml-auto text-slate-300 transition-transform ${isShiftSectionOpen ? 'rotate-90' : ''}`} />
+                    <RotateCw size={14} />
+                    <span className="text-xs font-bold">重新整理</span>
                   </button>
-                  {isShiftSectionOpen && availableShifts.map(shift => {
-                    const label = shift.startDate === shift.endDate
-                      ? shift.startDate.slice(5).replace('-', '/')
-                      : `${shift.startDate.slice(5).replace('-', '/')} – ${shift.endDate.slice(5).replace('-', '/')}`;
-                    const isSelected = shift.id === selectedShiftId;
-
-                    if (deleteConfirmId === shift.id) {
-                      return (
-                        <div key={shift.id} className="bg-rose-50 rounded-xl p-2.5 border border-rose-100">
-                          <p className="text-[11px] text-rose-700 font-semibold mb-2">確認刪除「{label}」？</p>
-                          <div className="flex gap-1.5 justify-end">
-                            <button type="button" onClick={() => setDeleteConfirmId(null)} className="px-2.5 py-1 text-[10px] text-slate-400 hover:bg-slate-100 rounded-lg cursor-pointer">取消</button>
-                            <button
-                              type="button"
-                              onClick={() => { onDeleteShift?.(shift.id); setDeleteConfirmId(null); }}
-                              className="px-2.5 py-1 text-[10px] bg-rose-600 text-white font-bold rounded-lg cursor-pointer hover:bg-rose-700"
-                            >刪除</button>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div
-                        key={shift.id}
-                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl transition-all ${
-                          isSelected ? 'bg-indigo-50 border border-indigo-100' : 'hover:bg-slate-50 border border-transparent'
-                        }`}
-                      >
-                        {/* Label — click to switch shift & edit patients in main view */}
-                        <button
-                          type="button"
-                          onClick={() => { onSelectShift?.(shift.id); setIsSidebarOpen(false); }}
-                          className="flex-1 flex items-center gap-2 text-left cursor-pointer"
-                          title="切換至此班，在主畫面編輯病人"
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSelected ? 'bg-indigo-500' : 'bg-slate-300'}`} />
-                          <span className={`text-xs font-semibold ${isSelected ? 'text-indigo-700' : 'text-slate-600'}`}>{label}</span>
-                        </button>
-                        {/* Pencil = navigate to shift for patient editing */}
-                        <button
-                          type="button"
-                          onClick={() => { onSelectShift?.(shift.id); setIsSidebarOpen(false); }}
-                          className="w-6 h-6 flex items-center justify-center text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all cursor-pointer shrink-0"
-                          title="切換至此班，編輯病人"
-                        >
-                          <Pencil size={11} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteConfirmId(shift.id)}
-                          className="w-6 h-6 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all cursor-pointer shrink-0"
-                          title="刪除值班"
-                        >
-                          <Trash2 size={11} />
-                        </button>
-                      </div>
-                    );
-                  })}
                 </div>
-              )}
+              </div>
 
-
-            </div>
-
-            {/* Sidebar Footer */}
-            <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 text-center text-[10px] text-slate-400 font-mono shrink-0">
-              Clinical Shift v{version}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Backup Import Modal */}
-      {showImportModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-55 animate-fade-in" id="import-modal-overlay">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100" id="import-modal-container">
-            <div className="bg-slate-50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="font-semibold text-slate-800 text-sm flex items-center gap-2">
-                <Upload size={16} className="text-indigo-600" />
-                匯入值班清單資料
-              </h3>
-              <button 
-                id="close-import-modal-btn"
-                onClick={() => setShowImportModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-sm font-medium"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-5 flex flex-col gap-3">
-              <textarea
-                id="import-json-textarea"
-                value={importText}
-                onChange={(e) => {
-                  setImportText(e.target.value);
-                  setImportError('');
-                }}
-                placeholder='在此貼上 {"newPatients": [...], ...}'
-                className="w-full h-48 border border-slate-200 rounded-xl p-3 text-xs font-mono focus:outline-hidden focus:ring-1 focus:ring-indigo-500 lightbox-textarea resize-none bg-slate-50"
-              />
-              {importError && (
-                <p className="text-[11px] text-rose-500 flex items-center gap-1 bg-rose-50 p-2 rounded-lg" id="import-error-message">
-                  <AlertCircle size={12} />
-                  {importError}
-                </p>
-              )}
-              <div className="flex justify-end gap-2 mt-2">
+              {/* 教學、回報：兩顆膠囊按鈕 */}
+              <div className="flex gap-2">
                 <button
-                  id="cancel-import-btn"
-                  onClick={() => setShowImportModal(false)}
-                  className="px-3.5 py-1.5 text-xs text-slate-500 hover:bg-slate-100 rounded-lg transition-all"
+                  type="button"
+                  onClick={() => { setIsSidebarOpen(false); setIsTourOpen(true); }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 h-10 rounded-full cursor-pointer ${GLASS} ${GLASS_HOVER}`}
                 >
-                  取消
+                  <HelpCircle size={16} className="text-indigo-600" />
+                  <span className="text-xs font-bold text-slate-700">使用教學</span>
                 </button>
                 <button
-                  id="confirm-import-btn"
-                  onClick={handleImportSubmit}
-                  disabled={!importText.trim()}
-                  className="px-4 py-1.5 text-xs bg-slate-800 text-white hover:bg-slate-700 disabled:opacity-40 rounded-lg transition-all cursor-pointer"
+                  type="button"
+                  onClick={() => setIsFeedbackOpen(true)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 h-10 rounded-full cursor-pointer ${GLASS} ${GLASS_HOVER}`}
                 >
-                  確認載入
+                  <MessageSquareWarning size={16} className="text-rose-600" />
+                  <span className="text-xs font-bold text-slate-700">意見回報</span>
                 </button>
               </div>
+
+              <p className="text-center text-[10px] pt-1 text-slate-500 font-mono">Clinical Shift v{version} · 僅供個人值班紀錄使用</p>
             </div>
           </div>
         </div>
       )}
 
+      {isShiftSectionOpen && (
+        <ShiftManager
+          shifts={availableShifts}
+          selectedShiftId={selectedShiftId}
+          isDarkMode={isDarkMode}
+          onSelect={id => { onSelectShift?.(id); setIsShiftSectionOpen(false); setIsSidebarOpen(false); }}
+          onEdit={(id, start, end) => onEditShift?.(id, start, end)}
+          onDelete={id => onDeleteShift?.(id)}
+          onClose={() => setIsShiftSectionOpen(false)}
+        />
+      )}
+      {isFeedbackOpen && <Feedback user={user} isDarkMode={isDarkMode} onClose={() => setIsFeedbackOpen(false)} />}
+      {isTourOpen && <Tour steps={TOUR_STEPS} isDarkMode={isDarkMode} onClose={() => setIsTourOpen(false)} />}
     </>
   );
 }

@@ -110,66 +110,64 @@ export const saveState = (state: DutyState): void => {
 };
 
 // Generate comprehensive text for shift handover (clinical clipboard tool)
-export const generateHandoverText = (state: DutyState): string => {
-  let text = `📋 === 值班病患狀態交班清單 ===\n`;
-  text += `產生時間：${new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}\n`;
-  text += `==================================\n\n`;
+// 交班簡報（貼 LINE 用）：一床一行，只印有填的欄位
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const hasDx = (dx: string) => !!dx && dx !== '無' && dx !== '無確切診斷';
 
-  // Section 1: New Patients
-  text += `【 1. 今日新病人 (${state.newPatients.length} 床) 】\n`;
-  if (state.newPatients.length === 0) {
-    text += `  無新病人紀錄。\n`;
-  } else {
-    state.newPatients.forEach((p, idx) => {
-      const order = p.orderDone ? '✅ 醫囑已開' : '❌ 醫囑未完成';
-      const visit = p.visited ? '✅ 已看病人' : '❌ 未看病人';
-      const chart = p.chartDone ? '✅ 寫完病歷' : '❌ 未寫病歷';
-      text += `${idx + 1}. 床號：[${p.bed}] 姓名：${p.name || '未輸入'}\n`;
-      text += `   診斷：${p.diagnosis || '無'}\n`;
-      text += `   工作進度：${order} | ${visit} | ${chart}\n`;
-      text += `   備註：${p.note || '無'}\n\n`;
+export const generateHandoverText = (state: DutyState, now = new Date()): string => {
+  // 半形空白分隔；全形括號、｜ 前後不留空白（「CAP（未寫病歷）血培養已送」）
+  const join = (...parts: (string | false | undefined)[]) =>
+    (parts.filter(Boolean) as string[]).reduce((acc, p) => (!acc ? p : /^[（｜【]/.test(p) || /[）】]$/.test(acc) ? acc + p : `${acc} ${p}`), '');
+  const lines = [`📋 交班 ${pad2(now.getMonth() + 1)}/${pad2(now.getDate())} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`];
+
+  if (state.newPatients.length) {
+    lines.push('', `【新病人 ${state.newPatients.length}】`);
+    state.newPatients.forEach(p => {
+      const todo = [!p.orderDone && '未開醫囑', !p.visited && '未看', !p.chartDone && '未寫病歷'].filter(Boolean);
+      lines.push('• ' + join(p.bed, hasDx(p.diagnosis) && p.diagnosis, todo.length > 0 && `（${todo.join('、')}）`, p.note.trim()));
     });
   }
 
-  // Section 2: General Orders
-  text += `【 2. 護理一般醫囑開立追蹤 (${state.generalOrders.filter(o => !o.isCompleted).length} 筆待開) 】\n`;
-  const pendingOrders = state.generalOrders.filter(o => !o.isCompleted);
-  if (pendingOrders.length === 0) {
-    text += `  無未完成醫囑，太棒了！\n`;
-  } else {
-    pendingOrders.forEach((o, idx) => {
-      const prioMap = { high: '🔴 緊急', normal: '🟡 一般', low: '🔵 稍晚' };
-      text += `${idx + 1}. 床號：[${o.bed}] 姓名：${o.name || '無'} (${prioMap[o.priority]})\n`;
-      text += `   醫囑內容：${o.orderTask}\n`;
-      text += `   備註：${o.note || '無'}\n\n`;
+  const pending = state.generalOrders.filter(o => !o.isCompleted);
+  if (pending.length) {
+    lines.push('', `【待開醫囑 ${pending.length}】`);
+    pending.forEach(o => lines.push('• ' + join(o.bed, o.orderTask.trim(), o.note.trim() && `｜${o.note.trim()}`)));
+  }
+
+  if (state.handoverPatients.length) {
+    lines.push('', `【交班 ${state.handoverPatients.length}】`);
+    state.handoverPatients.forEach(h => {
+      const mark = h.status === 'critical' ? '🚨' : h.status === 'unstable' ? '⚠️' : '';
+      // 舊資料的「內容」欄（attentionPoints）跟備註併在一起印
+      const note = [h.attentionPoints, h.note].map(t => (t || '').trim()).filter(Boolean).join('；');
+      lines.push('• ' + join(mark, h.bed, hasDx(h.diagnosis) && h.diagnosis, h.isConsult && '【會診】', note && `｜${note}`, h.isHandedOver && '✓已交班'));
     });
   }
 
-  // Section 3: Handover Patients
-  text += `【 3. 值班特別關注與交班對象 (${state.handoverPatients.filter(h => !h.isHandedOver).length} 床未完全交接) 】\n`;
-  const activeHandovers = state.handoverPatients;
-  if (activeHandovers.length === 0) {
-    text += `  無特別交班病人。\n`;
-  } else {
-    activeHandovers.forEach((h, idx) => {
-      const statusMap = { critical: '🚨 命危/特別不穩定', unstable: '⚠️ 狀態變動中', stable: '🟢 穩定，常規觀測' };
-      const handed = h.isHandedOver ? '✅ 已交班' : '❌ 待交接';
-      text += `${idx + 1}. 床號：[${h.bed}] 姓名：${h.name || '無'} [狀態: ${statusMap[h.status]}] [${handed}]\n`;
-      text += `   診斷：${h.diagnosis || '無'}\n`;
-      text += `   特別關切與處理指引：\n   👉 ${h.attentionPoints || '標準值班監控'}\n`;
-      text += `   備註：${h.note || '無'}\n\n`;
-    });
-  }
-
-  text += `==================================\n`;
-  text += `💡 護理師回報電話請對床頭呼叫系統，值班加油！`;
-  return text;
+  if (lines.length === 1) lines.push('', '（目前沒有資料）');
+  return lines.join('\n');
 };
 
-// Simple helper to export full JSON
-export const exportJSON = (state: DutyState): string => {
-  return JSON.stringify(state, null, 2);
-};
+// 最小自我檢查（只在開發伺服器跑）：格式改壞時 console 會跳 Assertion failed
+if (import.meta.env?.DEV) {
+  const t = generateHandoverText({
+    newPatients: [{ id: '1', bed: '1205-1', name: '', diagnosis: 'CAP', note: '血培養已送', orderDone: true, visited: true, chartDone: false, createdAt: '' }],
+    generalOrders: [
+      { id: '2', bed: '1101', name: '', diagnosis: '', orderTask: 'K 3.1 補鉀', note: '', isCompleted: false, priority: 'normal', createdAt: '' },
+      { id: '3', bed: '1102', name: '', diagnosis: '', orderTask: '已開的', note: '', isCompleted: true, priority: 'normal', createdAt: '' },
+    ],
+    handoverPatients: [
+      { id: '4', bed: '1703', name: '', diagnosis: 'GI bleeding', note: '追 Hb', attentionPoints: '', status: 'critical', isHandedOver: false, createdAt: '' },
+      { id: '5', bed: '1416', name: '', diagnosis: '無', note: '', attentionPoints: '', status: 'stable', isHandedOver: true, isConsult: true, createdAt: '' },
+    ],
+  }, new Date(2026, 9, 6, 23, 5));
+  console.assert(t === [
+    '📋 交班 10/06 23:05', '',
+    '【新病人 1】', '• 1205-1 CAP（未寫病歷）血培養已送', '',
+    '【待開醫囑 1】', '• 1101 K 3.1 補鉀', '',
+    '【交班 2】', '• 🚨 1703 GI bleeding｜追 Hb', '• 1416【會診】✓已交班',
+  ].join('\n'), 'generateHandoverText 格式跑掉了', t);
+}
 
 const FLOOR = '(9|1\\d|2[01])';                       // 9～21 樓
 const ROOM = '(0[1-9]|1\\d|2[0-2]|5[1-9]|6\\d|7[0-2])'; // A 側 01～22、B 側 51～72
