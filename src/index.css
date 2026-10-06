@@ -11,11 +11,11 @@
   /* Holds quiet, desaturated, grayish medical colors */
 
   /* 1. Slate Blue-Gray (originally Indigo) */
-  --color-indigo-50: #f2f5f7;
-  --color-indigo-100: #e5ebf0;
-  --color-indigo-150: #d3deea;
-  --color-indigo-200: #b3c5d6;
-  --color-indigo-300: #93acc4;
+  --color-indigo-50: #f2f5f8;
+  --color-indigo-100: #e4eaf1;
+  --color-indigo-150: #d2deea;
+  --color-indigo-200: #b8cadc;
+  --color-indigo-300: #99b2ca;
   --color-indigo-400: #7795b2;
   --color-indigo-500: #5b7993;
   --color-indigo-600: #496277;
@@ -26,11 +26,11 @@
   --color-indigo-950: #10151a;
 
   /* 2. Warm Ochre & Clay (originally Amber) */
-  --color-amber-50: #faf7f2;
-  --color-amber-100: #f4ede0;
-  --color-amber-150: #ebdfcd;
-  --color-amber-200: #dcceb4;
-  --color-amber-300: #c6b497;
+  --color-amber-50: #faf6f1;
+  --color-amber-100: #f4ebdd;
+  --color-amber-150: #ecdec8;
+  --color-amber-200: #dfccad;
+  --color-amber-300: #ccb18c;
   --color-amber-400: #af9c80;
   --color-amber-500: #938067;
   --color-amber-600: #796853;
@@ -41,12 +41,12 @@
   --color-amber-950: #211a13;
 
   /* 3. Terracotta & Dusty Pink (originally Rose) */
-  --color-rose-50: #fbf7f7;
-  --color-rose-100: #f3e4e4;
-  --color-rose-150: #ead4d4;
-  --color-rose-200: #dec2c2;
-  --color-rose-250: #d2b0b0;
-  --color-rose-300: #c5979c;
+  --color-rose-50: #fbf6f6;
+  --color-rose-100: #f4e3e3;
+  --color-rose-150: #ecd2d2;
+  --color-rose-200: #e0bdbd;
+  --color-rose-250: #d6acac;
+  --color-rose-300: #cc989a;
   --color-rose-400: #b07e84;
   --color-rose-500: #97656d;
   --color-rose-550: #86555c;
@@ -88,8 +88,8 @@
   --color-slate-950: #161611;
 
   /* 6. Lavender Gray (originally Violet) — 會診標記專用，只定義有用到的色階 */
-  --color-violet-100: #eceaf1;
-  --color-violet-200: #d8d3e2;
+  --color-violet-100: #eeebf4;
+  --color-violet-200: #dad4e7;
   --color-violet-500: #8d84a3;
   --color-violet-600: #756c8b;
   --color-violet-700: #5c546f;
@@ -122,11 +122,11 @@ input, textarea, select, button {
 /* --- DARK MODE SELECTOR OVERRIDES --- */
 .dark {
   /* 1. Slate Blue-Gray (originally Indigo) */
-  --color-indigo-50: #222a31;
-  --color-indigo-100: #2a3641;
-  --color-indigo-150: #344350;
-  --color-indigo-200: #405260;
-  --color-indigo-300: #526778;
+  --color-indigo-50: #2a3032;
+  --color-indigo-100: #30383e;
+  --color-indigo-150: #37424a;
+  --color-indigo-200: #404d57;
+  --color-indigo-300: #4e5e6d;
   --color-indigo-400: #86a7c2;
   --color-indigo-500: #9bb9d1;
   --color-indigo-600: #96b8d2;
@@ -137,11 +137,11 @@ input, textarea, select, button {
   --color-indigo-950: #fafcff;
 
   /* 2. Warm Ochre & Clay (originally Amber) */
-  --color-amber-50: #2c2722;
-  --color-amber-100: #393129;
+  --color-amber-50: #322e26;
+  --color-amber-100: #3c342b;
   --color-amber-150: #463c30;
-  --color-amber-200: #544837;
-  --color-amber-300: #685742;
+  --color-amber-200: #524634;
+  --color-amber-300: #66523c;
   --color-amber-400: #b39a78;
   --color-amber-500: #c7ad89;
   --color-amber-600: #ba9c77;
@@ -153,12 +153,12 @@ input, textarea, select, button {
   --color-amber-955: #fffaf0;
 
   /* 3. Terracotta & Dusty Pink (originally Rose) */
-  --color-rose-50: #2e2424;
-  --color-rose-100: #3c2c2c;
-  --color-rose-150: #4a3435;
-  --color-rose-200: #5b3e40;
-  --color-rose-250: #6d494c;
-  --color-rose-300: #85585c;
+  --color-rose-50: #332a28;
+  --color-rose-100: #3e302e;
+  --color-rose-150: #483634;
+  --color-rose-200: #563d3c;
+  --color-rose-250: #634444;
+  --color-rose-300: #744e4f;
   --color-rose-400: #c48d93;
   --color-rose-500: #d3a0a6;
   --color-rose-550: #ce9499;
@@ -203,8 +203,8 @@ input, textarea, select, button {
   --color-slate-950: #fafaf5;
 
   /* 6. Lavender Gray (originally Violet) */
-  --color-violet-100: #302d38;
-  --color-violet-200: #45404f;
+  --color-violet-100: #37343c;
+  --color-violet-200: #494452;
   --color-violet-500: #9a91ae;
   --color-violet-600: #b4acc6;
   --color-violet-700: #cdc6dd;

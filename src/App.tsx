@@ -303,6 +303,12 @@ export default function App() {
       { id: 'pv-h2', bed: '1101', name: '', diagnosis: 'CHF', note: '追 K', attentionPoints: '', status: 'unstable', isHandedOver: false, createdAt: now },
       { id: 'pv-h3', bed: '1416', name: '', diagnosis: 'DM foot', note: '會診整外', attentionPoints: '', status: 'stable', isHandedOver: false, isConsult: true, createdAt: now },
     ]);
+    setChartRecords([
+      { id: 'pv-c1', mrn: '1234567', name: '', tags: ['鼓室圖', 'ABR', '純音聽力', 'EPA07 耳與聽力'], note: '雙側聽損評估', createdAt: now },
+      { id: 'pv-c2', mrn: '2345678', name: '', tags: ['鼻竇手術', '內視鏡'], note: 'CRS s/p FESS', createdAt: now, caselogDone: true },
+      { id: 'pv-c3', mrn: '3456789', name: '', tags: ['頸廓清', '腮腺', 'EPA06 頭頸腫塊'], note: '', createdAt: now },
+      { id: 'pv-c4', mrn: '4567890', name: '', tags: [], note: '還沒上標籤', createdAt: now },
+    ]);
     setSyncStatus({ lastSynced: null, isSyncing: false, statusText: '🧪 預覽模式：假資料，不會存檔', error: false });
   }, []);
 
@@ -1396,7 +1402,7 @@ export default function App() {
                   onClick={() => { setShowQuickPhoneAdd(!showQuickPhoneAdd); clearQp(); }}
                   className={`group relative flex items-center justify-center gap-2.5 rounded-full overflow-hidden py-1.5 px-5 text-white transition-all duration-200 cursor-pointer hover:brightness-110 ${
                 showQuickPhoneAdd
-                  ? 'bg-[#86555c]'
+                  ? 'bg-[#99696e]'
                   : 'bg-[#5f7f6d]'
               }`}
             >
@@ -1497,7 +1503,7 @@ export default function App() {
               onClick={() => { setShowQuickPhoneAdd(!showQuickPhoneAdd); clearQp(); }}
               className={`group relative flex items-center justify-center gap-2.5 rounded-full overflow-hidden py-2 px-4 text-white transition-all duration-200 cursor-pointer hover:brightness-110 flex-1 min-w-0 ${
                 showQuickPhoneAdd
-                  ? 'bg-[#86555c]'
+                  ? 'bg-[#99696e]'
                   : 'bg-[#5f7f6d]'
               }`}
             >
@@ -1785,7 +1791,7 @@ export default function App() {
               onClick={() => {
                 setShowAddPatient(!showAddPatient);
               }}
-              className="absolute top-2 right-3 z-20 h-8 px-3 rounded-full flex items-center justify-center gap-1 text-xs font-bold bg-[#496277] dark:bg-[#526778] text-white transition-all cursor-pointer hover:brightness-110 active:scale-95"
+              className="absolute top-2 right-3 z-20 h-8 px-3 rounded-full flex items-center justify-center gap-1 text-xs font-bold bg-[#60788c] dark:bg-[#526677] text-white transition-all cursor-pointer hover:brightness-110 active:scale-95"
               title="新增新病人"
             >
               <Plus size={14} className="stroke-[3]" /><span>新增</span>
@@ -2356,7 +2362,7 @@ export default function App() {
               onClick={() => {
                 setShowAddOrder(!showAddOrder);
               }}
-              className="absolute top-2 right-3 z-20 h-8 px-3 rounded-full flex items-center justify-center gap-1 text-xs font-bold bg-[#796853] dark:bg-[#685742] text-white transition-all cursor-pointer hover:brightness-110 active:scale-95"
+              className="absolute top-2 right-3 z-20 h-8 px-3 rounded-full flex items-center justify-center gap-1 text-xs font-bold bg-[#83725b] dark:bg-[#6e5840] text-white transition-all cursor-pointer hover:brightness-110 active:scale-95"
               title="新增醫囑"
             >
               <Plus size={14} className="stroke-[3]" /><span>新增</span>
@@ -2779,7 +2785,7 @@ export default function App() {
               onClick={() => {
                 setShowAddHandover(!showAddHandover);
               }}
-              className="absolute top-2 right-3 z-20 h-8 px-3 rounded-full flex items-center justify-center gap-1 text-xs font-bold bg-[#86555c] dark:bg-[#6d494c] text-white transition-all cursor-pointer hover:brightness-110 active:scale-95"
+              className="absolute top-2 right-3 z-20 h-8 px-3 rounded-full flex items-center justify-center gap-1 text-xs font-bold bg-[#99696e] dark:bg-[#724a4c] text-white transition-all cursor-pointer hover:brightness-110 active:scale-95"
               title="新增交班"
             >
               <Plus size={14} className="stroke-[3]" /><span>新增</span>

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChartRecord } from '../types';
 import { Plus, Trash2, Check, X, FileText, Tag, Pencil, Send, Eye, EyeOff, MessageSquare } from 'lucide-react';
 import { applyTagPatch, buildCaselogPrompt, buildEpaPrompt, buildNewRecords, buildOpeningLine, currentRank, epaCode, hasCaselogTag, hasEpaTag, NewRecord, TagPatch } from '../emyway';
@@ -33,6 +33,26 @@ const PRESET_GROUPS: [string, string[]][] = [
   ]],
 ];
 const PRESET_TAGS = PRESET_GROUPS.flatMap(([, ts]) => ts);
+
+// Case Log 標籤的 emyway 項目全名，順序照 emyway 下拉選單（OneDrive/emyway-scripts/make_caselog_xlsx.py 的 ITEMS）。
+// 刻意只改顯示：紀錄裡存的還是短名，舊資料和 emyway 腳本都不用動。
+const CASELOG_FULL: [string, string][] = [
+  ['純音聽力', '純音聽力檢查'], ['鼓室圖', '鼓室圖檢查'], ['內視鏡', '各式內視鏡檢查'], ['鼻填塞', '鼻填塞'],
+  ['ABR', '聽力腦幹檢查'], ['前庭功能', '一般前庭功能試驗檢查'], ['眼振圖', '眼振圖檢查'], ['囊腫切除', '耳廓或其他囊腫切除'],
+  ['鼓膜切開', '鼓膜切開'], ['鼻中隔成型', '鼻中隔鼻道成型術'], ['扁桃摘除', '扁桃摘除術'], ['氣切', '氣管切開術'],
+  ['中耳通氣管', '中耳通氣管留置術'], ['鼻骨復位', '鼻骨復位術'], ['鼻竇手術', '副鼻竇手術'], ['鼓室成形', '鼓室成形術'],
+  ['乳突切除', '乳突切除術'], ['喉顯微', '喉顯微手術或喉內視鏡手術'], ['雷射', '雷射手術'], ['食道氣管異物', '食道氣管檢查及異物摘除'],
+  ['頭頸外傷', '耳鼻喉頭頸顏面外傷處理'], ['頸部腫瘤', '簡單頸部腫瘤切除術'], ['顎下腺', '顎下腺腫瘤切除術'], ['腮腺', '腮腺切除術'],
+  ['頸廓清', '頸廓清術'], ['鼻竇腫瘤', '各種鼻或副鼻竇腫瘤切除術'],
+  ['顏面整形重建', '專科醫師考試指定教科書中有關耳鼻喉頭頸顏面微整及整形重建之相關處置及手術'],
+  ['喉切除', '喉部分或全切除術'], ['口腔癌複合切除', '口腔癌複合切除術'], ['喉氣管重建', '喉氣管重建手術'], ['語言治療', '語言檢查及治療'],
+];
+const FULL_NAME = new Map(CASELOG_FULL);
+const TAG_ORDER = new Map(CASELOG_FULL.map(([t], i) => [t, i]));
+const fullName = (t: string) => FULL_NAME.get(t) ?? t;
+// 排序：Case Log 照 emyway 順序 → EPA 照編號 → 自訂照字母
+const tagRank = (t: string) => TAG_ORDER.get(t) ?? (epaCode(t) ? 1000 : 2000);
+const byTagOrder = (a: string, b: string) => tagRank(a) - tagRank(b) || a.localeCompare(b);
 
 const EMPTY = { mrn: '', name: '', tags: [] as string[], note: '' };
 
@@ -89,6 +109,26 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
   const formAccent = ACCENT[formTagKind];
 
   const library = tags.length ? tags : PRESET_TAGS;
+
+  // 長按標籤（手機沒有懸停）在畫面底部顯示全名；長按後放開的那下 click 不算數
+  const [fullTip, setFullTip] = useState<string | null>(null);
+  const pressTimer = useRef<number | undefined>(undefined);
+  const longPressed = useRef(false);
+  const longPress = (t: string) => ({
+    onTouchStart: () => {
+      longPressed.current = false;
+      pressTimer.current = window.setTimeout(() => { longPressed.current = true; setFullTip(fullName(t)); }, 450);
+    },
+    onTouchEnd: () => window.clearTimeout(pressTimer.current),
+    onTouchMove: () => window.clearTimeout(pressTimer.current),
+    onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+  });
+  const consumeLongPress = () => { const was = longPressed.current; longPressed.current = false; return was; };
+  useEffect(() => {
+    if (!fullTip) return;
+    const id = window.setTimeout(() => setFullTip(null), 2500);
+    return () => window.clearTimeout(id);
+  }, [fullTip]);
   // 每個標籤的人數：同一個病人（病歷號優先，沒有就用姓名）在同一標籤下只算一次
   const tagPeople = new Map<string, Set<string>>();
   records.forEach(r => {
@@ -143,13 +183,13 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
   // 標籤庫全部都列出來，加上紀錄上還留著、但已從標籤庫刪掉的殘留標籤
   const allTags = Array.from(new Set([...library, ...records.flatMap(r => r.tags)]))
     .filter(t => !!epaCode(t) === isEpaTab)
-    .sort((a, b) => countOf(b) - countOf(a) || a.localeCompare(b));
+    .sort(byTagOrder);
   // 分類顯示：預設群組（只留還在標籤庫裡、且屬於表單目前這一側的）＋ 自訂
   // 自訂標籤沒有 EPA 字首就一律算 Case Log，所以「+」只放在 Case Log 側，免得新增完看不到
   const inFormSide = (t: string) => !!epaCode(t) === isEpaForm;
   const groups: [string, string[]][] = [
-    ...PRESET_GROUPS.map(([g, ts]) => [g, ts.filter(t => library.includes(t) && inFormSide(t))] as [string, string[]]),
-    ['自訂', library.filter(t => !PRESET_TAGS.includes(t) && inFormSide(t))] as [string, string[]],
+    ...PRESET_GROUPS.map(([g, ts]) => [g, ts.filter(t => library.includes(t) && inFormSide(t)).sort(byTagOrder)] as [string, string[]]),
+    ['自訂', library.filter(t => !PRESET_TAGS.includes(t) && inFormSide(t)).sort(byTagOrder)] as [string, string[]],
   ].filter(([g, ts]) => ts.length > 0 || (g === '自訂' && !isEpaForm));
 
   // 還沒上任何標籤的紀錄兩個 tab 都看得到，免得剛記完的病人找不到
@@ -382,11 +422,11 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
                     return (
                       <span
                         key={t}
-                        className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full border transition-colors ${
+                        className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full border transition-colors select-none [-webkit-touch-callout:none] ${
                           on ? formAccent.chipOn : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                         }`}
                       >
-                        <button type="button" onClick={() => toggleTag(t)} title={`${t}：${countOf(t)} 人`} className="flex items-center gap-1 cursor-pointer">
+                        <button type="button" onClick={() => { if (consumeLongPress()) return; toggleTag(t); }} {...longPress(t)} title={`${fullName(t)}：${countOf(t)} 人`} className="flex items-center gap-1 cursor-pointer">
                           {t}
                           {countOf(t) > 0 && (
                             <span className={`tabular-nums ${on ? 'text-white/70' : 'text-slate-400'}`}>{countOf(t)}</span>
@@ -536,15 +576,16 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
 
       {/* 標籤篩選（全部標籤都列，附各標籤人數，多的排前面，沒人的淡化）*/}
       {allTags.length > 0 && (
-        <div className="flex items-center gap-1 flex-wrap">
-          <Tag size={11} className="text-slate-400 shrink-0" />
+        // 字級放在外層：index.css 對 button 設了 font-size: inherit，button 自己的 text-[10px] 會被蓋掉
+        <div className="flex items-center gap-1 flex-wrap text-[10px]">
           {allTags.map(t => (
             <button
               key={t}
               type="button"
-              onClick={() => setTagFilter(tagFilter === t ? null : t)}
-              title={`${t}：${countOf(t)} 人`}
-              className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full border transition-colors cursor-pointer ${
+              onClick={() => { if (consumeLongPress()) return; setTagFilter(tagFilter === t ? null : t); }}
+              {...longPress(t)}
+              title={`${fullName(t)}：${countOf(t)} 人`}
+              className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full border transition-colors cursor-pointer select-none [-webkit-touch-callout:none] ${
                 tagFilter === t
                   ? accent.chipOn
                   : countOf(t) === 0
@@ -575,6 +616,7 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
               onClick={e => {
                 // 正在選取文字（想複製病歷內容）時放開滑鼠也會觸發 click，這裡不當成點擊
                 if (window.getSelection()?.toString()) return;
+                if (consumeLongPress()) return; // 剛長按標籤看全名，不是要打開這筆
                 if (picking) { togglePick(r.id); return; }
                 const box = e.currentTarget.getBoundingClientRect();
                 // 沒有內容可看的（note 是空的）整張卡都當左半邊處理，免得點了沒反應
@@ -584,7 +626,7 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
               className={`flex flex-wrap gap-2 p-2.5 border rounded-xl transition-colors cursor-pointer ${
                 picking?.has(r.id)
                   ? accent.card
-                  : `bg-slate-50/60 border-slate-150 ${accent.hover}`
+                  : `bg-slate-50/60 dark:bg-slate-50 border-slate-150 ${accent.hover}`
               }`}
             >
               {picking && (
@@ -604,18 +646,8 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
                     </span>
                   )}
                   {r.name && <span className="text-sm font-semibold text-slate-800">{r.name}</span>}
-                  {r.tags.map(t => (
-                    <span
-                      key={t}
-                      className={`px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${
-                        epaCode(t) ? 'text-amber-800 bg-amber-100/70' : 'text-slate-600 bg-slate-150/70'
-                      }`}
-                    >
-                      {t}
-                    </span>
-                  ))}
-                  {/* 已匯出徽章：點一下可取消標記 */}
-                  <span className="ml-auto flex items-center gap-1 shrink-0">
+                  {/* 已匯出徽章：點一下可取消標記（字級放外層，原因同篩選列） */}
+                  <span className="flex items-center gap-1 shrink-0 text-[10px]">
                     {(
                       [
                         ['caselog', 'caselogDone', 'CL', 'Case Log'],
@@ -629,12 +661,14 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
                             type="button"
                             title={`已匯出到 ${full}，點一下取消標記`}
                             onClick={e => { e.stopPropagation(); unmark(r.id, f); }}
-                            className={`px-1.5 py-0.5 text-[10px] font-bold border rounded-full cursor-pointer ${ACCENT[k].badge}`}
+                            className={`px-2.5 py-1 text-[10px] font-bold leading-none border rounded-full cursor-pointer ${ACCENT[k].badge}`}
                           >
                             {label}
                           </button>
                         )
                     )}
+                  </span>
+                  <span className="ml-auto flex items-center gap-1 shrink-0">
                     {/* 預覽開關：右半邊點擊之外的另一個入口，鍵盤也按得到 */}
                     {r.note && (
                       <button
@@ -651,6 +685,22 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
                     </span>
                   </span>
                 </div>
+                {r.tags.length > 0 && (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {[...r.tags].sort(byTagOrder).map(t => (
+                      <span
+                        key={t}
+                        {...longPress(t)}
+                        title={fullName(t)}
+                        className={`px-1.5 py-0.5 text-[10px] font-semibold rounded-full select-none [-webkit-touch-callout:none] ${
+                          epaCode(t) ? 'text-amber-800 bg-amber-100/70 dark:bg-amber-100' : 'text-slate-600 bg-slate-150/70 dark:bg-slate-150'
+                        }`}
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               {/* 病歷內容：預設完全不顯示，點開才在右邊攤開；太長的用捲軸，免得把卡片撐爆 */}
               {previewId === r.id && r.note && (
@@ -661,6 +711,11 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
             </div>
           )
         )
+      )}
+      {fullTip && (
+        <div role="status" className="fixed left-1/2 -translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom)+1.5rem)] z-50 max-w-[90vw] px-3 py-2 rounded-lg bg-[#33332d] text-white text-xs shadow-lg pointer-events-none">
+          {fullTip}
+        </div>
       )}
     </div>
   );

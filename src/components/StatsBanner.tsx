@@ -31,7 +31,7 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
         onClick={() => onTabChange('new')}
         className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 md:px-3 rounded-lg border border-transparent transition-all text-xs md:text-[13px] font-bold cursor-pointer select-none ${
           activeTab === 'new'
-            ? 'bg-[#496277] dark:bg-[#526778] text-white'
+            ? 'bg-[#60788c] dark:bg-[#526677] text-white'
             : 'text-slate-600 hover:text-indigo-600 hover:bg-white/60 dark:hover:bg-slate-150'
         }`}
       >
@@ -54,7 +54,7 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
         onClick={() => onTabChange('orders')}
         className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 md:px-3 rounded-lg border border-transparent transition-all text-xs md:text-[13px] font-bold cursor-pointer select-none ${
           activeTab === 'orders'
-            ? 'bg-[#796853] dark:bg-[#685742] text-white'
+            ? 'bg-[#83725b] dark:bg-[#6e5840] text-white'
             : 'text-slate-600 hover:text-amber-600 hover:bg-white/60 dark:hover:bg-slate-150'
         }`}
       >
@@ -77,7 +77,7 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
         onClick={() => onTabChange('handovers')}
         className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 md:px-3 rounded-lg border border-transparent transition-all text-xs md:text-[13px] font-bold cursor-pointer select-none ${
           activeTab === 'handovers'
-            ? 'bg-[#86555c] dark:bg-[#6d494c] text-white'
+            ? 'bg-[#99696e] dark:bg-[#724a4c] text-white'
             : 'text-slate-600 hover:text-rose-600 hover:bg-white/60 dark:hover:bg-slate-150'
         }`}
       >
