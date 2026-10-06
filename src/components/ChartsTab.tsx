@@ -623,7 +623,7 @@ export default function ChartsTab({ records, onChange, tags, onTagsChange, searc
                 if (r.note && e.clientX - box.left > box.width / 2) setPreviewId(previewId === r.id ? null : r.id);
                 else openEdit(r);
               }}
-              className={`flex flex-wrap gap-2 p-2.5 border rounded-xl transition-colors cursor-pointer animate-rise-in ${
+              className={`flex flex-wrap gap-2 p-2.5 border rounded-xl transition-colors cursor-pointer ${
                 picking?.has(r.id)
                   ? accent.card
                   : `bg-slate-50/60 dark:bg-slate-50 border-slate-150 ${accent.hover}`

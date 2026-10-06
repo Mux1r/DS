@@ -103,19 +103,11 @@
   --animate-scale-up: scale-up 0.18s cubic-bezier(0.2, 0.9, 0.3, 1);
   --animate-slide-in-right: slide-in-right 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
   --animate-pulse-once: pulse-once 0.5s ease-out;
-  --animate-rise-in: rise-in 0.18s cubic-bezier(0.2, 0.9, 0.3, 1) both;
 
   @keyframes fade-in { from { opacity: 0; } }
   @keyframes scale-up { from { opacity: 0; transform: translateY(-6px) scale(0.97); } }
   @keyframes slide-in-right { from { transform: translateX(100%); } }
   @keyframes pulse-once { 50% { opacity: 0.45; } }
-  @keyframes rise-in { from { opacity: 0; transform: translateY(4px); } }
-}
-
-/* 切分頁、新增項目時，面板和卡片輕輕浮上來 */
-#panel-new-patients, #panel-general-orders, #panel-handovers,
-[id^="compact-new-patient-"], [id^="compact-order-card-"], [id^="compact-handover-card-"] {
-  animation: var(--animate-rise-in);
 }
 
 /* 按鈕、輸入框的顏色／大小變化一律帶短過渡；放在 base 層，個別寫了 duration 的照自己的 */
