@@ -54,7 +54,7 @@ export default function StatsBanner({ state, activeTab, onTabChange }: StatsBann
         onClick={() => onTabChange('orders')}
         className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 md:px-3 rounded-lg border border-transparent transition-all text-xs md:text-[13px] font-bold cursor-pointer select-none ${
           activeTab === 'orders'
-            ? 'bg-[#83725b] dark:bg-[#6e5840] text-white'
+            ? 'bg-[#82735f] dark:bg-[#6a5b47] text-white'
             : 'text-slate-600 hover:text-amber-600 hover:bg-white/60 dark:hover:bg-slate-150'
         }`}
       >

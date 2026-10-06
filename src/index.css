@@ -90,9 +90,50 @@
   /* 6. Lavender Gray (originally Violet) — 會診標記專用，只定義有用到的色階 */
   --color-violet-100: #eeebf4;
   --color-violet-200: #dad4e7;
+  --color-violet-300: #bcb5cc;
   --color-violet-500: #8d84a3;
   --color-violet-600: #756c8b;
   --color-violet-700: #5c546f;
+}
+
+/* --- 過渡動畫：快（150–220ms）、只做淡入＋小位移，不做會擋手的長動畫 --- */
+/* 抽屜、彈窗原本就掛著這幾個 class，但一直沒定義，所以之前都是瞬間出現 */
+@theme {
+  --animate-fade-in: fade-in 0.16s ease-out;
+  --animate-scale-up: scale-up 0.18s cubic-bezier(0.2, 0.9, 0.3, 1);
+  --animate-slide-in-right: slide-in-right 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
+  --animate-pulse-once: pulse-once 0.5s ease-out;
+  --animate-rise-in: rise-in 0.18s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+
+  @keyframes fade-in { from { opacity: 0; } }
+  @keyframes scale-up { from { opacity: 0; transform: translateY(-6px) scale(0.97); } }
+  @keyframes slide-in-right { from { transform: translateX(100%); } }
+  @keyframes pulse-once { 50% { opacity: 0.45; } }
+  @keyframes rise-in { from { opacity: 0; transform: translateY(4px); } }
+}
+
+/* 切分頁、新增項目時，面板和卡片輕輕浮上來 */
+#panel-new-patients, #panel-general-orders, #panel-handovers,
+[id^="compact-new-patient-"], [id^="compact-order-card-"], [id^="compact-handover-card-"] {
+  animation: var(--animate-rise-in);
+}
+
+/* 按鈕、輸入框的顏色／大小變化一律帶短過渡；放在 base 層，個別寫了 duration 的照自己的 */
+@layer base {
+  button, a, input, textarea, select, label {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform, filter;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+
+/* 系統開了「減少動態效果」就全部關掉 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Custom classes for cozy, calm medical UI styling */
@@ -205,6 +246,7 @@ input, textarea, select, button {
   /* 6. Lavender Gray (originally Violet) */
   --color-violet-100: #37343c;
   --color-violet-200: #494452;
+  --color-violet-300: #7a728b;
   --color-violet-500: #9a91ae;
   --color-violet-600: #b4acc6;
   --color-violet-700: #cdc6dd;

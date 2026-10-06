@@ -43,6 +43,9 @@ interface HeaderProps {
   onDeleteShift?: (id: string) => void;
 }
 
+const TILE = 'flex flex-col items-start justify-between gap-3 p-3.5 min-h-[88px] rounded-2xl bg-slate-50 border border-slate-150 hover:border-slate-300 transition-all cursor-pointer active:scale-[0.98] text-left';
+const TILE_ICON = 'w-8 h-8 rounded-xl flex items-center justify-center shrink-0';
+
 export default function Header({ state, syncStatus, onImport, isSidebarOpen, setIsSidebarOpen, isDarkMode, onToggleDarkMode, user, onSignOut, availableShifts = [], selectedShiftId = '', onSelectShift, onEditShift, onDeleteShift }: HeaderProps) {
   const [copiedHandover, setCopiedHandover] = useState(false);
   const [copiedRaw, setCopiedRaw] = useState(false);
@@ -195,42 +198,73 @@ export default function Header({ state, syncStatus, onImport, isSidebarOpen, set
                 </div>
               )}
 
-              {/* SECTION C: DISPLAY SETTINGS */}
-              <div className="space-y-2 pb-2 border-b border-slate-100">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 mb-2">
-                  {isDarkMode ? <Moon size={12} className="text-slate-400" /> : <Sun size={12} className="text-slate-400" />}
-                  <span>顯示設定</span>
-                </div>
+              {/* 功能磚：兩格小、一格寬交錯排列。字級寫在 span 上（index.css 對 button 設了 font-size: inherit） */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <button type="button" onClick={onToggleDarkMode} className={TILE}>
+                  <span className={`${TILE_ICON} bg-amber-150 text-amber-700`}>
+                    {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-700">{isDarkMode ? '淺色主題' : '深色主題'}</span>
+                </button>
+                <button type="button" onClick={() => window.location.reload()} className={TILE}>
+                  <span className={`${TILE_ICON} bg-slate-150 text-slate-600`}>
+                    <RotateCw size={16} />
+                  </span>
+                  <span className="text-xs font-semibold text-slate-700">重新整理</span>
+                </button>
+
                 <button
                   type="button"
-                  onClick={onToggleDarkMode}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs bg-slate-50 text-slate-700 hover:text-indigo-600 border border-slate-150 rounded-xl transition-all cursor-pointer group font-semibold"
+                  id="copy-handover-text-btn"
+                  onClick={handleCopyHandover}
+                  className={`col-span-2 flex items-center gap-3 p-3.5 rounded-2xl text-white transition-all cursor-pointer active:scale-[0.98] ${
+                    copiedHandover ? 'bg-[#5f7f6d]' : 'bg-[#60788c] dark:bg-[#526677] hover:brightness-110'
+                  }`}
                 >
-                  <span className="flex items-center gap-1.5">
-                    {isDarkMode
-                      ? <Sun size={13} className="text-amber-500" />
-                      : <Moon size={13} className="text-slate-400 group-hover:text-indigo-500" />
-                    }
-                    {isDarkMode ? '切換淺色主題' : '切換深色主題'}
+                  <span className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/20 shrink-0">
+                    {copiedHandover ? <Check size={17} className="stroke-[3]" /> : <ClipboardCopy size={17} />}
                   </span>
-                  <ChevronRight size={11} className="text-slate-300 group-hover:text-indigo-400" />
+                  <span className="flex flex-col items-start text-left">
+                    <span className="text-sm font-bold">{copiedHandover ? '已複製交班簡報' : '複製交班簡報'}</span>
+                    <span className="text-[10px] opacity-75">LINE 格式</span>
+                  </span>
+                </button>
+
+                <button type="button" id="download-backup-btn" onClick={triggerDownload} className={TILE}>
+                  <span className={`${TILE_ICON} bg-emerald-150 text-emerald-700`}>
+                    <Download size={16} />
+                  </span>
+                  <span className="text-xs font-semibold text-slate-700">下載備份</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => window.location.reload()}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs bg-slate-50 text-slate-700 hover:text-indigo-600 border border-slate-150 rounded-xl transition-all cursor-pointer group font-semibold"
+                  id="upload-backup-btn"
+                  onClick={() => { setImportError(''); setShowImportModal(true); }}
+                  className={TILE}
                 >
-                  <span className="flex items-center gap-1.5">
-                    <RotateCw size={13} className="text-slate-400 group-hover:text-indigo-500" />
-                    重新整理
+                  <span className={`${TILE_ICON} bg-rose-150 text-rose-700`}>
+                    <Upload size={16} />
                   </span>
-                  <ChevronRight size={11} className="text-slate-300 group-hover:text-indigo-400" />
+                  <span className="text-xs font-semibold text-slate-700">匯入資料</span>
+                </button>
+
+                <button
+                  type="button"
+                  id="copy-raw-json-btn"
+                  onClick={handleCopyRaw}
+                  className="col-span-2 flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-150 hover:border-slate-300 transition-all cursor-pointer active:scale-[0.98]"
+                >
+                  <span className={`${TILE_ICON} bg-violet-100 text-violet-700`}>
+                    <ClipboardCheck size={16} />
+                  </span>
+                  <span className="text-xs font-semibold text-slate-700">複製原始 JSON</span>
+                  {copiedRaw && <span className="ml-auto text-[10.5px] text-emerald-600 font-bold">已複製!</span>}
                 </button>
               </div>
 
               {/* SECTION: SHIFT MANAGEMENT */}
               {availableShifts.length > 0 && (
-                <div className="space-y-1 pt-2 pb-2 border-b border-slate-100">
+                <div className="space-y-1 pt-3 border-t border-slate-100 text-[11px]">
                   <button
                     type="button"
                     onClick={() => setIsShiftSectionOpen(v => !v)}
@@ -302,81 +336,6 @@ export default function Header({ state, syncStatus, onImport, isSidebarOpen, set
                 </div>
               )}
 
-              {/* SECTION A: CLINICAL HANDOVER TEXT GENERATOR */}
-              <button
-                id="copy-handover-text-btn"
-                onClick={handleCopyHandover}
-                className={`w-full flex items-center justify-center gap-1.5 text-xs py-2.5 px-3 rounded-xl font-bold transition-all cursor-pointer ${
-                  copiedHandover 
-                    ? 'bg-emerald-650 bg-emerald-600 text-white shadow-sm border border-emerald-600' 
-                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
-                }`}
-              >
-                {copiedHandover ? (
-                  <>
-                    <Check size={13} className="stroke-[3]" />
-                    已複製交班簡報
-                  </>
-                ) : (
-                  <>
-                    <ClipboardCopy size={13} />
-                    複製交班簡報 (LINE格式)
-                  </>
-                )}
-              </button>
-
-              {/* SECTION B: CLINICAL DATABASE BACKUP & RESTORE */}
-              <div className="space-y-2.5 pt-2 border-t border-slate-100" id="backup-action-group">
-                {/* Download Backup */}
-                <button
-                  type="button"
-                  id="download-backup-btn"
-                  onClick={triggerDownload}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs bg-slate-50 text-slate-700 hover:text-indigo-600 border border-slate-150 rounded-xl transition-all cursor-pointer group font-semibold"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <Download size={13} className="text-slate-400 group-hover:text-indigo-500" />
-                    下載 JSON 備份檔
-                  </span>
-                  <ChevronRight size={11} className="text-slate-300 group-hover:text-indigo-400" />
-                </button>
-
-                {/* Upload Import */}
-                <button
-                  type="button"
-                  id="upload-backup-btn"
-                  onClick={() => {
-                    setImportError('');
-                    setShowImportModal(true);
-                  }}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs bg-slate-50 text-slate-700 hover:text-indigo-600 border border-slate-150 rounded-xl transition-all cursor-pointer group font-semibold"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <Upload size={13} className="text-slate-400 group-hover:text-indigo-500" />
-                    歷史資料庫匯入
-                  </span>
-                  <ChevronRight size={11} className="text-slate-300 group-hover:text-indigo-400" />
-                </button>
-
-                {/* Copy JSON Raw Text */}
-                <button
-                  type="button"
-                  id="copy-raw-json-btn"
-                  onClick={handleCopyRaw}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs bg-slate-50 text-slate-700 hover:text-indigo-600 border border-slate-150 rounded-xl transition-all cursor-pointer group font-semibold"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <ClipboardCheck size={13} className="text-slate-400 group-hover:text-indigo-500" />
-                    複製原始 JSON 字串
-                  </span>
-                  {copiedRaw ? (
-                    <span className="text-[10.5px] text-emerald-600 font-bold">已複製!</span>
-                  ) : (
-                    <ChevronRight size={11} className="text-slate-300 group-hover:text-indigo-400" />
-                  )}
-                </button>
-
-              </div>
 
             </div>
 

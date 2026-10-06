@@ -2362,7 +2362,7 @@ export default function App() {
               onClick={() => {
                 setShowAddOrder(!showAddOrder);
               }}
-              className="absolute top-2 right-3 z-20 h-8 px-3 rounded-full flex items-center justify-center gap-1 text-xs font-bold bg-[#83725b] dark:bg-[#6e5840] text-white transition-all cursor-pointer hover:brightness-110 active:scale-95"
+              className="absolute top-2 right-3 z-20 h-8 px-3 rounded-full flex items-center justify-center gap-1 text-xs font-bold bg-[#82735f] dark:bg-[#6a5b47] text-white transition-all cursor-pointer hover:brightness-110 active:scale-95"
               title="新增醫囑"
             >
               <Plus size={14} className="stroke-[3]" /><span>新增</span>
@@ -2997,7 +2997,7 @@ export default function App() {
                         className={`border rounded-xl px-2.5 py-1.5 flex items-start gap-2.5 transition-all ${isHandoverEditMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${
                           dragOverHandoverId === h.id ? 'border-rose-400 bg-rose-50/50 dark:bg-rose-50' :
                           h.isHandedOver ? 'border-slate-100 bg-slate-100/40 dark:bg-slate-50 grayscale opacity-55 hover:opacity-100 hover:grayscale-0 shadow-3xs' :
-                          h.isConsult ? 'border-violet-500 bg-violet-100/40 dark:bg-violet-100 shadow-3xs' :
+                          h.isConsult ? 'border-violet-300 bg-violet-100/40 dark:bg-violet-100 shadow-3xs' :
                           critical
                             ? 'border-rose-200 bg-rose-50/25 dark:bg-rose-50 shadow-3xs'
                             : 'border-slate-150 bg-white hover:border-slate-200 shadow-3xs'
@@ -3107,7 +3107,7 @@ export default function App() {
                   if (h.isHandedOver) {
                     borderStyle = 'border-slate-100 bg-slate-100/40 dark:bg-slate-50 opacity-60';
                   } else if (h.isConsult) {
-                    borderStyle = 'border-violet-500 bg-violet-100/40 dark:bg-violet-100 shadow-xs';
+                    borderStyle = 'border-violet-300 bg-violet-100/40 dark:bg-violet-100 shadow-xs';
                   } else if (critical) {
                     borderStyle = 'border-rose-200 bg-rose-50/5 hover:bg-rose-50/10 dark:bg-rose-50 dark:hover:bg-rose-50 shadow-rose-50/30 shadow-2xs';
                   }
