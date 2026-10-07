@@ -167,19 +167,17 @@ export function FavoritesManager({ isDarkMode, favorites, onChange, onClose }: {
 
 export const addFavorite = (d: Draft): FavoritePatient => ({ ...d, id: `fav-${Date.now()}`, createdAt: new Date().toISOString() });
 
-// 編輯視窗頂端的「收藏」鈕（擺在「交班」旁邊）；存完閃一下「已收藏」
+// 編輯視窗頂端的收藏鈕（擺在「交班」旁邊）：只放一顆亮金色星星、不要底色；存完變實心
 export function FavoriteButton({ onClick, justSaved }: { onClick: () => void; justSaved: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      title="收藏這位病人，之後追蹤"
-      className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all active:scale-95 shrink-0 cursor-pointer ${
-        justSaved ? 'bg-amber-150 text-amber-800' : 'bg-amber-100 text-amber-800 hover:bg-amber-150'
-      }`}
+      title={justSaved ? '已收藏' : '收藏這位病人，之後追蹤'}
+      aria-label={justSaved ? '已收藏' : '收藏病人'}
+      className="w-8 h-8 flex items-center justify-center shrink-0 text-[#e3a21a] dark:text-[#f2b83a] transition-transform hover:scale-110 active:scale-90 cursor-pointer"
     >
-      <Star size={11} className={`stroke-[3] ${justSaved ? 'fill-current' : ''}`} />
-      <span>{justSaved ? '已收藏' : '收藏'}</span>
+      <Star size={17} strokeWidth={2.5} className={justSaved ? 'fill-current' : ''} />
     </button>
   );
 }

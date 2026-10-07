@@ -4,6 +4,9 @@ export interface TourStep {
   target: string; // 畫面元素上的 data-tour 值
   title: string;
   body: string;
+  click?: string; // 進這一步前先按這個（CSS 選擇器），例如打開速記面板
+  shown?: string; // 看得到這個就代表已經打開了：不重按、也才需要收回（按鈕多半是切換式，按兩次會關掉）
+  undo?: string;  // 離開這一步時按這個，把剛才打開的收回去
 }
 
 interface Props {
@@ -13,8 +16,9 @@ interface Props {
 }
 
 // 同一個 data-tour 可能有電腦版、手機版兩份，挑畫面上看得到的那個
-const findVisible = (target: string) =>
-  [...document.querySelectorAll<HTMLElement>(`[data-tour="${target}"]`)].find(el => el.getClientRects().length > 0) ?? null;
+const visible = (selector: string) =>
+  [...document.querySelectorAll<HTMLElement>(selector)].find(el => el.getClientRects().length > 0) ?? null;
+const findVisible = (target: string) => visible(`[data-tour="${target}"]`);
 
 // 引導教學（照 HMSS 的 Tour）：把目標元素用聚光燈框起來，旁邊放說明卡。找不到目標時說明卡置中。
 export default function Tour({ steps, isDarkMode, onClose }: Props) {
@@ -22,20 +26,29 @@ export default function Tour({ steps, isDarkMode, onClose }: Props) {
   const [rect, setRect] = useState<DOMRect | null>(null);
   const step = steps[index];
 
-  // 找到目標、捲到畫面中間，量位置；視窗大小改變時重量
+  // 需要的話先按一下（打開面板／展開卡片），等畫面長出來再找目標、捲到中間、量位置；視窗大小改變時重量。
+  // 離開這一步時按 undo 收回去，不然面板會一直開著蓋住下一步。
   useLayoutEffect(() => {
-    const el = findVisible(step.target);
-    if (!el) return setRect(null);
-    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    const measure = () => setRect(el.getBoundingClientRect());
-    measure();
-    const t = window.setTimeout(measure, 350); // 等捲動結束再量一次
+    if (step.click && !(step.shown && visible(step.shown))) visible(step.click)?.click();
+    let el: HTMLElement | null = null;
+    const measure = () => setRect(el ? el.getBoundingClientRect() : null);
+    const timers = [
+      window.setTimeout(() => {
+        el = findVisible(step.target);
+        el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        measure();
+      }, step.click ? 120 : 0),
+      window.setTimeout(measure, step.click ? 500 : 350), // 等捲動、動畫結束再量一次
+    ];
     window.addEventListener('resize', measure);
     return () => {
-      clearTimeout(t);
+      timers.forEach(clearTimeout);
       window.removeEventListener('resize', measure);
+      // 收回要等 React 這一輪更新做完再按：在換步驟的同一輪裡按，關閉面板的更新會被吃掉（實測過）
+      const { undo, shown } = step;
+      if (undo) window.setTimeout(() => { if (!shown || visible(shown)) visible(undo)?.click(); }, 0);
     };
-  }, [step.target]);
+  }, [step]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

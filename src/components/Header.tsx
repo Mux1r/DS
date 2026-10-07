@@ -50,13 +50,20 @@ const GLASS_HOVER = 'hover:bg-white/80 dark:hover:bg-white/10';
 
 // 使用教學的步驟（target 對應畫面元素的 data-tour）
 const TOUR_STEPS: TourStep[] = [
-  { target: 'mode', title: '切換模式', body: '「Duty List」是值班清單；切到「病歷紀錄」可以記跨值班的病歷筆記，匯出到 emyway。' },
   { target: 'shift', title: '值班區間', body: '這裡是目前的值班。今天還沒有值班時旁邊會出現閃爍的「＋」，按下去新增。資料按值班分開存。' },
   { target: 'phone', title: '電話速記', body: '護理師來電時按這裡，打床號和內容，再選要歸到新病人、醫囑、交班或會診。' },
+  { target: 'phone-panel', click: '[data-tour="phone"]', shown: '[data-tour="phone-panel"]', undo: '[data-tour="phone-close"]', title: '速記面板',
+    body: '打床號、診斷和內容，再按上方的新病人、醫囑、交班或會診，就會直接存到那一區。' },
   { target: 'online', title: '上線號碼', body: '記下這班的上線號碼，只存在這台裝置上。' },
   { target: 'tabs', title: '三個功能', body: '新病人、醫囑、交班。數字是還沒完成的項目數。' },
+  { target: 'patient-dots', click: '#tab-btn-new-patients', title: '新病人的三個點',
+    body: '每位新病人右邊有三個點：紅＝醫囑、黃＝探視、綠＝病歷，有顏色代表還沒做。做完點一下就變灰。' },
+  { target: 'patient-card', click: '[data-tour="patient-more"]', shown: '[data-tour="patient-expand"]', undo: '[data-tour="patient-more"]', title: '展開',
+    body: '按最右邊的 ⋮ 展開，三個點會變成有字的按鈕，還可以直接寫備註、加醫囑，不用打開編輯視窗。' },
   { target: 'add', title: '新增', body: '在目前的分頁新增一筆。點卡片可以編輯內容。' },
-  { target: 'settings', title: '設定', body: '主題、交班簡報、值班管理、這個教學和意見回報都在這裡。' },
+  // 收藏鈕在編輯視窗裡，教學時畫面上沒有，所以這步沒有框（說明卡置中）
+  { target: 'favorite', title: '⭐ 收藏病人', body: '想後續追蹤的病人，在新病人、醫囑、交班的編輯視窗上方按星星，補上病歷號就存起來了。收藏的病人在設定的「收藏病人」查看和寫追蹤筆記。' },
+  { target: 'settings', title: '設定', body: '主題、交班簡報、值班管理、收藏病人、這個教學和意見回報都在這裡。' },
 ];
 
 export default function Header({ state, syncStatus, isSidebarOpen, setIsSidebarOpen, isDarkMode, onToggleDarkMode, user, onSignOut, availableShifts = [], selectedShiftId = '', onSelectShift, onEditShift, onDeleteShift, favorites, onFavoritesChange, appMode }: HeaderProps) {

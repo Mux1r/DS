@@ -1209,7 +1209,6 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setIsModeMenuOpen(o => !o)}
-                  data-tour="mode"
                   className="flex items-center gap-1 px-1 py-1 -mx-1 text-sm font-bold tracking-tight text-slate-800 font-sans rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
                   title="切換模式"
                 >
@@ -1590,7 +1589,7 @@ export default function App() {
             id="panel-quick-phone-add"
             className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-[calc(env(safe-area-inset-top)+1rem)] px-3 md:pt-8 md:px-6"
           >
-            <div className="w-full max-w-4xl bg-gradient-to-b from-emerald-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-emerald-100 dark:border-slate-200/40 flex flex-col max-h-[92vh] animate-scale-up duration-200">
+            <div data-tour="phone-panel" className="w-full max-w-4xl bg-gradient-to-b from-emerald-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-emerald-100 dark:border-slate-200/40 flex flex-col max-h-[92vh] animate-scale-up duration-200">
               {/* Header: dispatch buttons left, continue+close right */}
               <div className="flex items-center justify-between px-4 py-2 border-b border-emerald-100/50 shrink-0">
                 <div className="flex items-center gap-1.5">
@@ -1611,6 +1610,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => { setShowQuickPhoneAdd(false); clearQp(); }}
+                    data-tour="phone-close"
                     className="text-slate-400 hover:text-slate-650 hover:bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-lg font-bold"
                     title="關閉"
                   >
@@ -2009,6 +2009,7 @@ export default function App() {
                       <div
                         key={p.id}
                         id={`compact-new-patient-${p.id}`}
+                        data-tour="patient-card"
                         draggable={isPatientEditMode}
                         onDragStart={isPatientEditMode ? (e) => { e.dataTransfer.effectAllowed = 'move'; setDragPatientId(p.id); } : undefined}
                         onDragOver={isPatientEditMode ? (e) => { e.preventDefault(); setDragOverPatientId(p.id); } : undefined}
@@ -2093,7 +2094,7 @@ export default function App() {
                           </div>
 
                           {/* Right: morphing dot→pill buttons */}
-                          <div className="flex items-center shrink-0 ml-auto select-none min-w-[28px]">
+                          <div data-tour="patient-dots" className="flex items-center shrink-0 ml-auto select-none min-w-[28px]">
                             {isPatientEditMode ? (
                               /* Edit mode: unique key prevents React from reusing circle button DOM nodes (avoids transition-all height animation jitter) */
                               <button
@@ -2163,6 +2164,7 @@ export default function App() {
                                 {/* Single toggle button: extends to card's right edge, vertical hit zone via card padding */}
                                 <button
                                   key="patient-dot-toggle"
+                                  data-tour="patient-more"
                                   onClick={(e) => { e.stopPropagation(); setInlineOrderText(''); setExpandedControlPatientId(expandedControlPatientId === p.id ? null : p.id); }}
                                   className="group relative ml-1.5 -mr-3 pr-3 flex items-center justify-center rounded-r-xl transition-colors duration-150 shrink-0 self-stretch"
                                   title={expandedControlPatientId === p.id ? '收起' : '展開 Toggle'}
@@ -2183,7 +2185,7 @@ export default function App() {
                           </div>
                         </div>
                         {expandedControlPatientId === p.id && (
-                          <div onClick={e => e.stopPropagation()} className="mt-2 pt-2 border-t border-slate-100 grid grid-cols-2 gap-2">
+                          <div data-tour="patient-expand" onClick={e => e.stopPropagation()} className="mt-2 pt-2 border-t border-slate-100 grid grid-cols-2 gap-2">
                             <div className="flex flex-col gap-1">
                               <span className="text-[10px] text-slate-400 font-medium">備註</span>
                               <textarea
@@ -2234,6 +2236,7 @@ export default function App() {
                     <div
                       key={p.id}
                       id={`compact-new-patient-${p.id}`}
+                        data-tour="patient-card"
                       onClick={() => {
                         editFocusFieldRef.current = null;
                         setEditingPatientId(p.id);
