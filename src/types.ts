@@ -52,6 +52,16 @@ export interface ChartRecord {
   epaDone?: boolean;     // 已匯出到 emyway EPA 學習評量
 }
 
+// 收藏病人：要後續追蹤的，跨值班保存（不綁 shift）
+export interface FavoritePatient {
+  id: string;
+  mrn: string;        // 病歷號（必填）
+  bed: string;
+  diagnosis: string;
+  note: string;       // 追蹤筆記
+  createdAt: string;
+}
+
 export interface Shift {
   id: string;        // equals startDate — used as Firebase document ID (backward-compatible with dates/ path)
   startDate: string; // "2026-06-13"

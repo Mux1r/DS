@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
-import { HeartPulse } from 'lucide-react';
 
 export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
@@ -22,11 +21,10 @@ export default function LoginScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#f1eef9] via-[#edf2f8] to-[#ecf5f0] flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 p-8 flex flex-col items-center gap-6">
-        <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg">
-          <HeartPulse size={32} className="text-white" />
-        </div>
+        {/* 跟主畫面同一個 App 圖示 */}
+        <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" className="w-20 h-20 rounded-[22%] shadow-lg" />
 
         <div className="text-center">
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Duty List</h1>

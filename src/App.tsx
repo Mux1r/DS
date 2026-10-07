@@ -4,12 +4,13 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { DutyState, NewPatient, GeneralOrder, HandoverPatient, SyncStatus, Shift, ChartRecord } from './types';
+import { DutyState, NewPatient, GeneralOrder, HandoverPatient, SyncStatus, Shift, ChartRecord, FavoritePatient } from './types';
 import { getInitialState, saveState, formatTime, formatBedInput, parseBed, compareBed } from './utils';
 import { db, auth } from './firebase';
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import LoginScreen from './components/LoginScreen';
+import { FavoriteButton, FavoritePrompt, addFavorite } from './components/Favorites';
 
 // Import UI components
 import Header from './components/Header';
@@ -103,6 +104,12 @@ export default function App() {
   const [chartTags, setChartTags] = useState<string[]>([]); // 標籤庫（空 = 用 ChartsTab 內建預設）
   const chartsLocalJsonRef = useRef('');
   const chartsSyncedJsonRef = useRef<string | null>(null); // null = not loaded yet
+
+  // 收藏病人：跨值班保存在 users/{uid}/metadata/favorites
+  const [favorites, setFavorites] = useState<FavoritePatient[]>([]);
+  const favLoadedRef = useRef(false); // 雲端那份讀到之前不准寫，不然會用空清單蓋掉
+  const [favPrompt, setFavPrompt] = useState<{ mrn: string; bed: string; diagnosis: string; note: string } | null>(null);
+  const [favJustSaved, setFavJustSaved] = useState(false);
 
   // Toggles for inline quick-add forms in each column - now placed at the bottom!
   const [showAddPatient, setShowAddPatient] = useState(false);
@@ -565,6 +572,41 @@ export default function App() {
     }, 300);
     return () => clearTimeout(t);
   }, [user, chartRecords, chartTags]);
+
+  // 2c. 收藏病人：讀雲端那份；改動很少，所以改了就直接寫回去（不做防抖）
+  useEffect(() => {
+    if (!user) return;
+    favLoadedRef.current = false;
+    const ref = doc(db, 'users', user.uid, 'metadata', 'favorites');
+    return onSnapshot(ref, (snap) => {
+      if (snap.metadata.hasPendingWrites) return;
+      setFavorites((snap.exists() && snap.data().items) || []);
+      favLoadedRef.current = true;
+    });
+  }, [user]);
+
+  const updateFavorites = (next: FavoritePatient[]) => {
+    if (user && !favLoadedRef.current) {
+      alert('收藏清單還在載入，請稍等一下再試');
+      return false;
+    }
+    setFavorites(next);
+    if (user) {
+      setDoc(doc(db, 'users', user.uid, 'metadata', 'favorites'), { items: next, updatedAt: serverTimestamp() })
+        .catch(e => {
+          console.error('Error saving favorites', e);
+          setSyncStatus({ lastSynced: null, isSyncing: false, statusText: '⚠️ 收藏沒存成功，請確認網路', error: true });
+        });
+    }
+    return true;
+  };
+
+  // 編輯視窗按「收藏」：帶入目前的欄位；床號框裡打的是病歷號（7 碼以上數字）就直接當病歷號
+  const openFavPrompt = (bed: string, diagnosis: string, note: string) => {
+    const b = bed.trim();
+    const isMrn = /^\d{7,}$/.test(b);
+    setFavPrompt({ mrn: isMrn ? b : '', bed: isMrn ? '' : b, diagnosis: diagnosis === '無' ? '' : diagnosis.trim(), note: note.trim() });
+  };
 
   // 3. Index bed→diagnosis mapping for autofill suggestions (diagnosis only, no cross-shift patient data)
   useEffect(() => {
@@ -1135,7 +1177,23 @@ export default function App() {
         }}
         onEditShift={handleEditShift}
         onDeleteShift={handleDeleteShift}
+        favorites={favorites}
+        onFavoritesChange={updateFavorites}
+        appMode={appMode}
       />
+      {favPrompt && (
+        <FavoritePrompt
+          isDarkMode={isDarkMode}
+          initial={favPrompt}
+          onSave={d => {
+            if (updateFavorites([addFavorite(d), ...favorites])) {
+              setFavJustSaved(true);
+              setTimeout(() => setFavJustSaved(false), 2000);
+            }
+          }}
+          onClose={() => setFavPrompt(null)}
+        />
+      )}
 
       {/* Main Container */}
       <main className="flex-grow max-w-7xl w-full mx-auto px-2 py-2.5 md:px-3 md:py-3.5" id="dashboard-content-main">
@@ -1156,7 +1214,6 @@ export default function App() {
                   title="切換模式"
                 >
                   {appMode === 'charts' ? '病歷紀錄' : 'Duty List'}
-                  <ChevronDown size={11} className={`text-slate-400 transition-transform duration-200 ${isModeMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isModeMenuOpen && (
                   <>
@@ -1807,6 +1864,7 @@ export default function App() {
                 <div className="w-full max-w-2xl bg-gradient-to-b from-indigo-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-indigo-150 dark:border-slate-200/40 flex flex-col max-h-[90vh] animate-scale-up duration-200">
                   <form onSubmit={handleAddPatientSubmit} autoComplete="off" className="flex flex-col flex-grow overflow-hidden">
                     <div className="flex items-center justify-end gap-1.5 px-4 py-2 border-b border-indigo-100/50 shrink-0">
+                      <FavoriteButton onClick={() => openFavPrompt(pBed, pDiagnosis, pNote)} justSaved={favJustSaved} />
                       <button
                         type="button"
                         id="btn-import-patient-to-handover"
@@ -2379,6 +2437,7 @@ export default function App() {
                 <div className="w-full max-w-2xl bg-gradient-to-b from-amber-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-amber-150 dark:border-slate-200/40 flex flex-col max-h-[92vh] animate-scale-up duration-200">
                   <form onSubmit={handleAddOrderSubmit} autoComplete="off" className="flex flex-col flex-grow overflow-hidden">
                     <div className="flex items-center justify-end gap-1.5 px-4 py-2 border-b border-amber-100/50 shrink-0">
+                      <FavoriteButton onClick={() => openFavPrompt(oBed, oDiagnosis, [oTask, oNote].filter(Boolean).join('\n'))} justSaved={favJustSaved} />
                       <button
                         type="button"
                         id="btn-import-order-to-handover"
@@ -2802,6 +2861,7 @@ export default function App() {
                 <div className="w-full max-w-2xl bg-gradient-to-b from-rose-50 to-white dark:to-slate-100 rounded-2xl shadow-2xl border border-rose-150 dark:border-slate-200/40 flex flex-col max-h-[92vh] animate-scale-up duration-200">
                   <form onSubmit={handleAddHandoverSubmit} autoComplete="off" className="flex flex-col flex-grow overflow-hidden">
                     <div className="flex items-center justify-end gap-1.5 px-4 py-2 border-b border-rose-100/50 shrink-0">
+                      <div className="mr-auto"><FavoriteButton onClick={() => openFavPrompt(hBed, hDiagnosis, hNote)} justSaved={favJustSaved} /></div>
                       <button type="submit" className="w-8 h-8 rounded-full flex items-center justify-center bg-rose-500 hover:bg-rose-600 text-white transition-colors cursor-pointer" title="確認">
                         <Check size={15} className="stroke-[3]" />
                       </button>

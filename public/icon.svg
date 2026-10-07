@@ -1,17 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" rx="112" fill="#587363" /> <!-- Morandi Sage Green -->
-  <!-- Inner card/clipboard -->
-  <rect x="136" y="100" width="240" height="312" rx="24" fill="#faf7f2" /> <!-- Morandi Warm Cream -->
-  <!-- Clipboard header -->
-  <rect x="206" y="70" width="100" height="40" rx="10" fill="#938067" /> <!-- Morandi Clay/Amber -->
-  <!-- Check lines -->
-  <line x1="186" y1="170" x2="326" y2="170" stroke="#75756b" stroke-width="20" stroke-linecap="round" />
-  <line x1="186" y1="240" x2="326" y2="240" stroke="#75756b" stroke-width="20" stroke-linecap="round" />
-  <line x1="186" y1="310" x2="286" y2="310" stroke="#75756b" stroke-width="20" stroke-linecap="round" />
-  <!-- Checkmarks -->
-  <circle cx="160" cy="170" r="14" fill="#496277" /> <!-- Morandi Slate Blue -->
-  <circle cx="160" cy="240" r="14" fill="#496277" />
-  <circle cx="160" cy="310" r="14" fill="#496277" />
-  <!-- A little stethoscope / nurse curved line -->
-  <path d="M 230,360 C 230,390 282,390 282,360" fill="none" stroke="#97656d" stroke-width="16" stroke-linecap="round" /> <!-- Morandi dusty pink -->
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b9add9"/><stop offset="0.5" stop-color="#93add0"/><stop offset="1" stop-color="#93c3a8"/></linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="0.5" y2="1">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.6"/>
+  </linearGradient>
+  <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="1"/><stop offset="0.5" stop-color="#ffffff" stop-opacity="0.2"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.7"/>
+  </linearGradient>
+  <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.7"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+  </linearGradient>
+  <filter id="b" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="45"/></filter>
+  <filter id="sh" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#3f4f6a" flood-opacity="0.22"/></filter>
+  <filter id="cs" x="-30%" y="-50%" width="160%" height="220%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#3f4f6a" flood-opacity="0.25"/></filter>
+  <clipPath id="tile"><rect width="512" height="512" rx="112"/></clipPath>
+</defs>
+<g clip-path="url(#tile)">
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g filter="url(#sh)"><rect x="132" y="108" width="248" height="318" rx="40" fill="url(#glass)" stroke="url(#edge)" stroke-width="4"/></g>
+  <rect x="144" y="118" width="224" height="110" rx="34" fill="url(#sheen)" opacity="0.5"/>
+  <g filter="url(#cs)"><rect x="198" y="80" width="116" height="58" rx="20" fill="#5b6f96"/></g><rect x="206" y="84" width="100" height="22" rx="11" fill="#ffffff" opacity="0.22"/><rect x="230" y="98" width="52" height="14" rx="7" fill="#faf7f2" opacity="0.55"/><path d="M172 212 l13 13 l24 -26" fill="none" stroke="#5b6f96" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/><rect x="232" y="203" width="116" height="18" rx="9" fill="#5b6f96" opacity="0.3"/><path d="M172 282 l13 13 l24 -26" fill="none" stroke="#5b6f96" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/><rect x="232" y="273" width="100" height="18" rx="9" fill="#5b6f96" opacity="0.3"/><path d="M172 352 l13 13 l24 -26" fill="none" stroke="#5b6f96" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/><rect x="232" y="343" width="76" height="18" rx="9" fill="#5b6f96" opacity="0.3"/>
+</g>
 </svg>

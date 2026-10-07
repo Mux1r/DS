@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nurse-duty-v3';
+const CACHE_NAME = 'nurse-duty-v4'; // 換圖示時要加一，不然已安裝的手機會一直用快取裡的舊圖示
 const ASSETS = [
   './',
   './index.html',

@@ -5,11 +5,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
-import { DutyState, SyncStatus, Shift } from '../types';
+import { DutyState, SyncStatus, Shift, FavoritePatient } from '../types';
 import { generateHandoverText } from '../utils';
 import Tour, { TourStep } from './Tour';
 import Feedback from './Feedback';
 import ShiftManager from './ShiftManager';
+import { FavoritesManager } from './Favorites';
 import { version } from '@/package.json';
 import {
   ClipboardCopy,
@@ -21,6 +22,7 @@ import {
   Moon,
   HelpCircle,
   MessageSquareWarning,
+  Star,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -37,6 +39,9 @@ interface HeaderProps {
   onSelectShift?: (id: string) => void;
   onEditShift?: (id: string, startDate: string, endDate: string) => void;
   onDeleteShift?: (id: string) => void;
+  favorites: FavoritePatient[];
+  onFavoritesChange: (next: FavoritePatient[]) => boolean;
+  appMode: 'duty' | 'charts';
 }
 
 // 設定頁照 HMSS 控制中心：半透明毛玻璃卡片。不用 bg-white，深色模式會被 index.css 強制改成實色
@@ -54,10 +59,11 @@ const TOUR_STEPS: TourStep[] = [
   { target: 'settings', title: '設定', body: '主題、交班簡報、值班管理、這個教學和意見回報都在這裡。' },
 ];
 
-export default function Header({ state, syncStatus, isSidebarOpen, setIsSidebarOpen, isDarkMode, onToggleDarkMode, user, onSignOut, availableShifts = [], selectedShiftId = '', onSelectShift, onEditShift, onDeleteShift }: HeaderProps) {
+export default function Header({ state, syncStatus, isSidebarOpen, setIsSidebarOpen, isDarkMode, onToggleDarkMode, user, onSignOut, availableShifts = [], selectedShiftId = '', onSelectShift, onEditShift, onDeleteShift, favorites, onFavoritesChange, appMode }: HeaderProps) {
   const [copiedHandover, setCopiedHandover] = useState(false);
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [isShiftSectionOpen, setIsShiftSectionOpen] = useState(false);
 
   // Live digital clock
@@ -72,12 +78,13 @@ export default function Header({ state, syncStatus, isSidebarOpen, setIsSidebarO
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       if (isFeedbackOpen) setIsFeedbackOpen(false);
+      else if (isFavoritesOpen) setIsFavoritesOpen(false);
       else if (isShiftSectionOpen) setIsShiftSectionOpen(false);
       else if (isSidebarOpen && !isTourOpen) setIsSidebarOpen(false);
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [isFeedbackOpen, isShiftSectionOpen, isSidebarOpen, isTourOpen, setIsSidebarOpen]);
+  }, [isFeedbackOpen, isFavoritesOpen, isShiftSectionOpen, isSidebarOpen, isTourOpen, setIsSidebarOpen]);
 
   const formatLocalDate = (d: Date) => {
     const options: Intl.DateTimeFormatOptions = { 
@@ -151,11 +158,10 @@ export default function Header({ state, syncStatus, isSidebarOpen, setIsSidebarO
                 </div>
               )}
 
-              {/* 值班管理、交班簡報：兩張並排 */}
+              {/* 值班管理、收藏病人並排；交班簡報一張寬的 */}
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  data-tour="shift-manage"
                   onClick={() => setIsShiftSectionOpen(true)}
                   aria-haspopup="dialog"
                   className={`p-4 rounded-2xl text-left cursor-pointer active:scale-[0.98] ${GLASS} ${GLASS_HOVER}`}
@@ -166,13 +172,23 @@ export default function Header({ state, syncStatus, isSidebarOpen, setIsSidebarO
                 </button>
                 <button
                   type="button"
-                  id="copy-handover-text-btn"
-                  onClick={handleCopyHandover}
+                  onClick={() => setIsFavoritesOpen(true)}
+                  aria-haspopup="dialog"
                   className={`p-4 rounded-2xl text-left cursor-pointer active:scale-[0.98] ${GLASS} ${GLASS_HOVER}`}
                 >
-                  {copiedHandover ? <Check size={16} className="text-emerald-600 stroke-[3]" /> : <ClipboardCopy size={16} className="text-rose-600" />}
-                  <span className="block text-sm font-bold mt-3 text-slate-800">{copiedHandover ? '已複製' : '複製交班簡報'}</span>
-                  <span className="block text-[11px] mt-1 text-slate-500">LINE 格式</span>
+                  <Star size={16} className={`text-amber-600 ${favorites.length ? 'fill-current' : ''}`} />
+                  <span className="block text-sm font-bold mt-3 text-slate-800">收藏病人</span>
+                  <span className="block text-[11px] mt-1 text-slate-500">{favorites.length ? `${favorites.length} 位追蹤中` : '後續追蹤用'}</span>
+                </button>
+                <button
+                  type="button"
+                  id="copy-handover-text-btn"
+                  onClick={handleCopyHandover}
+                  className={`col-span-2 flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left cursor-pointer active:scale-[0.98] ${GLASS} ${GLASS_HOVER}`}
+                >
+                  {copiedHandover ? <Check size={16} className="text-emerald-600 stroke-[3] shrink-0" /> : <ClipboardCopy size={16} className="text-rose-600 shrink-0" />}
+                  <span className="text-sm font-bold text-slate-800">{copiedHandover ? '已複製交班簡報' : '複製交班簡報'}</span>
+                  <span className="ml-auto text-[11px] text-slate-500">LINE 格式</span>
                 </button>
               </div>
 
@@ -223,16 +239,16 @@ export default function Header({ state, syncStatus, isSidebarOpen, setIsSidebarO
                 </div>
               </div>
 
-              {/* 教學、回報：兩顆膠囊按鈕 */}
+              {/* 教學、回報：兩顆膠囊按鈕；病歷紀錄模式只留回報（教學講的是值班列表的畫面） */}
               <div className="flex gap-2">
-                <button
+                {appMode === 'duty' && <button
                   type="button"
                   onClick={() => { setIsSidebarOpen(false); setIsTourOpen(true); }}
                   className={`flex-1 flex items-center justify-center gap-1.5 h-10 rounded-full cursor-pointer ${GLASS} ${GLASS_HOVER}`}
                 >
                   <HelpCircle size={16} className="text-indigo-600" />
                   <span className="text-xs font-bold text-slate-700">使用教學</span>
-                </button>
+                </button>}
                 <button
                   type="button"
                   onClick={() => setIsFeedbackOpen(true)}
@@ -259,6 +275,9 @@ export default function Header({ state, syncStatus, isSidebarOpen, setIsSidebarO
           onDelete={id => onDeleteShift?.(id)}
           onClose={() => setIsShiftSectionOpen(false)}
         />
+      )}
+      {isFavoritesOpen && (
+        <FavoritesManager isDarkMode={isDarkMode} favorites={favorites} onChange={onFavoritesChange} onClose={() => setIsFavoritesOpen(false)} />
       )}
       {isFeedbackOpen && <Feedback user={user} isDarkMode={isDarkMode} onClose={() => setIsFeedbackOpen(false)} />}
       {isTourOpen && <Tour steps={TOUR_STEPS} isDarkMode={isDarkMode} onClose={() => setIsTourOpen(false)} />}
