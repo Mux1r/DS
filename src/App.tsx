@@ -433,9 +433,11 @@ export default function App() {
         }
 
         setAvailableShifts(shiftsList);
-        if (shiftsList.length > 0 && !shiftsList.find(s => s.id === selectedShiftId)) {
-          setSelectedShiftId(shiftsList[0].id);
-          localStorage.setItem('duty_selected_shift_id', shiftsList[0].id);
+        // 打開 App 一律跳到開始日期最新的那班（清單改過日期後不一定照順序，所以自己找）
+        if (shiftsList.length > 0) {
+          const latest = shiftsList.reduce((a, b) => (b.startDate > a.startDate ? b : a));
+          setSelectedShiftId(latest.id);
+          localStorage.setItem('duty_selected_shift_id', latest.id);
         }
       } catch (e) {
         console.error('Error loading shifts', e);
