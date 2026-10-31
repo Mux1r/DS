@@ -2620,7 +2620,7 @@ export default function App() {
                         } : undefined}
                         onClick={isOrderEditMode ? undefined : () => {
                           oEditFocusFieldRef.current = null;
-                          setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' || '');
+                          setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' ? o.name : '');
                           setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
                           setONote(o.note || '');
                           setOPriority(o.priority || 'normal'); setShowAddOrder(true);
@@ -2665,7 +2665,7 @@ export default function App() {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   oEditFocusFieldRef.current = 'bed';
-                                  setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' || '');
+                                  setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' ? o.name : '');
                                   setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
                                   setONote(o.note || '');
                                   setOPriority(o.priority || 'normal'); setShowAddOrder(true);
@@ -2681,7 +2681,7 @@ export default function App() {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   oEditFocusFieldRef.current = 'task';
-                                  setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' || '');
+                                  setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' ? o.name : '');
                                   setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
                                   setONote(o.note || '');
                                   setOPriority(o.priority || 'normal'); setShowAddOrder(true);
@@ -2715,7 +2715,7 @@ export default function App() {
                       id={`compact-order-card-${o.id}`}
                       onClick={() => {
                         oEditFocusFieldRef.current = null;
-                        setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' || '');
+                        setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' ? o.name : '');
                         setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
                         setONote(o.note || '');
                         setOPriority(o.priority || 'normal'); setShowAddOrder(true);
@@ -2757,7 +2757,7 @@ export default function App() {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 oEditFocusFieldRef.current = 'bed';
-                                setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' || '');
+                                setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' ? o.name : '');
                                 setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
                                 setONote(o.note || '');
                                 setOPriority(o.priority || 'normal'); setShowAddOrder(true);
@@ -2793,7 +2793,7 @@ export default function App() {
                           onClick={(e) => {
                             e.stopPropagation();
                             oEditFocusFieldRef.current = 'task';
-                            setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' || '');
+                            setEditingOrderId(o.id); setOBed(o.bed); setOName(o.name && o.name !== '不具名' ? o.name : '');
                             setOTask(o.orderTask); setODiagnosis(o.diagnosis || '');
                             setONote(o.note || '');
                             setOPriority(o.priority || 'normal'); setShowAddOrder(true);
