@@ -1100,7 +1100,7 @@ export default function App() {
     if (hideCompletedOrders && o.isCompleted) return false;
     if (!qStr) return true;
     return o.bed.toLowerCase().includes(qStr) ||
-           (o.name && o.name !== '不具名' && o.name && o.name !== '不具名'.toLowerCase().includes(qStr)) ||
+           (o.name && o.name !== '不具名' && o.name.toLowerCase().includes(qStr)) ||
            (o.diagnosis && o.diagnosis.toLowerCase().includes(qStr)) ||
            o.orderTask.toLowerCase().includes(qStr) ||
            (o.note && o.note.toLowerCase().includes(qStr));
@@ -1122,7 +1122,7 @@ export default function App() {
     if (hideHandledHandovers && h.isHandedOver) return false;
     if (!qStr) return true;
     return h.bed.toLowerCase().includes(qStr) ||
-           (h.name && h.name !== '不具名' && h.name && h.name !== '不具名'.toLowerCase().includes(qStr)) ||
+           (h.name && h.name !== '不具名' && h.name.toLowerCase().includes(qStr)) ||
            (h.diagnosis && h.diagnosis.toLowerCase().includes(qStr)) ||
            h.attentionPoints.toLowerCase().includes(qStr) ||
            (h.note && h.note.toLowerCase().includes(qStr));
