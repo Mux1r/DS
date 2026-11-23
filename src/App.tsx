@@ -55,6 +55,12 @@ import {
 // import.meta.env.DEV 在正式 build 是 false，這段跟著被移除，線上版開不出來。
 const PREVIEW = import.meta.env.DEV && new URLSearchParams(location.search).has('preview');
 
+// 離線時 Firestore 會先丟一份「快取裡沒有 → 文件不存在」的快照，不代表雲端真的沒資料。
+// 當成空資料的話，畫面會全空（看起來像資料不見），這時一編輯，連線後就把雲端那份整個蓋掉。
+const isOfflineMiss = (snap: { exists(): boolean; metadata: { fromCache: boolean } }) =>
+  snap.metadata.fromCache && !snap.exists();
+const OFFLINE_STATUS: SyncStatus = { lastSynced: null, isSyncing: true, statusText: '📡 離線中，連上網路後會自動載入', error: true };
+
 export default function App() {
   // Dark mode state with automatic persistent storage
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
@@ -425,6 +431,7 @@ export default function App() {
     const metaRef = doc(db, 'users', user.uid, 'metadata', 'summary');
     return onSnapshot(metaRef, (snap) => {
       if (snap.metadata.hasPendingWrites) return;
+      if (isOfflineMiss(snap)) { setSyncStatus(OFFLINE_STATUS); return; }
       const data = snap.exists() ? snap.data() : {};
 
       // 舊格式只有 dates、從沒有 shifts 欄位才轉換（刪光所有班 = shifts: []，不能再把舊的變回來）
@@ -513,6 +520,7 @@ export default function App() {
     const unsub = onSnapshot(dateRef, (snap) => {
       // Skip snapshots caused by our own pending writes to avoid save loops
       if (snap.metadata.hasPendingWrites) return;
+      if (isOfflineMiss(snap)) { setSyncStatus(OFFLINE_STATUS); return; } // 還沒載入成功前也不准存
 
       const data = snap.exists() ? snap.data() : {};
       const patients = data.patients || [];
@@ -547,6 +555,7 @@ export default function App() {
     const ref = doc(db, 'users', user.uid, 'metadata', 'charts');
     const unsub = onSnapshot(ref, (snap) => {
       if (snap.metadata.hasPendingWrites) return;
+      if (isOfflineMiss(snap)) return;
       const remote = {
         records: (snap.exists() && snap.data().records) || [],
         tags: (snap.exists() && snap.data().tags) || [],
@@ -589,6 +598,7 @@ export default function App() {
     const ref = doc(db, 'users', user.uid, 'metadata', 'favorites');
     return onSnapshot(ref, (snap) => {
       if (snap.metadata.hasPendingWrites) return;
+      if (isOfflineMiss(snap)) return;
       setFavorites((snap.exists() && snap.data().items) || []);
       favLoadedRef.current = true;
     });
