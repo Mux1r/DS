@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
-import { DutyState, SyncStatus, Shift, FavoritePatient } from '../types';
+import { DutyState, SyncStatus, Shift, FavoritePatient, LostShift } from '../types';
 import { generateHandoverText } from '../utils';
 import Tour, { TourStep } from './Tour';
 import Feedback from './Feedback';
@@ -39,6 +39,8 @@ interface HeaderProps {
   onSelectShift?: (id: string) => void;
   onEditShift?: (id: string, startDate: string, endDate: string) => void;
   onDeleteShift?: (id: string) => void;
+  onFindLostShifts?: () => Promise<LostShift[]>;
+  onRestoreShifts?: (ids: string[]) => boolean;
   favorites: FavoritePatient[];
   onFavoritesChange: (next: FavoritePatient[]) => boolean;
   appMode: 'duty' | 'charts';
@@ -66,7 +68,7 @@ const TOUR_STEPS: TourStep[] = [
   { target: 'settings', title: '設定', body: '主題、交班簡報、值班管理、收藏病人、這個教學和意見回報都在這裡。' },
 ];
 
-export default function Header({ state, syncStatus, isSidebarOpen, setIsSidebarOpen, isDarkMode, onToggleDarkMode, user, onSignOut, availableShifts = [], selectedShiftId = '', onSelectShift, onEditShift, onDeleteShift, favorites, onFavoritesChange, appMode }: HeaderProps) {
+export default function Header({ state, syncStatus, isSidebarOpen, setIsSidebarOpen, isDarkMode, onToggleDarkMode, user, onSignOut, availableShifts = [], selectedShiftId = '', onSelectShift, onEditShift, onDeleteShift, onFindLostShifts, onRestoreShifts, favorites, onFavoritesChange, appMode }: HeaderProps) {
   const [copiedHandover, setCopiedHandover] = useState(false);
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
@@ -280,6 +282,8 @@ export default function Header({ state, syncStatus, isSidebarOpen, setIsSidebarO
           onSelect={id => { onSelectShift?.(id); setIsShiftSectionOpen(false); setIsSidebarOpen(false); }}
           onEdit={(id, start, end) => onEditShift?.(id, start, end)}
           onDelete={id => onDeleteShift?.(id)}
+          onFindLost={onFindLostShifts}
+          onRestore={onRestoreShifts}
           onClose={() => setIsShiftSectionOpen(false)}
         />
       )}

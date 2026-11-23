@@ -4,10 +4,10 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { DutyState, NewPatient, GeneralOrder, HandoverPatient, SyncStatus, Shift, ChartRecord, FavoritePatient } from './types';
+import { DutyState, NewPatient, GeneralOrder, HandoverPatient, SyncStatus, Shift, ChartRecord, FavoritePatient, LostShift } from './types';
 import { getInitialState, saveState, formatTime, formatBedInput, parseBed, compareBed } from './utils';
 import { db, auth } from './firebase';
-import { doc, setDoc, serverTimestamp, onSnapshot, runTransaction } from 'firebase/firestore';
+import { doc, collection, getDocsFromServer, setDoc, serverTimestamp, onSnapshot, runTransaction } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import LoginScreen from './components/LoginScreen';
 import { FavoriteButton, FavoritePrompt, addFavorite } from './components/Favorites';
@@ -509,6 +509,30 @@ export default function App() {
       localStorage.setItem('duty_selected_shift_id', updated[0].id);
     }
   };
+
+  // 找回值班：直接問雲端（不看快取，離線就報錯），列出 dates/ 裡有資料、卻不在清單上的班
+  const findLostShifts = async (): Promise<LostShift[]> => {
+    if (PREVIEW) return [{ id: '2026-11-01', count: 5 }, { id: '2026-10-18', count: 2 }];
+    if (!user) return [];
+    const snap = await getDocsFromServer(collection(db, 'users', user.uid, 'dates'));
+    const known = new Set(availableShifts.map(s => s.id));
+    return snap.docs
+      .filter(d => !known.has(d.id) && /^\d{4}-\d{2}-\d{2}$/.test(d.id))
+      .map(d => {
+        const x = d.data();
+        return { id: d.id, count: (x.patients?.length || 0) + (x.orders?.length || 0) + (x.handovers?.length || 0) };
+      })
+      .filter(x => x.count > 0)
+      .sort((a, b) => b.id.localeCompare(a.id));
+  };
+
+  // 加回清單：結束日不知道，先設成跟開始日同一天，之後可用鉛筆改
+  const restoreShifts = (ids: string[]) =>
+    mutateShifts(list => {
+      const known = new Set(list.map(s => s.id));
+      const added = ids.filter(id => !known.has(id)).map(id => ({ id, startDate: id, endDate: id }));
+      return [...list, ...added].sort((a, b) => b.startDate.localeCompare(a.startDate));
+    });
 
   // 2. Real-time listener for selectedShiftId — auto-syncs across devices
   useEffect(() => {
@@ -1196,6 +1220,8 @@ export default function App() {
         }}
         onEditShift={handleEditShift}
         onDeleteShift={handleDeleteShift}
+        onFindLostShifts={findLostShifts}
+        onRestoreShifts={restoreShifts}
         favorites={favorites}
         onFavoritesChange={updateFavorites}
         appMode={appMode}
