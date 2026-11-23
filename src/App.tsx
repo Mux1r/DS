@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DutyState, NewPatient, GeneralOrder, HandoverPatient, SyncStatus, Shift, ChartRecord, FavoritePatient } from './types';
 import { getInitialState, saveState, formatTime, formatBedInput, parseBed, compareBed } from './utils';
 import { db, auth } from './firebase';
-import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, onSnapshot, runTransaction } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import LoginScreen from './components/LoginScreen';
 import { FavoriteButton, FavoritePrompt, addFavorite } from './components/Favorites';
@@ -107,6 +107,7 @@ export default function App() {
 
   // 收藏病人：跨值班保存在 users/{uid}/metadata/favorites
   const [favorites, setFavorites] = useState<FavoritePatient[]>([]);
+  const shiftsLoadedRef = useRef(false); // 值班清單讀到之前不准寫，不然會用空清單蓋掉
   const favLoadedRef = useRef(false); // 雲端那份讀到之前不准寫，不然會用空清單蓋掉
   const [favPrompt, setFavPrompt] = useState<{ mrn: string; bed: string; diagnosis: string; note: string } | null>(null);
   const [favJustSaved, setFavJustSaved] = useState(false);
@@ -414,85 +415,91 @@ export default function App() {
     }
   };
 
-  // 1. Load available shifts from Firebase when user logs in (with migration from old dates format)
+  // 1. 值班清單：即時監聽 users/{uid}/metadata/summary（含舊 dates 格式一次性轉換）
+  // 以前只在登入時 getDoc 讀一次，之後改清單都拿本機那份整包蓋回去；
+  // 另一台裝置（或一直開著的 PWA）拿舊清單一改，就會把別台新增的班從清單抹掉。
   useEffect(() => {
     if (!user) return;
-    const loadShifts = async () => {
-      try {
-        const metaRef = doc(db, 'users', user.uid, 'metadata', 'summary');
-        const metaSnap = await getDoc(metaRef);
-        let shiftsList: Shift[] = metaSnap.exists() ? (metaSnap.data().shifts || []) : [];
+    shiftsLoadedRef.current = false;
+    let first = true;
+    const metaRef = doc(db, 'users', user.uid, 'metadata', 'summary');
+    return onSnapshot(metaRef, (snap) => {
+      if (snap.metadata.hasPendingWrites) return;
+      const data = snap.exists() ? snap.data() : {};
 
-        // Migrate old single-date format to shift format (one-time)
-        if (shiftsList.length === 0 && metaSnap.exists()) {
-          const oldDates: string[] = metaSnap.data().dates || [];
-          if (oldDates.length > 0) {
-            shiftsList = oldDates.map(d => ({ id: d, startDate: d, endDate: d }));
-            await setDoc(metaRef, { shifts: shiftsList }, { merge: true });
-          }
-        }
-
-        setAvailableShifts(shiftsList);
-        // 打開 App 一律跳到開始日期最新的那班（清單改過日期後不一定照順序，所以自己找）
-        if (shiftsList.length > 0) {
-          const latest = shiftsList.reduce((a, b) => (b.startDate > a.startDate ? b : a));
-          setSelectedShiftId(latest.id);
-          localStorage.setItem('duty_selected_shift_id', latest.id);
-        }
-      } catch (e) {
-        console.error('Error loading shifts', e);
-        setAvailableShifts([]);
+      // 舊格式只有 dates、從沒有 shifts 欄位才轉換（刪光所有班 = shifts: []，不能再把舊的變回來）
+      if (!('shifts' in data) && Array.isArray(data.dates) && data.dates.length > 0) {
+        const migrated: Shift[] = data.dates.map((d: string) => ({ id: d, startDate: d, endDate: d }));
+        setDoc(metaRef, { shifts: migrated }, { merge: true }).catch(e => console.error('Error migrating shifts', e));
+        return; // 寫入後會再收到一次快照
       }
-    };
-    loadShifts();
+
+      const shiftsList: Shift[] = data.shifts || [];
+      setAvailableShifts(shiftsList);
+      shiftsLoadedRef.current = true;
+
+      // 打開 App（每次登入的第一份快照）一律跳到開始日期最新的那班；之後只在目前這班被別台刪掉時才換
+      setSelectedShiftId(prev => {
+        if (shiftsList.length === 0) return prev;
+        if (!first && shiftsList.some(s => s.id === prev)) return prev;
+        const latest = shiftsList.reduce((a, b) => (b.startDate > a.startDate ? b : a));
+        localStorage.setItem('duty_selected_shift_id', latest.id);
+        return latest.id;
+      });
+      first = false;
+    }, (e) => {
+      // 讀不到就維持畫面上的清單並擋住寫入，不要當成「沒有值班」
+      console.error('Error loading shifts', e);
+      shiftsLoadedRef.current = false;
+      setSyncStatus({ lastSynced: null, isSyncing: false, statusText: '⚠️ 值班清單載入失敗，請確認網路後重新整理', error: true });
+    });
   }, [user]);
 
-  const handleAddShift = async (startDate: string, endDate: string) => {
-    const id = startDate; // use startDate as ID — backward-compatible with dates/ Firebase path
+  // 改值班清單：先改畫面，再用 transaction 讀雲端最新那份套同一個改動寫回，不會蓋掉別台裝置的變更
+  const mutateShifts = (op: (list: Shift[]) => Shift[]): boolean => {
+    if (user && !shiftsLoadedRef.current) {
+      alert('值班清單還在載入，請稍等一下再試');
+      return false;
+    }
+    setAvailableShifts(prev => op(prev));
+    if (user) {
+      const metaRef = doc(db, 'users', user.uid, 'metadata', 'summary');
+      runTransaction(db, async (tx) => {
+        const snap = await tx.get(metaRef);
+        const remote: Shift[] = (snap.exists() && snap.data().shifts) || [];
+        tx.set(metaRef, { shifts: op(remote) }, { merge: true });
+      }).catch(e => {
+        console.error('Error saving shifts', e);
+        setSyncStatus({ lastSynced: null, isSyncing: false, statusText: '⚠️ 值班清單沒存成功，請確認網路', error: true });
+      });
+    }
+    return true;
+  };
+
+  const handleAddShift = (startDate: string, endDate: string) => {
+    const id = startDate;
     if (availableShifts.find(s => s.id === id)) return; // already exists
-    const newShift: Shift = { id, startDate, endDate };
-    const newList = [newShift, ...availableShifts].sort((a, b) => b.startDate.localeCompare(a.startDate));
-    setAvailableShifts(newList);
+    const ok = mutateShifts(list =>
+      list.some(s => s.id === id)
+        ? list
+        : [{ id, startDate, endDate }, ...list].sort((a, b) => b.startDate.localeCompare(a.startDate))
+    );
+    if (!ok) return;
     setSelectedShiftId(id);
     localStorage.setItem('duty_selected_shift_id', id);
     setShowAddShiftForm(false);
-    if (user) {
-      try {
-        const metaRef = doc(db, 'users', user.uid, 'metadata', 'summary');
-        await setDoc(metaRef, { shifts: newList }, { merge: true });
-      } catch (e) {
-        console.error('Error adding shift', e);
-      }
-    }
   };
 
-  const handleEditShift = async (id: string, startDate: string, endDate: string) => {
-    const updated = availableShifts.map(s => s.id === id ? { ...s, startDate, endDate } : s);
-    setAvailableShifts(updated);
-    if (user) {
-      try {
-        const metaRef = doc(db, 'users', user.uid, 'metadata', 'summary');
-        await setDoc(metaRef, { shifts: updated }, { merge: true });
-      } catch (e) {
-        console.error('Error editing shift', e);
-      }
-    }
+  const handleEditShift = (id: string, startDate: string, endDate: string) => {
+    mutateShifts(list => list.map(s => s.id === id ? { ...s, startDate, endDate } : s));
   };
 
-  const handleDeleteShift = async (id: string) => {
+  const handleDeleteShift = (id: string) => {
     const updated = availableShifts.filter(s => s.id !== id);
-    setAvailableShifts(updated);
+    if (!mutateShifts(list => list.filter(s => s.id !== id))) return;
     if (selectedShiftId === id && updated.length > 0) {
       setSelectedShiftId(updated[0].id);
       localStorage.setItem('duty_selected_shift_id', updated[0].id);
-    }
-    if (user) {
-      try {
-        const metaRef = doc(db, 'users', user.uid, 'metadata', 'summary');
-        await setDoc(metaRef, { shifts: updated }, { merge: true });
-      } catch (e) {
-        console.error('Error deleting shift', e);
-      }
     }
   };
 
