@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { X, Pencil, Trash2, Check } from 'lucide-react';
-import { Shift } from '../types';
+import { X, Pencil, Trash2, Check, History, Loader2 } from 'lucide-react';
+import { Shift, LostShift } from '../types';
 
 interface Props {
   shifts: Shift[];
@@ -9,6 +9,8 @@ interface Props {
   onSelect: (id: string) => void;
   onEdit: (id: string, startDate: string, endDate: string) => void;
   onDelete: (id: string) => void;
+  onFindLost?: () => Promise<LostShift[]>;
+  onRestore?: (ids: string[]) => boolean;
   onClose: () => void;
 }
 
@@ -18,11 +20,26 @@ const label = (s: Shift) =>
     : `${s.startDate.slice(5).replace('-', '/')} – ${s.endDate.slice(5).replace('-', '/')}`;
 
 // 值班管理懸浮視窗：點一列切換到那班；鉛筆改起訖日期；垃圾桶要再確認一次才刪
-export default function ShiftManager({ shifts, selectedShiftId, isDarkMode, onSelect, onEdit, onDelete, onClose }: Props) {
+export default function ShiftManager({ shifts, selectedShiftId, isDarkMode, onSelect, onEdit, onDelete, onFindLost, onRestore, onClose }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  // 找回值班：idle → loading → done（lost 有內容或是空的）/ error
+  const [findState, setFindState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [lost, setLost] = useState<LostShift[]>([]);
+
+  const findLost = async () => {
+    if (!onFindLost) return;
+    setFindState('loading');
+    try { setLost(await onFindLost()); setFindState('done'); }
+    catch (e) { console.error('Error finding lost shifts', e); setFindState('error'); }
+  };
+  const restore = (ids: string[]) => {
+    if (!onRestore?.(ids)) return;
+    setLost(prev => prev.filter(x => !ids.includes(x.id)));
+  };
+  const dateLabel = (id: string) => `${id.slice(0, 4)}/${id.slice(5).replace('-', '/')}`;
 
   const beginEdit = (s: Shift) => { setEditingId(s.id); setStart(s.startDate); setEnd(s.endDate); setDeleteId(null); };
   const valid = !!start && !!end && end >= start;
@@ -107,6 +124,40 @@ export default function ShiftManager({ shifts, selectedShiftId, isDarkMode, onSe
             );
           })}
         </div>
+
+        {onFindLost && (
+          <div className="p-3 border-t border-inherit shrink-0 text-sm space-y-2">
+            {findState !== 'done' && (
+              <button type="button" onClick={findLost} disabled={findState === 'loading'} className="w-full flex items-center justify-center gap-1.5 h-10 rounded-2xl text-xs font-bold opacity-70 hover:opacity-100 hover:bg-slate-100 disabled:opacity-50 cursor-pointer">
+                {findState === 'loading' ? <Loader2 size={14} className="animate-spin" /> : <History size={14} />}
+                {findState === 'loading' ? '從雲端尋找中…' : '找回不見的值班'}
+              </button>
+            )}
+            {findState === 'error' && <p role="alert" className="text-[11px] text-center text-rose-600">要連上網路才能找，請確認網路後再試一次</p>}
+            {findState === 'done' && lost.length === 0 && (
+              <p className="py-2 text-center text-xs opacity-60">雲端沒有不在清單裡的值班資料</p>
+            )}
+            {findState === 'done' && lost.length > 0 && (
+              <>
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[11px] font-semibold opacity-70">雲端還有這些班的資料</span>
+                  {lost.length > 1 && (
+                    <button type="button" onClick={() => restore(lost.map(x => x.id))} className="text-[11px] font-bold text-indigo-600 hover:underline cursor-pointer">全部加回</button>
+                  )}
+                </div>
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {lost.map(x => (
+                    <div key={x.id} className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900">
+                      <span className="flex-1 font-semibold">{dateLabel(x.id)} <span className="text-[11px] font-normal opacity-70">· {x.count} 筆</span></span>
+                      <button type="button" onClick={() => restore([x.id])} className="px-3 h-8 rounded-xl bg-[#60788c] text-white text-xs font-bold cursor-pointer hover:brightness-110">加回</button>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] opacity-60 px-1">加回後結束日先設成同一天，可用鉛筆修改</p>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

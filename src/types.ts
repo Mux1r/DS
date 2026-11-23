@@ -68,6 +68,12 @@ export interface Shift {
   endDate: string;   // "2026-06-14"
 }
 
+// 找回值班：雲端 dates/ 有資料、但不在值班清單裡的班
+export interface LostShift {
+  id: string;    // = 開始日期
+  count: number; // 新病人 + 醫囑 + 交班 筆數
+}
+
 export interface DutyState {
   newPatients: NewPatient[];
   generalOrders: GeneralOrder[];
