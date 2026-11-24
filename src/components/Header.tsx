@@ -47,7 +47,7 @@ interface HeaderProps {
 }
 
 // 設定頁照 HMSS 控制中心：半透明毛玻璃卡片。不用 bg-white，深色模式會被 index.css 強制改成實色
-const GLASS = 'bg-white/60 dark:bg-white/5 border border-white/80 dark:border-white/10 backdrop-blur-sm';
+const GLASS = 'bg-white/60 dark:bg-white/5 border border-slate-200 dark:border-white/10 backdrop-blur-sm';
 const GLASS_HOVER = 'hover:bg-white/80 dark:hover:bg-white/10';
 
 // 使用教學的步驟（target 對應畫面元素的 data-tour）
